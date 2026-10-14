@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Environment and Secrets (NEVER COMMIT PASSWORDS TO GITHUB)
+.env
+.env.*
+*.env
+backend/.env
+frontend/.env
+*.local
+
+# Build outputs
+dist/
+frontend/dist/
+dist-ssr/
+
+# Vercel
+.vercel/
+
+# Logs and system
+*.log
+.DS_Store
+backend/data/users.json
+backend/data/otps.json
