@@ -46,31 +46,93 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{
+    <div className="bd-pattern-bg" style={{
       minHeight: 'calc(100vh - 64px)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: 'stretch',
       justifyContent: 'center',
-      padding: '32px 20px',
-      background: '#f0f4f8',
+      background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 100%)',
+      position: 'relative',
     }}>
-      <div style={{ width: '100%', maxWidth: '440px' }} className="animate-fade-in-up">
+      {/* Left Panel: BD Land Infographic (hidden on mobile) */}
+      <div className="hide-on-mobile" style={{
+        flex: '1',
+        maxWidth: '500px',
+        background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #0f766e 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 36px',
+        position: 'relative',
+        overflow: 'hidden',
+      }}>
+        {/* Background pattern */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backgroundImage: 'url(/images/bd_land_pattern.jpg)',
+          backgroundRepeat: 'repeat', backgroundSize: '400px',
+          opacity: 0.05, pointerEvents: 'none',
+        }}/>
+        {/* Infographic SVG */}
+        <img
+          src="/images/bd_land_infographic.svg"
+          alt="e-ভূমি বাংলাদেশ"
+          style={{ width: '100%', maxWidth: '360px', height: 'auto', borderRadius: '16px', position: 'relative', zIndex: 1 }}
+        />
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '24px' }}>
+          <div style={{ fontSize: '20px', fontWeight: '900', color: '#f0fdf4', marginBottom: '8px' }}>
+            e-ভূমি বাংলাদেশ
+          </div>
+          <div style={{ fontSize: '13px', color: '#86efac', lineHeight: 1.6, maxWidth: '300px' }}>
+            ডিজিটাল ভূমি ব্যবস্থাপনা — SHA-256 এনক্রিপ্টেড দলিল,
+            QR খতিয়ান এবং NID যাচাইয়ের সমন্বিত প্ল্যাটফর্ম।
+          </div>
+          {/* Mini stats */}
+          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+            {[
+              { val: '৯', label: 'মৌজা' },
+              { val: 'SHA-256', label: 'এনক্রিপ্টেড' },
+              { val: 'QR', label: 'খতিয়ান' },
+            ].map((s, i) => (
+              <div key={i} style={{
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '12px', padding: '10px 16px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: '16px', fontWeight: '900', color: '#f0fdf4' }}>{s.val}</div>
+                <div style={{ fontSize: '10px', color: '#86efac', marginTop: '2px' }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right Panel: Login Form */}
+      <div style={{
+        flex: '1',
+        maxWidth: '480px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '32px 24px',
+      }}>
+      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          {/* Logo */}
-          <div style={{
-            width: '60px',
-            height: '60px',
-            background: 'linear-gradient(135deg, #1a6b3c, #16a34a)',
-            borderRadius: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '28px',
-            margin: '0 auto 16px',
-            boxShadow: '0 4px 14px rgba(26,107,60,0.35)',
-          }}>🏛️</div>
+          {/* Bangladesh Land Seal */}
+          <img 
+            src="/images/bd_land_seal.png" 
+            alt="বাংলাদেশ ডিজিটাল ভূমি রেকর্ড সিল" 
+            className="bd-seal-glow"
+            style={{
+              width: '72px',
+              height: '72px',
+              objectFit: 'contain',
+              margin: '0 auto 14px',
+              display: 'block'
+            }} 
+          />
 
           <div style={{
             display: 'inline-flex',
@@ -258,6 +320,7 @@ export default function LoginPage() {
           🔒 এই পোর্টালটি বাংলাদেশ সরকারের অনুমোদিত সংস্থার জন্য সংরক্ষিত।
           অননুমোদিত প্রবেশ আইনত দণ্ডনীয়।
         </p>
+      </div>
       </div>
     </div>
   );

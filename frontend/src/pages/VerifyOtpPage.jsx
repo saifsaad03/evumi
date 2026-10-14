@@ -307,15 +307,16 @@ export default function VerifyOtpPage() {
   }
 
   return (
-    <div style={{
+    <div className="bd-pattern-bg" style={{
       minHeight: 'calc(100vh - 64px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       padding: '32px 20px',
-      background: '#f0f4f8'
+      background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 100%)',
+      position: 'relative'
     }}>
-      <div style={{ width: '100%', maxWidth: '520px' }} className="animate-fade-in-up">
+      <div style={{ width: '100%', maxWidth: '520px', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
 
         {/* ================= SUCCESS CELEBRATION VIEW ================= */}
         {isSuccess ? (

@@ -161,18 +161,31 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{
+    <div className="bd-pattern-bg" style={{
       minHeight: 'calc(100vh - 64px)',
-      background: '#f0f4f8',
+      background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 100%)',
       padding: '40px 20px',
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center'
+      justifyContent: 'center',
+      position: 'relative'
     }}>
-      <div style={{ maxWidth: '820px', width: '100%' }} className="animate-fade-in-up">
+      <div style={{ maxWidth: '820px', width: '100%', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
 
         {/* Top Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+          <img 
+            src="/images/bd_land_seal.png" 
+            alt="বাংলাদেশ ডিজিটাল ভূমি রেকর্ড সিল" 
+            className="bd-seal-glow"
+            style={{
+              width: '64px',
+              height: '64px',
+              objectFit: 'contain',
+              margin: '0 auto 12px',
+              display: 'block'
+            }} 
+          />
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
