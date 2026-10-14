@@ -3,8 +3,9 @@ async function run() {
   const email = `citizen.${rand}@gmail.com`;
   const nid = `8877665544${rand}`;
 
+  const backendBase = process.env.BACKEND_URL || 'http://localhost:5000';
   console.log(`\n1. Sending OTP to ${email}...`);
-  const sendRes = await fetch('http://localhost:5000/api/otp/send-registration-otp', {
+  const sendRes = await fetch(`${backendBase}/api/otp/send-registration-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, nid, name: 'টেস্ট নাগরিক' })

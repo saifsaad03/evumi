@@ -106,8 +106,9 @@ router.post('/issue-namjari', async (req, res) => {
     record.last_updated = new Date();
     await record.save();
 
-    // Payment link for buyer
-    const paymentLink = `http://localhost:5173/payment/${record._id}`;
+    // Payment link for buyer (uses bound FRONTEND_URL service binding or local dev fallback)
+    const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').trim();
+    const paymentLink = new URL(`payment/${record._id}`, frontendBase.endsWith('/') ? frontendBase : `${frontendBase}/`).toString();
 
     return res.status(200).json({
       success: true,
