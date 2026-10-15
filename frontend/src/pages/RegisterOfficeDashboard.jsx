@@ -553,9 +553,10 @@ export default function RegisterOfficeDashboard() {
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="নাগরিকের NID দিন"
+                    placeholder="নাগরিকের NID / ফোন / ইমেইল দিন"
                     value={userQuery}
                     onChange={(e) => setUserQuery(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchUser(); } }}
                     style={{ flex: 1, fontSize: '13px' }}
                   />
                   <button
@@ -565,6 +566,25 @@ export default function RegisterOfficeDashboard() {
                     style={{ padding: '8px 14px', fontSize: '12px' }}
                   >
                     খুঁজুন
+                  </button>
+                </div>
+
+                {/* Quick Citizen selection buttons */}
+                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '10px', color: '#64748b', alignSelf: 'center' }}>টেস্ট নাগরিক:</span>
+                  <button
+                    type="button"
+                    onClick={() => { setUserQuery('১২৩৪৫৬৭৮৯১০'); }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#93c5fd', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    👤 সাদ (NID: ১২৩৪৫৬৭৮৯১০)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setUserQuery('১২৯৩৯২৮২৮২৯২৯'); }}
+                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#93c5fd', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    👤 তফিজার (NID: ১২৯৩৯২৮২৮২৯২৯)
                   </button>
                 </div>
               </div>
@@ -693,9 +713,34 @@ export default function RegisterOfficeDashboard() {
                   )}
                 </div>
 
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 12px', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 10px', lineHeight: 1.5 }}>
                   এসি ল্যান্ড অফিসে প্রস্তাব পাঠানোর পূর্বে নাগরিকের ব্যক্তিগত ইমেইলে ওটিপি প্রেরণ ও তা যাচাই করা বাধ্যতামূলক।
                 </p>
+
+                {/* Prerequisites Status Bar */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  padding: '8px 12px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  marginBottom: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8' }}>১. নির্বাচিত জমি:</span>
+                    <strong style={{ color: selectedLand ? '#86efac' : '#f87171' }}>
+                      {selectedLand ? `দাগ নং ${selectedLand.dag_no} (${selectedLand.mouza}) ✓` : '❌ বাম পাশ থেকে জমি নির্বাচন করুন'}
+                    </strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8' }}>২. লক্ষ্য নাগরিক:</span>
+                    <strong style={{ color: foundUser ? '#86efac' : '#f87171' }}>
+                      {foundUser ? `${foundUser.name} (${foundUser.email}) ✓` : '❌ উপরে নাগরিক NID দিয়ে খুঁজুন'}
+                    </strong>
+                  </div>
+                </div>
 
                 <div style={{ display: 'flex', gap: '8px', marginBottom: '10px' }}>
                   <button
@@ -703,16 +748,17 @@ export default function RegisterOfficeDashboard() {
                     onClick={handleSendCitizenOtp}
                     disabled={sendingCitizenOtp || !foundUser || !selectedLand}
                     className="btn-secondary"
+                    title={!selectedLand ? 'প্রথমে জমি নির্বাচন করুন' : !foundUser ? 'প্রথমে নাগরিক খুঁজুন' : 'ওটিপি পাঠান'}
                     style={{
                       padding: '8px 14px',
                       fontSize: '12px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      background: 'rgba(59, 130, 246, 0.15)',
-                      borderColor: 'rgba(59, 130, 246, 0.3)',
-                      color: '#93c5fd',
-                      cursor: 'pointer'
+                      background: (!foundUser || !selectedLand) ? 'rgba(255, 255, 255, 0.04)' : 'rgba(59, 130, 246, 0.15)',
+                      borderColor: (!foundUser || !selectedLand) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(59, 130, 246, 0.3)',
+                      color: (!foundUser || !selectedLand) ? '#64748b' : '#93c5fd',
+                      cursor: (!foundUser || !selectedLand) ? 'not-allowed' : 'pointer'
                     }}
                   >
                     <Send size={13} />
