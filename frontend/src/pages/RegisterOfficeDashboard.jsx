@@ -508,34 +508,38 @@ export default function RegisterOfficeDashboard() {
               </div>
 
               {/* Selected Land Preview */}
-              {selectedLand && (
-                <div className="glass-card" style={{ padding: '20px', borderLeft: '4px solid #10b981' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-                    <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>
-                      নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
-                    </h4>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      background: selectedLand.status === 'Active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                      color: selectedLand.status === 'Active' ? '#86efac' : '#fde047',
-                      fontWeight: '700'
-                    }}>
-                      স্ট্যাটাস: {selectedLand.status}
-                    </span>
-                  </div>
+              {selectedLand && (() => {
+                const isLandAllocated = selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার'));
+                return (
+                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>
+                        নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
+                      </h4>
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        background: isLandAllocated ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                        color: isLandAllocated ? '#fca5a5' : '#86efac',
+                        border: `1px solid ${isLandAllocated ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
+                        fontWeight: '700'
+                      }}>
+                        {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য সরকারি খাস জমি'}
+                      </span>
+                    </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
-                    <div>খতিয়ান: <strong>{selectedLand.khatian_no}</strong></div>
-                    <div>জে.এল নং: <strong>{selectedLand.jl_no}</strong></div>
-                    <div>মোট পরিমাণ: <strong style={{ color: '#22c55e' }}>{selectedLand.total_area_decimal} শতক</strong></div>
-                    <div>বর্তমান মালিক: <strong>{selectedLand.owner_name}</strong></div>
-                    <div>মালিকের NID: <strong style={{ fontFamily: 'monospace' }}>{selectedLand.owner_nid}</strong></div>
-                    <div>উপজেলা: <strong>{selectedLand.upazila || 'ধানমন্ডি'}</strong></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
+                      <div>খতিয়ান: <strong>{selectedLand.khatian_no}</strong></div>
+                      <div>জে.এল নং: <strong>{selectedLand.jl_no}</strong></div>
+                      <div>মোট পরিমাণ: <strong style={{ color: '#22c55e' }}>{selectedLand.total_area_decimal} শতক</strong></div>
+                      <div>বর্তমান মালিক: <strong style={{ color: isLandAllocated ? '#fca5a5' : '#cbd5e1' }}>{selectedLand.owner_name}</strong></div>
+                      <div>মালিকের NID: <strong style={{ fontFamily: 'monospace' }}>{selectedLand.owner_nid}</strong></div>
+                      <div>উপজেলা: <strong>{selectedLand.upazila || 'শিবগঞ্জ'}</strong></div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             {/* Right: Citizen Search + Volume/Page Fields + Submit to AC Land */}
@@ -864,27 +868,49 @@ export default function RegisterOfficeDashboard() {
                 </div>
               )}
 
+              {/* Check if land is already allocated */}
+              {selectedLand && (selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার'))) && (
+                <div style={{
+                  padding: '12px',
+                  background: 'rgba(239, 68, 68, 0.15)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: '8px',
+                  color: '#fca5a5',
+                  fontSize: '13px',
+                  marginBottom: '14px',
+                  lineHeight: 1.5
+                }}>
+                  🔒 <strong>সতর্কতা:</strong> দাগ নং {selectedLand.dag_no} জমিটি ইতিমধ্যে <strong>{selectedLand.owner_name}</strong> (NID: {selectedLand.owner_nid})-এর নামে রেকর্ডভুক্ত/প্রক্রিয়াধীন রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ করা যাবে না।
+                </div>
+              )}
+
               {/* THE ASSIGN BUTTON */}
-              <button
-                type="button"
-                onClick={handleAssignLand}
-                disabled={assigning || !selectedLand || !foundUser || citizenOtp.length !== 6}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '13px',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: 'linear-gradient(135deg, #1d4ed8, #2563eb)'
-                }}
-              >
-                <Send size={18} />
-                {assigning ? 'অনুরোধ পাঠানো হচ্ছে...' : 'নাগরিককে জমি বরাদ্দ করুন ➔ এসি ল্যান্ডে পাঠান'}
-              </button>
+              {(() => {
+                const isLandAllocated = selectedLand && (selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার')));
+                return (
+                  <button
+                    type="button"
+                    onClick={handleAssignLand}
+                    disabled={assigning || !selectedLand || !foundUser || citizenOtp.length !== 6 || isLandAllocated}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '13px',
+                      fontSize: '15px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: isLandAllocated ? 'rgba(239, 68, 68, 0.2)' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                      cursor: isLandAllocated ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    <Send size={18} />
+                    {assigning ? 'অনুরোধ পাঠানো হচ্ছে...' : isLandAllocated ? '🔒 জমিটি ইতিমধ্যে বরাদ্দকৃত (নিষিদ্ধ)' : 'নাগরিককে জমি বরাদ্দ করুন ➔ এসি ল্যান্ডে পাঠান'}
+                  </button>
+                );
+              })()}
             </div>
           </div>
 

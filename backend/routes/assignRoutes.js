@@ -46,26 +46,57 @@ router.get('/filter-options', verifyToken, async (req, res) => {
 });
 
 // GET /api/assign/search-land
-// Register Office searches land by cascade parameters
+// Register Office searches land by cascade parameters.
+// LOGIC: Any Dag and any criteria dynamically exists as available government khas land.
+// BUT once a land is assigned or in-process, it is locked and CANNOT be assigned to anyone else!
 router.get('/search-land', verifyToken, async (req, res) => {
   try {
     const { division, district, upazila, mouza, jl_no, khatian_no, dag_no } = req.query;
 
-    const query = {};
-    if (division) query.division = division;
-    if (district) query.district = district;
-    if (upazila) query.upazila = upazila;
-    if (mouza) query.mouza = mouza;
-    if (jl_no) query.jl_no = jl_no;
-    if (khatian_no) query.khatian_no = khatian_no;
-    if (dag_no) query.dag_no = dag_no;
+    const cleanDag = (dag_no || '101').toString().trim();
+    const cleanMouza = (mouza || 'গুজিয়া').toString().trim();
+    const cleanKhatian = (khatian_no || '১').toString().trim();
+    const cleanJl = (jl_no || '1').toString().trim();
 
-    const records = await LandRecord.find(query);
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+
+    // 1. Search if this plot already exists in MongoDB
+    let record = await LandRecord.findOne({
+      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    });
+
+    // 2. If it does NOT exist yet, dynamically initialize it as government khas land!
+    if (!record) {
+      record = new LandRecord({
+        record_id: `rec_${Date.now()}_${engDag}`,
+        division: division || 'রাজশাহী',
+        district: district || 'বগুড়া',
+        upazila: upazila || 'শিবগঞ্জ',
+        mouza: cleanMouza,
+        jl_no: cleanJl,
+        khatian_no: cleanKhatian || '১',
+        dag_no: cleanDag,
+        owner_nid: '1000000000000',
+        owner_name: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার (১নং খাস খতিয়ান)',
+        owner_phone: '01700000000',
+        owner_email: 'khas@evhumi.gov.bd',
+        total_area_decimal: 20,
+        available_area_decimal: 20,
+        volume_book: 'VOL-KHAS-2026',
+        page_no: '01',
+        deed_no: `GOV-${engDag}-${Date.now().toString().slice(-4)}`,
+        sub_registry_code: 'SR-BOG-SHIB-01',
+        status: 'Active'
+      });
+      await record.save();
+    }
 
     return res.status(200).json({
       success: true,
-      count: records.length,
-      data: records
+      count: 1,
+      data: [record]
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'জমি খোঁজা ব্যর্থ হয়েছে।' });
@@ -148,8 +179,8 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       return res.status(404).json({ success: false, message: 'জমির রেকর্ড পাওয়া যায়নি।' });
     }
 
-    // Check if land is already pending review
-    if (land.status === 'Pending_AC_Land_Review' || land.status === 'Pending_Mutation') {
+    // Check if land is already pending review or sold
+    if (land.status === 'Pending_AC_Land_Review' || land.status === 'Pending_Mutation' || land.status === 'Sold') {
       return res.status(400).json({
         success: false,
         message: `এই জমিটি বর্তমানে '${land.status}' অবস্থায় রয়েছে। নতুন অ্যাসাইনমেন্ট করা সম্ভব নয়।`
@@ -160,6 +191,14 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     const rawNid = user_nid.toString().trim();
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
+
+    // If land is already owned by another citizen (not government khas land)
+    if (land.owner_nid && land.owner_nid !== '1000000000000' && land.owner_nid !== rawNid && land.owner_nid !== engNid && land.owner_nid !== bngNid) {
+      return res.status(400).json({
+        success: false,
+        message: `এই জমিটি ইতিমধ্যে '${land.owner_name}' (NID: ${land.owner_nid})-এর নামে রেকর্ডভুক্ত রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ দেওয়া যাবে না!`
+      });
+    }
 
     const citizen = await User.findOne({
       $or: [
