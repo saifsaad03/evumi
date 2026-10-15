@@ -757,7 +757,7 @@ export default function P4RegistryPanel() {
                   border: '1px solid rgba(255, 255, 255, 0.06)'
                 }}>
                   <QRCodeSVG
-                    value={`http://localhost:5173/qr-verify/${grantResult.qr_code_id || 'QR-' + deedForm.deed_no}`}
+                    value={`${window.location.origin}/qr-verify/${grantResult.qr_code_id || 'QR-' + deedForm.deed_no}`}
                     size={80}
                     fgColor="#f8fafc"
                     bgColor="transparent"

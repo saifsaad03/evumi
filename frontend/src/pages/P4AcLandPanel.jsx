@@ -331,7 +331,7 @@ export default function P4AcLandPanel() {
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
                   <QRCodeSVG
-                    value={`http://localhost:5173/qr-verify/${khatianData.qr_code_id}`}
+                    value={`${window.location.origin}/qr-verify/${khatianData.qr_code_id}`}
                     size={100}
                     fgColor="#f1f5f9"
                     bgColor="transparent"
