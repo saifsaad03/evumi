@@ -25,6 +25,33 @@ router.post('/grant-deed', async (req, res) => {
       return res.status(400).json({ success: false, message: `জমিটি ইতিমধ্যে ${record.status} অবস্থায় আছে। দলিল করা সম্ভব নয়।` });
     }
 
+    // Check LegalStatus for Court Case / Stay Order
+    const LegalStatus = require('../models/LegalStatus');
+    const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+    const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+    const cleanDag = (record.dag_no || '').toString().trim();
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+
+    const legalNotice = await LegalStatus.findOne({
+      $or: [
+        { dag_no: cleanDag },
+        { dag_no: engDag },
+        { dag_no: bngDag }
+      ]
+    });
+
+    if (legalNotice && (legalNotice.has_court_case || legalNotice.stay_order || legalNotice.is_khas)) {
+      return res.status(400).json({
+        success: false,
+        message: legalNotice.stay_order
+          ? `⛔ আদালতের Stay Order বলবৎ রয়েছে! [${legalNotice.case_details || ''}] জমিটি বিক্রয় বা ক্রেতার নামে রেজিস্ট্রি করা আইনত সম্পূর্ণ নিষিদ্ধ।`
+          : legalNotice.has_court_case
+          ? `⚖️ এই জমির ওপর আদালতে সক্রিয় মোকদ্দমা বিচারাধীন রয়েছে! [${legalNotice.case_details || ''}] মামলা নিষ্পত্তি না হওয়া পর্যন্ত হস্তান্তর অসম্ভব।`
+          : `🚫 সরকারি খাস জমি ব্যক্তিগতভাবে বিক্রয় বা দলিল সম্পাদন সম্পূর্ণ নিষিদ্ধ।`
+      });
+    }
+
     // Generate SHA-256 hash
     const hashData = `${deed_no}-${deed_year}-${record.dag_no}-${record.owner_nid}-${buyer_nid}-${Date.now()}`;
     const deedHash = crypto.createHash('sha256').update(hashData).digest('hex');

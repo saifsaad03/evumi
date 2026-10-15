@@ -176,7 +176,7 @@ export default function UserDashboard() {
             gap: '8px'
           }}
         >
-          <Search size={16} /> P5 নাগরিক জমি যাচাই
+          <Search size={16} /> জমি সার্চ ও অ্যান্টি-ডাবল সেলিং চেক
         </button>
       </div>
 

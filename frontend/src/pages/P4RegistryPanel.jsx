@@ -372,6 +372,7 @@ export default function P4RegistryPanel() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#f87171', marginBottom: '6px' }}>
                   <ShieldAlert size={18} />
                   {doubleSellAlert.alert_type === 'DOUBLE_SELL' ? '🚨 ডাবল-সেলিং সতর্কতা (Double-Selling Alert)' :
+                   doubleSellAlert.alert_type === 'COURT_CASE_STAY_ORDER' ? '⛔ আদালতীয় মামলা ও স্থগিতাদেশ সতর্কতা (Court Case / Stay Order Alert)' :
                    doubleSellAlert.alert_type === 'FAKE_OWNER' ? '🚨 জালিয়াতি সতর্কতা (Fake Owner Detected)' :
                    doubleSellAlert.alert_type === 'UNASSIGNED_LAND' ? '⚠️ সরকারি খাস জমি সতর্কতা (Unassigned Land)' :
                    doubleSellAlert.alert_type === 'ALREADY_SOLD' ? '🚫 পূর্বেই বিক্রিত জমি (Already Sold)' :

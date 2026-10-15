@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const LandRecord = require('../models/LandRecord');
+const LegalStatus = require('../models/LegalStatus');
 
 // POST /api/verify-deed
 // P3: Step 1 & 2 - Seller NID check + Land Volume check
@@ -31,6 +32,38 @@ router.post('/verify-deed', async (req, res) => {
         success: false,
         alert_type: 'NOT_FOUND',
         message: '⚠️ এই দাগ ও মৌজায় নিবন্ধিত কোনো জমির রেকর্ড পাওয়া যায়নি (ডাটাবেজে জমিটি অস্তিত্বহীন বা বরাদ্দপ্রাপ্ত নয়)।'
+      });
+    }
+
+    // Check Super Admin Legal Notice / Court Case / Stay Order
+    const legalNotice = await LegalStatus.findOne({
+      $or: [
+        { dag_no: cleanDag },
+        { dag_no: engDag },
+        { dag_no: bngDag }
+      ]
+    });
+
+    if (legalNotice && (legalNotice.has_court_case || legalNotice.stay_order || legalNotice.is_khas)) {
+      let caseMsg = '';
+      if (legalNotice.stay_order) {
+        caseMsg = `⛔ আদালতের স্থগিতাদেশ (Stay Order): এই জমিতে বিজ্ঞ আদালতের নিষেধাজ্ঞা / Stay Order বলবৎ রয়েছে! ${legalNotice.case_details ? `[মামলা/আদেশ: ${legalNotice.case_details}]` : ''}। জমিটি বিক্রি, হস্তান্তর বা ক্রেতার নামে দলিল সম্পাদন সম্পূর্ণ নিষিদ্ধ।`;
+      } else if (legalNotice.has_court_case) {
+        caseMsg = `⚖️ আদালতীয় মামলা সতর্কতা (Active Court Dispute): এই জমির ওপর আদালতে সক্রিয় দেওয়ানি মোকদ্দমা / স্বত্ব মামলা বিচারাধীন রয়েছে! ${legalNotice.case_details ? `[মামলার বিবরণ: ${legalNotice.case_details}]` : ''}। মামলা নিষ্পত্তি না হওয়া পর্যন্ত জমিটি অনিরাপদ এবং বিক্রয়যোগ্য নয়।`;
+      } else if (legalNotice.is_khas) {
+        caseMsg = `🚫 সরকারি খাস জমি: এটি ১নং সরকারি খাস খতিয়ানের জমি (${legalNotice.khas_reason || 'সরকারি খাস সম্পত্তি'})। ব্যক্তি মালিকানাধীন হস্তান্তর সম্পূর্ণ অবৈধ।`;
+      }
+
+      return res.status(200).json({
+        success: false,
+        alert_type: 'COURT_CASE_STAY_ORDER',
+        message: caseMsg,
+        court_case: {
+          has_court_case: !!legalNotice.has_court_case,
+          stay_order: !!legalNotice.stay_order,
+          is_khas: !!legalNotice.is_khas,
+          case_details: legalNotice.case_details || ''
+        }
       });
     }
 

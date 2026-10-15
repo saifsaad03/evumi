@@ -211,6 +211,29 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
+    // Check LegalStatus for Court Case / Stay Order
+    const LegalStatus = require('../models/LegalStatus');
+    const cleanDag = (land.dag_no || '').toString().trim();
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+
+    const legalNotice = await LegalStatus.findOne({
+      $or: [
+        { dag_no: cleanDag },
+        { dag_no: engDag },
+        { dag_no: bngDag }
+      ]
+    });
+
+    if (legalNotice && (legalNotice.has_court_case || legalNotice.stay_order)) {
+      return res.status(400).json({
+        success: false,
+        message: legalNotice.stay_order
+          ? `⛔ এই জমিতে আদালতের স্থগিতাদেশ (Stay Order) বলবৎ রয়েছে! [${legalNotice.case_details || ''}] বরাদ্দ প্রদান সম্ভব নয়।`
+          : `⚖️ এই জমির ওপর আদালতে সক্রিয় মোকদ্দমা বিচারাধীন রয়েছে! [${legalNotice.case_details || ''}] বরাদ্দ প্রদান সম্ভব নয়।`
+      });
+    }
+
     // Verify citizen with English/Bengali digits
     const rawNid = user_nid.toString().trim();
     const engNid = toEnglishDigits(rawNid);

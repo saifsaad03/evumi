@@ -132,7 +132,7 @@ export default function Navbar() {
             className={location.pathname === '/verify' ? 'nav-link active' : 'nav-link'}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
           >
-            <Search size={15} /> <span>নাগরিক খতিয়ান যাচাই</span>
+            <Search size={15} /> <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
           </NavLink>
 
           {user?.role === 'Register Office' && (
@@ -345,7 +345,7 @@ export default function Navbar() {
               border: location.pathname === '/verify' ? '1px solid #bbf7d0' : 'none'
             }}
           >
-            <Search size={16} color="#047857" /> <span>খতিয়ান ও জমি যাচাই</span>
+            <Search size={16} color="#047857" /> <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
           </NavLink>
 
           {!user && (
