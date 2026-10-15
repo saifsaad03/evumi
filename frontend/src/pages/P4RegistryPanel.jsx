@@ -147,15 +147,16 @@ export default function P4RegistryPanel() {
   const currentStep = grantResult?.success ? 4 : landRecord ? 2 : 1;
 
   return (
-    <div style={{ color: '#f8fafc' }}>
+    <div style={{ color: '#0f172a' }}>
       {/* Top Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, rgba(30, 58, 138, 0.3) 0%, rgba(15, 23, 42, 0.7) 100%)',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
+        background: '#ffffff',
+        border: '1.5px solid #cbd5e1',
+        borderLeft: '5px solid #2563eb',
         borderRadius: '16px',
         padding: '24px 28px',
         marginBottom: '28px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.2)'
+        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -173,22 +174,22 @@ export default function P4RegistryPanel() {
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, color: '#f8fafc' }}>
+                <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, color: '#0f172a' }}>
                   দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং প্যানেল
                 </h2>
                 <span style={{
                   fontSize: '11px',
                   padding: '3px 10px',
                   borderRadius: '999px',
-                  background: 'rgba(34, 197, 94, 0.15)',
-                  color: '#4ade80',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  background: '#dcfce7',
+                  color: '#166534',
+                  border: '1px solid #86efac',
                   fontWeight: '700'
                 }}>
                   🛡️ Anti-Double Selling Active
                 </span>
               </div>
-              <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
+              <p style={{ color: '#334155', fontSize: '13px', margin: '4px 0 0 0' }}>
                 সাব-রেজিস্ট্রি কর্মকর্তা কর্তৃক দলিল সম্পাদন ➔ স্বয়ংক্রিয় লক ➔ এসি ল্যান্ড অফিসে নামজারি অনুমোদন প্রেরণ
               </p>
             </div>
@@ -196,13 +197,14 @@ export default function P4RegistryPanel() {
 
           <div style={{
             fontSize: '12px',
-            color: '#93c5fd',
-            background: 'rgba(59, 130, 246, 0.1)',
+            color: '#1e40af',
+            background: '#eff6ff',
             padding: '8px 14px',
             borderRadius: '10px',
-            border: '1px solid rgba(59, 130, 246, 0.2)'
+            border: '1.5px solid #bfdbfe',
+            fontWeight: '600'
           }}>
-            🏛️ সাব-রেজিস্ট্রি কোড: <strong>SR-BOG-SHIB-01</strong>
+            🏛️ সাব-রেজিস্ট্রি কোড: <strong style={{ color: '#1d4ed8' }}>SR-BOG-SHIB-01</strong>
           </div>
         </div>
 
@@ -213,7 +215,7 @@ export default function P4RegistryPanel() {
           gap: '12px',
           marginTop: '22px',
           paddingTop: '20px',
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+          borderTop: '1.5px solid #e2e8f0'
         }}>
           {steps.map((st) => {
             const isCompleted = currentStep > st.num || (st.num === 4 && grantResult?.success);
@@ -227,8 +229,8 @@ export default function P4RegistryPanel() {
                   gap: '10px',
                   padding: '10px 14px',
                   borderRadius: '10px',
-                  background: isCurrent ? 'rgba(59, 130, 246, 0.2)' : isCompleted ? 'rgba(34, 197, 94, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-                  border: `1px solid ${isCurrent ? '#3b82f6' : isCompleted ? 'rgba(34, 197, 94, 0.3)' : 'rgba(255, 255, 255, 0.06)'}`,
+                  background: isCurrent ? '#eff6ff' : isCompleted ? '#f0fdf4' : '#f8fafc',
+                  border: `1.5px solid ${isCurrent ? '#2563eb' : isCompleted ? '#86efac' : '#cbd5e1'}`,
                   transition: 'all 0.2s ease'
                 }}
               >
@@ -241,16 +243,16 @@ export default function P4RegistryPanel() {
                   justifyContent: 'center',
                   fontSize: '12px',
                   fontWeight: '800',
-                  background: isCurrent ? '#3b82f6' : isCompleted ? '#22c55e' : 'rgba(255,255,255,0.1)',
+                  background: isCurrent ? '#2563eb' : isCompleted ? '#16a34a' : '#94a3b8',
                   color: 'white'
                 }}>
                   {isCompleted ? <Check size={14} /> : st.num}
                 </div>
                 <div>
-                  <div style={{ fontSize: '13px', fontWeight: '700', color: isCurrent ? '#93c5fd' : isCompleted ? '#86efac' : '#cbd5e1' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: isCurrent ? '#1e40af' : isCompleted ? '#166534' : '#1e293b' }}>
                     {st.title}
                   </div>
-                  <div style={{ fontSize: '10px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '10px', color: isCurrent ? '#1d4ed8' : isCompleted ? '#15803d' : '#64748b' }}>
                     {st.desc}
                   </div>
                 </div>
@@ -265,19 +267,19 @@ export default function P4RegistryPanel() {
         {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* STEP 1: Land Search & Anti-Double Selling Check */}
-          <div className="glass-card" style={{ padding: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Search size={18} color="#60a5fa" />
+              <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: '#0f172a' }}>
+                <Search size={18} color="#2563eb" />
                 ১. জমি সার্চ ও অ্যান্টি-ডাবল সেলিং চেক
               </h3>
-              <span style={{ fontSize: '11px', color: '#94a3b8' }}>ধাপ ১ / ৪</span>
+              <span style={{ fontSize: '11px', color: '#475569', fontWeight: '600' }}>ধাপ ১ / ৪</span>
             </div>
 
 
             <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                   বিক্রেতার জাতীয় পরিচয়পত্র (NID) নম্বর
                 </label>
                 <input
@@ -286,12 +288,12 @@ export default function P4RegistryPanel() {
                   placeholder="যেমন: 1998567890123"
                   value={searchForm.seller_nid}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, seller_nid: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px' }}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                   দাগ নম্বর (Plot No)
                 </label>
                 <input
@@ -301,12 +303,12 @@ export default function P4RegistryPanel() {
                   placeholder="১০১"
                   value={searchForm.dag_no}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px' }}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                   মৌজার নাম
                 </label>
                 <input
@@ -316,7 +318,7 @@ export default function P4RegistryPanel() {
                   placeholder="গুজিয়া"
                   value={searchForm.mouza}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px' }}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                 />
               </div>
 
@@ -327,14 +329,15 @@ export default function P4RegistryPanel() {
                   className="btn-primary"
                   style={{
                     width: '100%',
-                    padding: '11px',
+                    padding: '12px',
                     fontSize: '14px',
                     fontWeight: '700',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    background: 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                    background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                    color: '#ffffff'
                   }}
                 >
                   {searchLoading ? 'যাচাই করা হচ্ছে...' : '🔍 জমি খুঁজুন ও অ্যান্টি-ডাবল সেলিং চেক করুন'}
@@ -346,12 +349,13 @@ export default function P4RegistryPanel() {
             {searchError && (
               <div style={{
                 padding: '10px 14px',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.25)',
+                background: '#fef2f2',
+                border: '1px solid #f87171',
                 borderRadius: '8px',
-                color: '#fca5a5',
+                color: '#991b1b',
                 fontSize: '12px',
-                marginTop: '10px'
+                marginTop: '10px',
+                fontWeight: '600'
               }}>
                 ⚠️ {searchError}
               </div>
@@ -363,13 +367,13 @@ export default function P4RegistryPanel() {
                 marginTop: '14px',
                 padding: '16px',
                 borderRadius: '10px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1.5px solid #ef4444',
-                color: '#fee2e2',
+                background: '#fef2f2',
+                border: '2px solid #ef4444',
+                color: '#991b1b',
                 fontSize: '13px',
                 lineHeight: 1.6
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#f87171', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#b91c1c', marginBottom: '6px' }}>
                   <ShieldAlert size={18} />
                   {doubleSellAlert.alert_type === 'DOUBLE_SELL' ? '🚨 ডাবল-সেলিং সতর্কতা (Double-Selling Alert)' :
                    doubleSellAlert.alert_type === 'COURT_CASE_STAY_ORDER' ? '⛔ আদালতীয় মামলা ও স্থগিতাদেশ সতর্কতা (Court Case / Stay Order Alert)' :
@@ -378,7 +382,7 @@ export default function P4RegistryPanel() {
                    doubleSellAlert.alert_type === 'ALREADY_SOLD' ? '🚫 পূর্বেই বিক্রিত জমি (Already Sold)' :
                    '⚠️ ভূমি রেকর্ড যাচাইকরণ সতর্কতা'}
                 </div>
-                <div>{doubleSellAlert.message}</div>
+                <div style={{ fontWeight: '500' }}>{doubleSellAlert.message}</div>
               </div>
             )}
 
@@ -387,14 +391,14 @@ export default function P4RegistryPanel() {
               <div style={{
                 marginTop: '14px',
                 padding: '18px',
-                background: 'rgba(34, 197, 94, 0.12)',
-                border: '1px solid rgba(34, 197, 94, 0.4)',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
                 borderRadius: '12px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldCheck size={20} color="#22c55e" />
-                    <span style={{ fontSize: '15px', fontWeight: '700', color: '#86efac' }}>
+                    <ShieldCheck size={20} color="#16a34a" />
+                    <span style={{ fontSize: '15px', fontWeight: '800', color: '#166534' }}>
                       জমির তথ্য ও বৈধতা যাচাইকৃত
                     </span>
                   </div>
@@ -402,24 +406,24 @@ export default function P4RegistryPanel() {
                     fontSize: '11px',
                     padding: '3px 10px',
                     borderRadius: '999px',
-                    background: landRecord.status === 'Active' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(245, 158, 11, 0.25)',
-                    color: landRecord.status === 'Active' ? '#86efac' : '#fde047',
+                    background: landRecord.status === 'Active' ? '#dcfce7' : '#fef3c7',
+                    color: landRecord.status === 'Active' ? '#166534' : '#92400e',
                     fontWeight: '700',
-                    border: '1px solid rgba(34, 197, 94, 0.4)'
+                    border: `1px solid ${landRecord.status === 'Active' ? '#86efac' : '#fde68a'}`
                   }}>
                     স্ট্যাটাস: {landRecord.status}
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '13px', color: '#e2e8f0' }}>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>মৌজা: <strong style={{ color: '#f8fafc' }}>{landRecord.mouza}</strong></div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>দাগ নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.dag_no}</strong></div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>খতিয়ান নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.khatian_no}</strong></div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>জে.এল নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.jl_no}</strong></div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>বর্তমান মালিক: <strong style={{ color: '#38bdf8' }}>{landRecord.owner_name}</strong></div>
-                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>মালিকের NID: <strong style={{ fontFamily: 'monospace', color: '#f8fafc' }}>{landRecord.owner_nid}</strong></div>
-                  <div style={{ gridColumn: 'span 2', background: 'rgba(34, 197, 94, 0.12)', padding: '10px 14px', borderRadius: '8px', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
-                    মোট বিক্রয়যোগ্য পরিমাণ: <strong style={{ fontSize: '15px' }}>{landRecord.available_area_decimal || landRecord.total_area_decimal} শতক</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '13px' }}>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মৌজা: <strong style={{ color: '#0f172a' }}>{landRecord.mouza}</strong></div>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>দাগ নম্বর: <strong style={{ color: '#0f172a' }}>{landRecord.dag_no}</strong></div>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>খতিয়ান নম্বর: <strong style={{ color: '#0f172a' }}>{landRecord.khatian_no}</strong></div>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>জে.এল নম্বর: <strong style={{ color: '#0f172a' }}>{landRecord.jl_no}</strong></div>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>বর্তমান মালিক: <strong style={{ color: '#1d4ed8' }}>{landRecord.owner_name}</strong></div>
+                  <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মালিকের NID: <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{landRecord.owner_nid}</strong></div>
+                  <div style={{ gridColumn: 'span 2', background: '#dcfce7', padding: '10px 14px', borderRadius: '8px', color: '#166534', border: '1px solid #86efac' }}>
+                    মোট বিক্রয়যোগ্য পরিমাণ: <strong style={{ fontSize: '15px', color: '#15803d' }}>{landRecord.available_area_decimal || landRecord.total_area_decimal} শতক</strong>
                   </div>
                 </div>
               </div>
@@ -428,19 +432,19 @@ export default function P4RegistryPanel() {
 
           {/* STEP 2: Buyer Details & Deed Preparation */}
           {landRecord && !doubleSellAlert && (
-            <div className="glass-card" style={{ padding: '24px' }}>
+            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <UserCheck size={18} color="#60a5fa" />
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserCheck size={18} color="#2563eb" />
                   ২. ক্রেতার তথ্য ও দলিলের বিবরণ
                 </h3>
-                <span style={{ fontSize: '11px', color: '#93c5fd', background: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>ধাপ ২ / ৪</span>
+                <span style={{ fontSize: '11px', color: '#1e40af', background: '#dbeafe', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>ধাপ ২ / ৪</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
-                    দলিল নম্বর <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    দলিল নম্বর <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -449,12 +453,12 @@ export default function P4RegistryPanel() {
                     placeholder="যেমন: DEED-2026-101"
                     value={deedForm.deed_no}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, deed_no: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     নিবন্ধনের সাল
                   </label>
                   <input
@@ -462,13 +466,13 @@ export default function P4RegistryPanel() {
                     className="input-field"
                     value={deedForm.deed_year}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, deed_year: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
-                    ক্রেতার নাম <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ক্রেতার নাম <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -477,13 +481,13 @@ export default function P4RegistryPanel() {
                     placeholder="ক্রেতার পূর্ণ নাম লিখুন"
                     value={deedForm.buyer_name}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_name: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
-                    ক্রেতার NID নম্বর <span style={{ color: '#ef4444' }}>*</span>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ক্রেতার NID নম্বর <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -492,12 +496,12 @@ export default function P4RegistryPanel() {
                     placeholder="ক্রেতার জাতীয় পরিচয়পত্র (NID)"
                     value={deedForm.buyer_nid}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_nid: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     ক্রেতার ফোন নম্বর
                   </label>
                   <input
@@ -506,12 +510,12 @@ export default function P4RegistryPanel() {
                     placeholder="যেমন: ০১৭১১xxxxxx"
                     value={deedForm.buyer_phone}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_phone: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     ক্রেতার ইমেইল (বিজ্ঞপ্তি প্রাপ্তির জন্য)
                   </label>
                   <input
@@ -520,12 +524,12 @@ export default function P4RegistryPanel() {
                     placeholder="ক্রেতার ইমেইল এড্রেস"
                     value={deedForm.buyer_email}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_email: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     বিক্রীত জমির পরিমাণ (শতক)
                   </label>
                   <input
@@ -534,13 +538,13 @@ export default function P4RegistryPanel() {
                     className="input-field"
                     value={deedForm.sold_area}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, sold_area: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
               </div>
 
               {/* STEP 3 BUTTON: Grant Deed */}
-              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ marginTop: '20px', paddingTop: '16px', borderTop: '1.5px solid #e2e8f0' }}>
                 <button
                   type="button"
                   onClick={handleGrantDeed}
@@ -555,14 +559,15 @@ export default function P4RegistryPanel() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    background: 'linear-gradient(135deg, #059669, #10b981)',
-                    boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                    color: '#ffffff',
+                    boxShadow: '0 4px 16px rgba(22, 163, 74, 0.35)'
                   }}
                 >
                   <CheckCircle size={18} />
                   {grantLoading ? 'দলিল সম্পাদন হচ্ছে...' : '৩. Grant Deed অনুমোদন করুন ➔ এসি ল্যান্ডে পাঠান'}
                 </button>
-                <div style={{ fontSize: '11px', color: '#94a3b8', textAlign: 'center', marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: '#475569', textAlign: 'center', marginTop: '8px', fontWeight: '500' }}>
                   🔒 Grant Deed করার সাথে সাথে SHA-256 হ্যাশ তৈরি হবে এবং জমিটি Pending_Mutation-এ লক হবে।
                 </div>
               </div>
@@ -581,24 +586,25 @@ export default function P4RegistryPanel() {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px dashed rgba(255, 255, 255, 0.1)'
+              background: '#ffffff',
+              border: '2px dashed #94a3b8'
             }}>
               <div style={{
                 width: '72px',
                 height: '72px',
                 borderRadius: '50%',
-                background: 'rgba(59, 130, 246, 0.1)',
+                background: '#eff6ff',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 marginBottom: '16px'
               }}>
-                <FileText size={36} color="#60a5fa" />
+                <FileText size={36} color="#2563eb" />
               </div>
-              <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#f1f5f9', margin: '0 0 8px 0' }}>
+              <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '0 0 8px 0' }}>
                 ই-নামজারি আবেদন ফর্ম প্রিভিউ
               </h4>
-              <p style={{ color: '#94a3b8', fontSize: '13px', maxWidth: '320px', lineHeight: 1.6 }}>
+              <p style={{ color: '#475569', fontSize: '13px', maxWidth: '320px', lineHeight: 1.6, fontWeight: '500' }}>
                 বাম পাশের প্যানেলে জমি সার্চ করে ক্রেতার তথ্য প্রদান করে <strong>Grant Deed</strong> সম্পন্ন করলে এখানে লাইভ আবেদনপত্র এবং কিউআর কোড দৃশ্যমান হবে।
               </p>
             </div>
@@ -609,20 +615,20 @@ export default function P4RegistryPanel() {
               {/* Grant Result Banner */}
               <div style={{
                 padding: '16px 20px',
-                background: grantResult.success ? 'rgba(34, 197, 94, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                border: `1px solid ${grantResult.success ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                background: grantResult.success ? '#dcfce7' : '#fef2f2',
+                border: `1.5px solid ${grantResult.success ? '#86efac' : '#f87171'}`,
                 borderRadius: '12px',
                 marginBottom: '16px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px'
               }}>
-                <CheckCircle size={24} color={grantResult.success ? '#22c55e' : '#ef4444'} />
+                <CheckCircle size={24} color={grantResult.success ? '#16a34a' : '#dc2626'} />
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: '800', color: grantResult.success ? '#86efac' : '#fca5a5' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: grantResult.success ? '#166534' : '#991b1b' }}>
                     {grantResult.message || 'Deed Granted! দলিল অনুমোদিত হয়েছে'}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#cbd5e1', marginTop: '2px' }}>
+                  <div style={{ fontSize: '12px', color: grantResult.success ? '#15803d' : '#b91c1c', marginTop: '2px', fontWeight: '500' }}>
                     জমি Pending_Mutation লক · এসি ল্যান্ড অফিস ড্যাশবোর্ডে আবেদন পৌঁছেছে
                   </div>
                 </div>
@@ -632,15 +638,15 @@ export default function P4RegistryPanel() {
               {grantResult.deed_hash && (
                 <div style={{
                   padding: '12px 16px',
-                  background: 'rgba(59, 130, 246, 0.08)',
-                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                  background: '#eff6ff',
+                  border: '1.5px solid #93c5fd',
                   borderRadius: '10px',
                   marginBottom: '16px'
                 }}>
-                  <div style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Hash size={13} color="#60a5fa" /> ক্রিপ্টোগ্রাফিক SHA-256 দলিল হ্যাশ (Anti-Tamper Deed Hash)
+                  <div style={{ fontSize: '11px', color: '#1e40af', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}>
+                    <Hash size={13} color="#2563eb" /> ক্রিপ্টোগ্রাফিক SHA-256 দলিল হ্যাশ (Anti-Tamper Deed Hash)
                   </div>
-                  <div style={{ fontSize: '11px', color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all', fontWeight: '600' }}>
+                  <div style={{ fontSize: '11px', color: '#1d4ed8', fontFamily: 'monospace', wordBreak: 'break-all', fontWeight: '700' }}>
                     {grantResult.deed_hash}
                   </div>
                 </div>
@@ -650,26 +656,26 @@ export default function P4RegistryPanel() {
               <div
                 ref={pdfRef}
                 style={{
-                  background: 'rgba(30, 41, 59, 0.85)',
-                  border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                  background: '#ffffff',
+                  border: '2px solid #cbd5e1',
                   borderRadius: '16px',
                   padding: '28px',
                   marginBottom: '16px',
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+                  boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
                 }}
               >
                 {/* Government Header */}
-                <div style={{ textAlign: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: '16px', marginBottom: '18px' }}>
-                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', letterSpacing: '0.5px' }}>
+                <div style={{ textAlign: 'center', borderBottom: '1.5px solid #cbd5e1', paddingBottom: '16px', marginBottom: '18px' }}>
+                  <div style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', letterSpacing: '0.5px' }}>
                     গণপ্রজাতন্ত্রী বাংলাদেশ সরকার
                   </div>
-                  <div style={{ fontSize: '14px', color: '#93c5fd', fontWeight: '600', marginTop: '2px' }}>
+                  <div style={{ fontSize: '14px', color: '#1e40af', fontWeight: '700', marginTop: '2px' }}>
                     ভূমি মন্ত্রণালয় · সাব-রেজিস্ট্রি ও রাজস্ব নেটওয়ার্ক
                   </div>
-                  <div style={{ fontSize: '13px', color: '#6ee7b7', fontWeight: '700', marginTop: '4px' }}>
+                  <div style={{ fontSize: '13px', color: '#166534', fontWeight: '800', marginTop: '4px' }}>
                     ই-নামজারি আবেদন ফর্ম (দলিল নিবন্ধন রেকর্ড)
                   </div>
-                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                  <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px', fontWeight: '600' }}>
                     e-Namjari Application & Deed Grant Record
                   </div>
                 </div>
@@ -690,9 +696,9 @@ export default function P4RegistryPanel() {
                     ['ক্রেতার নাম', deedForm.buyer_name],
                     ['ক্রেতার NID', deedForm.buyer_nid],
                   ].map(([k, v]) => (
-                    <div key={k} style={{ padding: '8px 10px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '6px' }}>
-                      <div style={{ fontSize: '10px', color: '#94a3b8' }}>{k}</div>
-                      <div style={{ fontSize: '12px', color: '#f8fafc', fontWeight: '600' }}>{v}</div>
+                    <div key={k} style={{ padding: '8px 10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                      <div style={{ fontSize: '10px', color: '#475569', fontWeight: '600' }}>{k}</div>
+                      <div style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>{v}</div>
                     </div>
                   ))}
                 </div>
@@ -703,25 +709,25 @@ export default function P4RegistryPanel() {
                   alignItems: 'center',
                   gap: '16px',
                   padding: '14px',
-                  background: 'rgba(255, 255, 255, 0.03)',
+                  background: '#f1f5f9',
                   borderRadius: '12px',
-                  border: '1px solid rgba(255, 255, 255, 0.06)'
+                  border: '1.5px solid #cbd5e1'
                 }}>
                   <QRCodeSVG
                     value={`${window.location.origin}/qr-verify/${grantResult.qr_code_id || 'QR-' + deedForm.deed_no}`}
                     size={80}
-                    fgColor="#f8fafc"
+                    fgColor="#0f172a"
                     bgColor="transparent"
                     level="H"
                   />
                   <div>
-                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#93c5fd' }}>
+                    <div style={{ fontSize: '12px', fontWeight: '700', color: '#1e40af' }}>
                       QR কোড আইডি: {grantResult.qr_code_id || 'QR-' + deedForm.deed_no}
                     </div>
-                    <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px', lineHeight: 1.5 }}>
+                    <div style={{ fontSize: '10px', color: '#475569', marginTop: '2px', lineHeight: 1.5, fontWeight: '500' }}>
                       এই QR কোড স্ক্যান করে লাইভ দলিলের বৈধতা ও এসি ল্যান্ডের স্ট্যাটাস যাচাই করা যাবে।
                     </div>
-                    <div style={{ fontSize: '9px', color: '#64748b', marginTop: '4px', fontFamily: 'monospace' }}>
+                    <div style={{ fontSize: '9px', color: '#334155', marginTop: '4px', fontFamily: 'monospace', fontWeight: '600' }}>
                       ডিজিটাল স্বাক্ষর: {grantResult.deed_hash?.substring(0, 24)}...
                     </div>
                   </div>
@@ -742,7 +748,8 @@ export default function P4RegistryPanel() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  background: 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                  background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                  color: '#ffffff'
                 }}
               >
                 <Download size={16} /> ৪. ই-নামজারি ফর্ম PDF ডাউনলোড করুন

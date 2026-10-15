@@ -25,10 +25,10 @@
   --safe-light:    #dcfce7;
 
   /* Surface & Background */
-  --bg-page:    #f0f4f8;
+  --bg-page:    #dde3ea;
   --bg-card:    #ffffff;
-  --bg-surface: #f8fafc;
-  --bg-muted:   #f1f5f9;
+  --bg-surface: #f1f5f9;
+  --bg-muted:   #e2e8f0;
 
   /* Borders */
   --border:         #e2e8f0;
@@ -599,35 +599,37 @@ select option:checked {
 .hero-fade { animation: heroFadeIn 0.6s ease-out forwards; }
 
 /* ============================================================
-   Dashboard Light Theme — Complete light mode across all dashboards
+   Dashboard Light Theme — Modern Slate Background with Crisp White Cards
    ============================================================ */
 .dashboard-dark {
-  background-color: #f8fafc;
+  background-color: #dde3ea !important;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(22, 163, 74, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 0%, rgba(22, 163, 74, 0.04) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.04) 0px, transparent 50%),
     radial-gradient(at 50% 100%, rgba(217, 119, 6, 0.03) 0px, transparent 50%);
   min-height: calc(100vh - 64px);
-  color: #0f172a;
+  color: #0f172a !important;
 }
 
-/* Glass cards inside dashboard get clean, crisp light styling */
+/* Glass cards inside dashboard get clean, solid crisp white styling with dark text */
 .dashboard-dark .glass-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 14px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.07), 0 1px 3px rgba(15, 23, 42, 0.05) !important;
+  color: #0f172a !important;
 }
 
 .dashboard-dark .glass-card:hover {
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  border-color: #cbd5e1;
+  box-shadow: 0 8px 26px rgba(15, 23, 42, 0.12) !important;
+  border-color: #94a3b8 !important;
 }
 
 .dashboard-dark .glass-card-light {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
   border-radius: 12px;
+  color: #0f172a !important;
 }
 
 /* Input styling inside dashboard light mode */
@@ -641,8 +643,9 @@ select option:checked {
 .dashboard-dark textarea {
   background-color: #ffffff !important;
   color: #0f172a !important;
-  border: 1.5px solid #cbd5e1 !important;
+  border: 1.5px solid #94a3b8 !important;
   border-radius: 10px;
+  font-weight: 500;
 }
 
 .dashboard-dark .input-field:focus,
@@ -654,15 +657,15 @@ select option:checked {
 .dashboard-dark select:focus,
 .dashboard-dark textarea:focus {
   background-color: #ffffff !important;
-  border-color: #16a34a !important;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.18) !important;
   color: #0f172a !important;
 }
 
 .dashboard-dark .input-field::placeholder,
 .dashboard-dark input::placeholder,
 .dashboard-dark textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
 .dashboard-dark select option,
@@ -673,49 +676,50 @@ select option:checked {
 
 /* Table styling in light dashboard */
 .dashboard-dark table {
-  color: #1e293b;
-  background-color: #ffffff;
+  color: #0f172a !important;
+  background-color: #ffffff !important;
 }
 
 .dashboard-dark table td {
-  color: #334155;
-  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .dashboard-dark table strong {
-  color: #0f172a;
+  color: #0f172a !important;
 }
 
-/* Button overrides in light dashboard */
+/* Button overrides in light dashboard — strictly non-transparent */
 .dashboard-dark .btn-secondary {
-  background: #ffffff;
-  color: #1e293b;
-  border: 1.5px solid #cbd5e1;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #94a3b8 !important;
+  font-weight: 600 !important;
 }
 
 .dashboard-dark .btn-secondary:hover {
-  background: #f8fafc;
-  border-color: #94a3b8;
+  background: #f1f5f9 !important;
+  border-color: #64748b !important;
 }
 
 /* Data table in light dashboard */
 .dashboard-dark .data-table th {
-  background: #f1f5f9;
-  color: #475569;
-  font-weight: 700;
-  border-bottom: 1px solid #e2e8f0;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 700 !important;
+  border-bottom: 1.5px solid #cbd5e1 !important;
 }
 
 .dashboard-dark .data-table td {
-  color: #1e293b;
-  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 
 .dashboard-dark .data-table tr:hover td {
-  background: #f8fafc;
+  background: #f8fafc !important;
 }
 
-/* Text Clarity & Light Contrast */
+/* Text Clarity & Dark High Contrast */
 .dashboard-dark,
 .dashboard-dark p,
 .dashboard-dark span,

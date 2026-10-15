@@ -284,7 +284,7 @@ export default function RegisterOfficeDashboard() {
   };
 
   return (
-    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px', minHeight: '100vh' }}>
+    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px', minHeight: '100vh', backgroundColor: '#dde3ea' }}>
       <div style={{ maxWidth: '1440px', margin: '24px auto', padding: '0 20px' }}>
         {/* Header Banner */}
         <div className="glass-card" style={{
@@ -295,42 +295,44 @@ export default function RegisterOfficeDashboard() {
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: '16px',
-          borderLeft: '4px solid #3b82f6',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+          background: '#ffffff',
+          border: '1.5px solid #cbd5e1',
+          borderLeft: '5px solid #2563eb',
+          boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{
               width: '52px',
               height: '52px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+              background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              boxShadow: '0 4px 14px rgba(59,130,246,0.35)'
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)'
             }}>
               <Building2 size={26} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+                <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                   সাব-রেজিস্ট্রি অফিস ড্যাশবোর্ড
                 </h1>
                 <span style={{
                   fontSize: '11px',
                   padding: '3px 10px',
                   borderRadius: '999px',
-                  background: 'rgba(59, 130, 246, 0.2)',
-                  color: '#93c5fd',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  background: '#dbeafe',
+                  color: '#1e40af',
+                  border: '1px solid #93c5fd',
                   fontWeight: '700'
                 }}>
                   Register Office
                 </span>
               </div>
-              <p style={{ color: '#cbd5e1', fontSize: '13px', margin: '4px 0 0 0' }}>
-                কর্মকর্তা: <strong style={{ color: '#f1f5f9' }}>{user?.name || 'সাব-রেজিস্ট্রার'}</strong> | {user?.office_details?.office_name || 'উপজেলা সাব-রেজিস্ট্রি অফিস'}
+              <p style={{ color: '#334155', fontSize: '13px', margin: '4px 0 0 0' }}>
+                কর্মকর্তা: <strong style={{ color: '#0f172a' }}>{user?.name || 'সাব-রেজিস্ট্রার'}</strong> | {user?.office_details?.office_name || 'উপজেলা সাব-রেজিস্ট্রি অফিস'}
               </p>
             </div>
           </div>
@@ -342,12 +344,11 @@ export default function RegisterOfficeDashboard() {
           <aside style={{
             width: '280px',
             flexShrink: 0,
-            background: 'rgba(15, 23, 42, 0.75)',
-            backdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
             borderRadius: '16px',
             padding: '20px 16px',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+            boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)',
             position: 'sticky',
             top: '20px'
           }}>
@@ -356,9 +357,9 @@ export default function RegisterOfficeDashboard() {
               fontWeight: '700',
               textTransform: 'uppercase',
               letterSpacing: '1px',
-              color: '#94a3b8',
+              color: '#1e293b',
               padding: '0 8px 14px',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              borderBottom: '1.5px solid #e2e8f0',
               marginBottom: '14px'
             }}>
               রেজিস্ট্রি ফিচার মেনু
@@ -374,37 +375,37 @@ export default function RegisterOfficeDashboard() {
                   padding: '14px 16px',
                   borderRadius: '12px',
                   background: activeTab === 'assign'
-                    ? 'linear-gradient(135deg, rgba(2, 132, 199, 0.9), rgba(3, 105, 161, 0.95))'
-                    : 'rgba(255, 255, 255, 0.04)',
-                  color: '#ffffff',
+                    ? 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                    : '#f1f5f9',
+                  color: activeTab === 'assign' ? '#ffffff' : '#0f172a',
                   fontWeight: '700',
                   fontSize: '13px',
-                  border: activeTab === 'assign' ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                  border: activeTab === 'assign' ? '1.5px solid #1e40af' : '1.5px solid #cbd5e1',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
                   textAlign: 'left',
-                  boxShadow: activeTab === 'assign' ? '0 6px 20px rgba(2, 132, 199, 0.4)' : 'none',
+                  boxShadow: activeTab === 'assign' ? '0 6px 18px rgba(29, 78, 216, 0.35)' : 'none',
                   transition: 'all 0.2s ease'
                 }}
               >
                 <div style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
-                  background: activeTab === 'assign' ? 'rgba(255,255,255,0.2)' : 'rgba(56, 189, 248, 0.15)',
+                  background: activeTab === 'assign' ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: activeTab === 'assign' ? '#ffffff' : '#38bdf8',
+                  color: activeTab === 'assign' ? '#ffffff' : '#1d4ed8',
                   flexShrink: 0
                 }}>
                   <Layers size={18} />
                 </div>
                 <div>
-                  <div style={{ color: '#ffffff', lineHeight: 1.3 }}>🏛️ সরকারি জমি বরাদ্দ</div>
-                  <div style={{ fontSize: '11px', color: activeTab === 'assign' ? '#e0f2fe' : '#94a3b8', fontWeight: '400' }}>
+                  <div style={{ color: activeTab === 'assign' ? '#ffffff' : '#0f172a', lineHeight: 1.3, fontWeight: '700' }}>🏛️ সরকারি জমি বরাদ্দ</div>
+                  <div style={{ fontSize: '11px', color: activeTab === 'assign' ? '#dbeafe' : '#475569', fontWeight: '500' }}>
                     খাস জমি বরাদ্দ প্রস্তাব
                   </div>
                 </div>
@@ -419,37 +420,37 @@ export default function RegisterOfficeDashboard() {
                   padding: '14px 16px',
                   borderRadius: '12px',
                   background: activeTab === 'deed_registry'
-                    ? 'linear-gradient(135deg, rgba(29, 78, 216, 0.9), rgba(37, 99, 235, 0.95))'
-                    : 'rgba(255, 255, 255, 0.04)',
-                  color: '#ffffff',
+                    ? 'linear-gradient(135deg, #1d4ed8, #2563eb)'
+                    : '#f1f5f9',
+                  color: activeTab === 'deed_registry' ? '#ffffff' : '#0f172a',
                   fontWeight: '700',
                   fontSize: '13px',
-                  border: activeTab === 'deed_registry' ? '1.5px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.08)',
+                  border: activeTab === 'deed_registry' ? '1.5px solid #1e40af' : '1.5px solid #cbd5e1',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
                   textAlign: 'left',
-                  boxShadow: activeTab === 'deed_registry' ? '0 6px 20px rgba(37, 99, 235, 0.4)' : 'none',
+                  boxShadow: activeTab === 'deed_registry' ? '0 6px 18px rgba(29, 78, 216, 0.35)' : 'none',
                   transition: 'all 0.2s ease'
                 }}
               >
                 <div style={{
-                  width: '32px',
-                  height: '32px',
+                  width: '34px',
+                  height: '34px',
                   borderRadius: '8px',
-                  background: activeTab === 'deed_registry' ? 'rgba(255,255,255,0.2)' : 'rgba(96, 165, 250, 0.15)',
+                  background: activeTab === 'deed_registry' ? 'rgba(255,255,255,0.2)' : '#e2e8f0',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: activeTab === 'deed_registry' ? '#ffffff' : '#60a5fa',
+                  color: activeTab === 'deed_registry' ? '#ffffff' : '#1d4ed8',
                   flexShrink: 0
                 }}>
                   <FileText size={18} />
                 </div>
                 <div>
-                  <div style={{ color: '#ffffff', lineHeight: 1.3 }}>🛡️ অ্যান্টি-ডাবল সেলিং প্যানেল</div>
-                  <div style={{ fontSize: '11px', color: activeTab === 'deed_registry' ? '#dbeafe' : '#94a3b8', fontWeight: '400' }}>
+                  <div style={{ color: activeTab === 'deed_registry' ? '#ffffff' : '#0f172a', lineHeight: 1.3, fontWeight: '700' }}>🛡️ অ্যান্টি-ডাবল সেলিং প্যানেল</div>
+                  <div style={{ fontSize: '11px', color: activeTab === 'deed_registry' ? '#dbeafe' : '#475569', fontWeight: '500' }}>
                     দলিল নিবন্ধন ও যাচাইকরণ
                   </div>
                 </div>
@@ -464,20 +465,20 @@ export default function RegisterOfficeDashboard() {
         <div>
           {/* Instructions bar */}
           <div style={{
-            background: 'rgba(59, 130, 246, 0.08)',
-            border: '1px solid rgba(59, 130, 246, 0.25)',
+            background: '#eff6ff',
+            border: '1.5px solid #bfdbfe',
             borderRadius: '12px',
             padding: '14px 20px',
             marginBottom: '24px',
             fontSize: '13px',
-            color: '#bfdbfe',
+            color: '#1e3a8a',
             display: 'flex',
             alignItems: 'center',
             gap: '12px'
           }}>
-            <Building2 size={20} color="#60a5fa" />
+            <Building2 size={20} color="#2563eb" />
             <div>
-              <strong>ওয়ার্কফ্লো নির্দেশিকা:</strong> ১. ক্যাসকেড ফিল্টার দিয়ে জমি খুঁজুন ➔ ২. নাগরিকের NID দিয়ে ইউজার বের করুন ➔ ৩. ভলিউম বই ও পৃষ্ঠা নম্বর লিখুন ➔ ৪. 'এসি ল্যান্ডে পাঠান' বাটনে ক্লিক করুন। এসি ল্যান্ড রিভিউ করে অনুমোদন দিলে স্বয়ংক্রিয়ভাবে নাগরিকের নামে বরাদ্দ সম্পন্ন হবে।
+              <strong style={{ color: '#1e40af' }}>ওয়ার্কফ্লো নির্দেশিকা:</strong> ১. ক্যাসকেড ফিল্টার দিয়ে জমি খুঁজুন ➔ ২. নাগরিকের NID দিয়ে ইউজার বের করুন ➔ ৩. ভলিউম বই ও পৃষ্ঠা নম্বর লিখুন ➔ ৪. 'এসি ল্যান্ডে পাঠান' বাটনে ক্লিক করুন। এসি ল্যান্ড রিভিউ করে অনুমোদন দিলে স্বয়ংক্রিয়ভাবে নাগরিকের নামে বরাদ্দ সম্পন্ন হবে।
             </div>
           </div>
 
@@ -485,68 +486,69 @@ export default function RegisterOfficeDashboard() {
             {/* Left: Cascade Land Filter & Citizen Search */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Cascade Filter Box */}
-              <div className="glass-card" style={{ padding: '24px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f1f5f9', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Layers size={18} color="#60a5fa" /> ক্যাসকেড ফিল্টার (জমি অনুসন্ধান)
+              <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Layers size={18} color="#2563eb" /> ক্যাসকেড ফিল্টার (জমি অনুসন্ধান)
                 </h3>
 
                 {/* Flow indicators */}
                 <div style={{
                   fontSize: '11px',
-                  color: '#93c5fd',
+                  color: '#1e40af',
                   marginBottom: '16px',
-                  background: 'rgba(59,130,246,0.1)',
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  fontWeight: '600'
+                  fontWeight: '700'
                 }}>
                   বিভাগ ➔ জেলা ➔ উপজেলা/সার্কেল ➔ মৌজা ➔ জেল নম্বর ➔ খতিয়ান ➔ দাগ নম্বর
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '16px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>১. বিভাগ (Division)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>১. বিভাগ (Division)</label>
                     <select
                       className="input-field"
                       value={filter.division}
                       onChange={(e) => handleDivisionChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     >
                       {divisionsList.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>২. জেলা (District)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>২. জেলা (District)</label>
                     <select
                       className="input-field"
                       value={filter.district}
                       onChange={(e) => handleDistrictChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     >
                       {districtsList.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৩. উপজেলা (Upazila)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৩. উপজেলা (Upazila)</label>
                     <select
                       className="input-field"
                       value={filter.upazila}
                       onChange={(e) => handleUpazilaChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     >
                       {upazilasList.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৪. মৌজা (মৌজা ও জে.এল)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৪. মৌজা (মৌজা ও জে.এল)</label>
                     <select
                       className="input-field"
                       value={filter.mouza}
                       onChange={(e) => handleMouzaChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     >
                       {mouzasList.map(m => (
                         <option key={m.jl_no + m.mouza} value={m.mouza}>
@@ -557,37 +559,37 @@ export default function RegisterOfficeDashboard() {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৫. জে.এল নং (স্বয়ংক্রিয়)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৫. জে.এল নং (স্বয়ংক্রিয়)</label>
                     <input
                       type="text"
                       readOnly
                       className="input-field"
                       value={filter.jl_no}
-                      style={{ width: '100%', fontSize: '12px', background: 'rgba(255,255,255,0.06)', color: '#86efac', fontWeight: '600' }}
+                      style={{ width: '100%', fontSize: '12px', background: '#f8fafc', color: '#166534', fontWeight: '700', border: '1.5px solid #cbd5e1' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৬. খতিয়ান নং</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৬. খতিয়ান নং</label>
                     <input
                       type="text"
                       className="input-field"
                       placeholder="খতিয়ান নং লিখুন"
                       value={filter.khatian_no}
                       onChange={(e) => setFilter(prev => ({ ...prev, khatian_no: e.target.value }))}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৭. দাগ নং (প্লট)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৭. দাগ নং (প্লট)</label>
                     <input
                       type="text"
                       className="input-field"
                       placeholder="দাগ নং লিখুন"
                       value={filter.dag_no}
                       onChange={(e) => setFilter(prev => ({ ...prev, dag_no: e.target.value }))}
-                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                     />
                   </div>
                 </div>
@@ -596,7 +598,7 @@ export default function RegisterOfficeDashboard() {
                   type="button"
                   onClick={handleSearchLand}
                   className="btn-primary"
-                  style={{ width: '100%', padding: '11px', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'linear-gradient(135deg, #16a34a, #15803d)', color: '#ffffff' }}
                 >
                   <Search size={16} /> জমি ফিল্টার ও নির্বাচন করুন
                 </button>
@@ -609,18 +611,18 @@ export default function RegisterOfficeDashboard() {
                 const displayOwnerNid = isLandAllocated ? selectedLand.owner_nid : 'প্রযোজ্য নয় (অনলাইনে অনিবন্ধিত)';
 
                 return (
-                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}`, background: 'rgba(30, 41, 59, 0.75)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
+                  <div className="glass-card" style={{ padding: '20px', borderLeft: `5px solid ${isLandAllocated ? '#ef4444' : '#16a34a'}`, background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
-                      <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                         নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
                       </h4>
                       <span style={{
                         fontSize: '11px',
                         padding: '4px 10px',
                         borderRadius: '999px',
-                        background: isLandAllocated ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
-                        color: isLandAllocated ? '#fca5a5' : '#86efac',
-                        border: `1px solid ${isLandAllocated ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
+                        background: isLandAllocated ? '#fee2e2' : '#dcfce7',
+                        color: isLandAllocated ? '#991b1b' : '#166534',
+                        border: `1px solid ${isLandAllocated ? '#f87171' : '#86efac'}`,
                         fontWeight: '700'
                       }}>
                         {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য সরকারি খাস জমি'}
@@ -628,29 +630,29 @@ export default function RegisterOfficeDashboard() {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '13px' }}>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>খতিয়ান:</span>
-                        <strong style={{ color: '#f8fafc' }}>{selectedLand.khatian_no || '১'}</strong>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>খতিয়ান:</span>
+                        <strong style={{ color: '#0f172a' }}>{selectedLand.khatian_no || '১'}</strong>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>জে.এল নং:</span>
-                        <strong style={{ color: '#f8fafc' }}>{selectedLand.jl_no}</strong>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>জে.এল নং:</span>
+                        <strong style={{ color: '#0f172a' }}>{selectedLand.jl_no}</strong>
                       </div>
-                      <div style={{ background: 'rgba(34, 197, 94, 0.08)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
-                        <span style={{ color: '#86efac', display: 'block', fontSize: '11px', marginBottom: '2px' }}>মোট পরিমাণ:</span>
-                        <strong style={{ color: '#4ade80', fontSize: '14px' }}>{selectedLand.total_area_decimal} শতক</strong>
+                      <div style={{ background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #86efac' }}>
+                        <span style={{ color: '#166534', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>মোট পরিমাণ:</span>
+                        <strong style={{ color: '#15803d', fontSize: '14px' }}>{selectedLand.total_area_decimal} শতক</strong>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>বর্তমান মালিক:</span>
-                        <strong style={{ color: isLandAllocated ? '#fca5a5' : '#38bdf8' }}>{displayOwnerName}</strong>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>বর্তমান মালিক:</span>
+                        <strong style={{ color: isLandAllocated ? '#b91c1c' : '#1d4ed8' }}>{displayOwnerName}</strong>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>মালিকের NID:</span>
-                        <strong style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{displayOwnerNid}</strong>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>মালিকের NID:</span>
+                        <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{displayOwnerNid}</strong>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>উপজেলা:</span>
-                        <strong style={{ color: '#f8fafc' }}>{selectedLand.upazila || 'শিবগঞ্জ'}</strong>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>উপজেলা:</span>
+                        <strong style={{ color: '#0f172a' }}>{selectedLand.upazila || 'শিবগঞ্জ'}</strong>
                       </div>
                     </div>
                   </div>
@@ -659,14 +661,14 @@ export default function RegisterOfficeDashboard() {
             </div>
 
             {/* Right: Citizen Search + Volume/Page Fields + Submit to AC Land */}
-            <div className="glass-card" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f1f5f9', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserCheck size={18} color="#60a5fa" /> লক্ষ্য নাগরিক নির্বাচন ও বরাদ্দ ফরম
+            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <UserCheck size={18} color="#2563eb" /> লক্ষ্য নাগরিক নির্বাচন ও বরাদ্দ ফরম
               </h3>
 
               {/* User search */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
+                <label style={{ fontSize: '12px', color: '#1e293b', display: 'block', marginBottom: '6px', fontWeight: '700' }}>
                   নাগরিক অনুসন্ধান (NID / ফোন / ইমেইল)
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -677,13 +679,13 @@ export default function RegisterOfficeDashboard() {
                     value={userQuery}
                     onChange={(e) => setUserQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchUser(); } }}
-                    style={{ flex: 1, fontSize: '13px', color: '#f8fafc' }}
+                    style={{ flex: 1, fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                   <button
                     type="button"
                     onClick={handleSearchUser}
                     className="btn-secondary"
-                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600' }}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '700', background: '#f1f5f9', border: '1.5px solid #94a3b8', color: '#0f172a' }}
                   >
                     খুঁজুন
                   </button>
@@ -691,7 +693,7 @@ export default function RegisterOfficeDashboard() {
               </div>
 
               {userError && (
-                <div style={{ padding: '8px 12px', background: 'rgba(239,68,68,0.1)', color: '#fca5a5', borderRadius: '6px', fontSize: '12px', marginBottom: '14px' }}>
+                <div style={{ padding: '8px 12px', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '6px', fontSize: '12px', marginBottom: '14px', fontWeight: '600' }}>
                   ⚠️ {userError}
                 </div>
               )}
@@ -699,45 +701,45 @@ export default function RegisterOfficeDashboard() {
               {/* Found user preview */}
               {foundUser && (
                 <div style={{
-                  background: 'rgba(34, 197, 94, 0.08)',
-                  border: '1px solid rgba(34, 197, 94, 0.25)',
+                  background: '#f0fdf4',
+                  border: '1.5px solid #86efac',
                   borderRadius: '10px',
                   padding: '14px',
                   marginBottom: '20px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <div style={{ fontWeight: '700', color: '#86efac', fontSize: '14px' }}>
+                    <div style={{ fontWeight: '700', color: '#166534', fontSize: '14px' }}>
                       👤 {foundUser.name}
                     </div>
-                    <span style={{ fontSize: '11px', background: 'rgba(34,197,94,0.2)', padding: '2px 8px', borderRadius: '999px', color: '#bbf7d0' }}>
+                    <span style={{ fontSize: '11px', background: '#dcfce7', padding: '2px 8px', borderRadius: '999px', color: '#166534', border: '1px solid #86efac', fontWeight: '700' }}>
                       নিবন্ধিত নাগরিক
                     </span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#cbd5e1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
-                    <div>NID: <strong style={{ fontFamily: 'monospace' }}>{foundUser.nid}</strong></div>
-                    <div>মোবাইল: <strong>{foundUser.phone}</strong></div>
-                    <div>পিতা: <strong>{foundUser.father_name}</strong></div>
-                    <div>ঠিকানা: <strong>{foundUser.upazila}, {foundUser.district}</strong></div>
+                  <div style={{ fontSize: '12px', color: '#1e293b', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px' }}>
+                    <div>NID: <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{foundUser.nid}</strong></div>
+                    <div>মোবাইল: <strong style={{ color: '#0f172a' }}>{foundUser.phone}</strong></div>
+                    <div>পিতা: <strong style={{ color: '#0f172a' }}>{foundUser.father_name}</strong></div>
+                    <div>ঠিকানা: <strong style={{ color: '#0f172a' }}>{foundUser.upazila}, {foundUser.district}</strong></div>
                   </div>
                 </div>
               )}
 
               {/* Volume Book and Page Number directly above Assign button */}
               <div style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
                 borderRadius: '10px',
                 padding: '16px',
                 marginBottom: '20px'
               }}>
-                <div style={{ fontSize: '12px', fontWeight: '700', color: '#93c5fd', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#1e40af', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <FileText size={14} /> সাব-রেজিস্ট্রি বালাম ও ভলিউম বই সংক্রান্ত তথ্য (বাধ্যতামূলক)
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
-                      ভলিউম বই নম্বর <span style={{ color: '#ef4444' }}>*</span>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                      ভলিউম বই নম্বর <span style={{ color: '#dc2626' }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -746,13 +748,13 @@ export default function RegisterOfficeDashboard() {
                       placeholder="যেমন: VOL-2026-X"
                       value={volumeBook}
                       onChange={(e) => setVolumeBook(e.target.value)}
-                      style={{ width: '100%', fontSize: '13px' }}
+                      style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px', fontWeight: '500' }}>
-                      পৃষ্ঠা নম্বর <span style={{ color: '#ef4444' }}>*</span>
+                    <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                      পৃষ্ঠা নম্বর <span style={{ color: '#dc2626' }}>*</span>
                     </label>
                     <input
                       type="text"
@@ -761,13 +763,13 @@ export default function RegisterOfficeDashboard() {
                       placeholder="যেমন: ১২৮"
                       value={pageNo}
                       onChange={(e) => setPageNo(e.target.value)}
-                      style={{ width: '100%', fontSize: '13px' }}
+                      style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                     />
                   </div>
                 </div>
 
                 <div style={{ marginBottom: '12px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     দলিল নম্বর (Deed No)
                   </label>
                   <input
@@ -776,12 +778,12 @@ export default function RegisterOfficeDashboard() {
                     placeholder="DEED-2026-088"
                     value={deedNo}
                     onChange={(e) => setDeedNo(e.target.value)}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#cbd5e1', marginBottom: '4px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     রেজিস্ট্রার মন্তব্য
                   </label>
                   <input
@@ -790,31 +792,31 @@ export default function RegisterOfficeDashboard() {
                     placeholder="স্বত্ব পর্যালোচনা মন্তব্য"
                     value={remarks}
                     onChange={(e) => setRemarks(e.target.value)}
-                    style={{ width: '100%', fontSize: '13px' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
                   />
                 </div>
               </div>
 
               {/* Citizen Email OTP Verification Block */}
               <div style={{
-                background: 'rgba(59, 130, 246, 0.05)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
+                background: '#eff6ff',
+                border: '1.5px solid #93c5fd',
                 borderRadius: '10px',
                 padding: '16px',
                 marginBottom: '20px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: '700', color: '#60a5fa', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     🔒 নাগরিক সম্মতি ও ইমেইল ওটিপি (OTP) যাচাইকরণ
                   </div>
                   {foundUser && (
-                    <span style={{ fontSize: '11px', color: '#93c5fd' }}>
+                    <span style={{ fontSize: '11px', color: '#1d4ed8', fontWeight: '700' }}>
                       {foundUser.email}
                     </span>
                   )}
                 </div>
 
-                <p style={{ fontSize: '11px', color: '#94a3b8', margin: '0 0 10px', lineHeight: 1.5 }}>
+                <p style={{ fontSize: '11px', color: '#334155', margin: '0 0 10px', lineHeight: 1.5, fontWeight: '500' }}>
                   এসি ল্যান্ড অফিসে প্রস্তাব পাঠানোর পূর্বে নাগরিকের ব্যক্তিগত ইমেইলে ওটিপি প্রেরণ ও তা যাচাই করা বাধ্যতামূলক।
                 </p>
 
@@ -823,21 +825,21 @@ export default function RegisterOfficeDashboard() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '4px',
-                  background: 'rgba(0, 0, 0, 0.2)',
+                  background: '#e2e8f0',
                   padding: '8px 12px',
                   borderRadius: '6px',
                   fontSize: '11px',
                   marginBottom: '12px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>১. নির্বাচিত জমি:</span>
-                    <strong style={{ color: selectedLand ? '#86efac' : '#f87171' }}>
+                    <span style={{ color: '#334155', fontWeight: '600' }}>১. নির্বাচিত জমি:</span>
+                    <strong style={{ color: selectedLand ? '#15803d' : '#b91c1c' }}>
                       {selectedLand ? `দাগ নং ${selectedLand.dag_no} (${selectedLand.mouza}) ✓` : '❌ বাম পাশ থেকে জমি নির্বাচন করুন'}
                     </strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>২. লক্ষ্য নাগরিক:</span>
-                    <strong style={{ color: foundUser ? '#86efac' : '#f87171' }}>
+                    <span style={{ color: '#334155', fontWeight: '600' }}>২. লক্ষ্য নাগরিক:</span>
+                    <strong style={{ color: foundUser ? '#15803d' : '#b91c1c' }}>
                       {foundUser ? `${foundUser.name} (${foundUser.email}) ✓` : '❌ উপরে নাগরিক NID দিয়ে খুঁজুন'}
                     </strong>
                   </div>
@@ -856,10 +858,11 @@ export default function RegisterOfficeDashboard() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      background: (!foundUser || !selectedLand) ? 'rgba(255, 255, 255, 0.04)' : 'rgba(59, 130, 246, 0.15)',
-                      borderColor: (!foundUser || !selectedLand) ? 'rgba(255, 255, 255, 0.08)' : 'rgba(59, 130, 246, 0.3)',
-                      color: (!foundUser || !selectedLand) ? '#64748b' : '#93c5fd',
-                      cursor: (!foundUser || !selectedLand) ? 'not-allowed' : 'pointer'
+                      background: (!foundUser || !selectedLand) ? '#f1f5f9' : '#2563eb',
+                      borderColor: (!foundUser || !selectedLand) ? '#cbd5e1' : '#1d4ed8',
+                      color: (!foundUser || !selectedLand) ? '#94a3b8' : '#ffffff',
+                      cursor: (!foundUser || !selectedLand) ? 'not-allowed' : 'pointer',
+                      fontWeight: '700'
                     }}
                   >
                     <Send size={13} />
@@ -879,14 +882,16 @@ export default function RegisterOfficeDashboard() {
                       letterSpacing: '4px',
                       textAlign: 'center',
                       fontFamily: 'monospace',
-                      fontWeight: '700',
-                      color: '#4ade80'
+                      fontWeight: '800',
+                      color: '#15803d',
+                      background: '#ffffff',
+                      border: '2px solid #16a34a'
                     }}
                   />
                 </div>
 
                 {otpSentMessage && (
-                  <div style={{ padding: '8px 10px', background: 'rgba(34, 197, 94, 0.1)', color: '#86efac', borderRadius: '6px', fontSize: '11px', marginBottom: '6px' }}>
+                  <div style={{ padding: '8px 10px', background: '#dcfce7', color: '#166534', border: '1px solid #86efac', borderRadius: '6px', fontSize: '11px', marginBottom: '6px', fontWeight: '600' }}>
                     ✅ {otpSentMessage}
                   </div>
                 )}
@@ -894,8 +899,8 @@ export default function RegisterOfficeDashboard() {
                 {otpPreview && (
                   <div style={{
                     padding: '10px 14px',
-                    background: 'rgba(34, 197, 94, 0.12)',
-                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    background: '#dcfce7',
+                    border: '1.5px solid #86efac',
                     borderRadius: '8px',
                     fontSize: '12px',
                     marginBottom: '8px',
@@ -906,9 +911,9 @@ export default function RegisterOfficeDashboard() {
                     flexWrap: 'wrap'
                   }}>
                     <div>
-                      <span style={{ color: '#86efac', fontWeight: '700' }}>🔑 ওটিপি কোড: </span>
-                      <strong style={{ fontSize: '16px', letterSpacing: '3px', color: '#4ade80', fontFamily: 'monospace' }}>{otpPreview}</strong>
-                      <div style={{ fontSize: '10px', color: '#94a3b8' }}>নাগরিকের ইনবক্সে এবং এখানে প্রদর্শিত হচ্ছে</div>
+                      <span style={{ color: '#166534', fontWeight: '800' }}>🔑 ওটিপি কোড: </span>
+                      <strong style={{ fontSize: '16px', letterSpacing: '3px', color: '#15803d', fontFamily: 'monospace' }}>{otpPreview}</strong>
+                      <div style={{ fontSize: '10px', color: '#166534', fontWeight: '500' }}>নাগরিকের ইনবক্সে এবং এখানে প্রদর্শিত হচ্ছে</div>
                     </div>
                     <button
                       type="button"
@@ -930,7 +935,7 @@ export default function RegisterOfficeDashboard() {
                 )}
 
                 {otpError && (
-                  <div style={{ padding: '8px 10px', background: 'rgba(239, 68, 68, 0.1)', color: '#fca5a5', borderRadius: '6px', fontSize: '11px' }}>
+                  <div style={{ padding: '8px 10px', background: '#fef2f2', color: '#991b1b', border: '1px solid #f87171', borderRadius: '6px', fontSize: '11px', fontWeight: '600' }}>
                     ⚠️ {otpError}
                   </div>
                 )}
@@ -940,12 +945,13 @@ export default function RegisterOfficeDashboard() {
               {assignSuccess && (
                 <div style={{
                   padding: '12px',
-                  background: 'rgba(34, 197, 94, 0.12)',
-                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  background: '#dcfce7',
+                  border: '1.5px solid #86efac',
                   borderRadius: '8px',
-                  color: '#86efac',
+                  color: '#166534',
                   fontSize: '13px',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
+                  fontWeight: '600'
                 }}>
                   {assignSuccess}
                 </div>
@@ -954,12 +960,13 @@ export default function RegisterOfficeDashboard() {
               {assignError && (
                 <div style={{
                   padding: '12px',
-                  background: 'rgba(239, 68, 68, 0.12)',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  background: '#fef2f2',
+                  border: '1.5px solid #f87171',
                   borderRadius: '8px',
-                  color: '#fca5a5',
+                  color: '#991b1b',
                   fontSize: '13px',
-                  marginBottom: '16px'
+                  marginBottom: '16px',
+                  fontWeight: '600'
                 }}>
                   ⚠️ {assignError}
                 </div>
@@ -969,13 +976,14 @@ export default function RegisterOfficeDashboard() {
               {selectedLand && checkIsAllocated(selectedLand) && (
                 <div style={{
                   padding: '14px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  background: '#fef2f2',
+                  border: '1.5px solid #ef4444',
                   borderRadius: '10px',
-                  color: '#fee2e2',
+                  color: '#991b1b',
                   fontSize: '13px',
                   marginBottom: '14px',
-                  lineHeight: 1.5
+                  lineHeight: 1.5,
+                  fontWeight: '500'
                 }}>
                   🔒 <strong>সতর্কতা:</strong> দাগ নং {selectedLand.dag_no} জমিটি ইতিমধ্যে <strong>{selectedLand.owner_name}</strong> (NID: {selectedLand.owner_nid})-এর নামে বরাদ্দকৃত/রেকর্ডভুক্ত রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ করা যাবে না।
                 </div>
@@ -994,12 +1002,14 @@ export default function RegisterOfficeDashboard() {
                       width: '100%',
                       padding: '13px',
                       fontSize: '15px',
-                      fontWeight: '700',
+                      fontWeight: '800',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      background: isLandAllocated ? 'rgba(239, 68, 68, 0.25)' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                      background: isLandAllocated ? '#fee2e2' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                      color: isLandAllocated ? '#991b1b' : '#ffffff',
+                      border: isLandAllocated ? '1.5px solid #f87171' : 'none',
                       cursor: isLandAllocated ? 'not-allowed' : 'pointer',
                       boxShadow: isLandAllocated ? 'none' : '0 4px 16px rgba(29, 78, 216, 0.4)'
                     }}
@@ -1013,25 +1023,25 @@ export default function RegisterOfficeDashboard() {
           </div>
 
           {/* Table: Sent Assignment Requests */}
-          <div className="glass-card" style={{ padding: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Clock size={18} color="#60a5fa" /> প্রেরিত জমি বরাদ্দ অনুরোধসমূহের স্থিতি
+              <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={18} color="#2563eb" /> প্রেরিত জমি বরাদ্দ অনুরোধসমূহের স্থিতি
               </h3>
-              <button onClick={fetchSentRequests} className="btn-secondary" style={{ padding: '5px 12px', fontSize: '12px' }}>
+              <button onClick={fetchSentRequests} className="btn-secondary" style={{ padding: '6px 14px', fontSize: '12px', background: '#f1f5f9', border: '1.5px solid #94a3b8', color: '#0f172a', fontWeight: '700' }}>
                 রিফ্রেশ
               </button>
             </div>
 
             {sentRequests.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px', color: '#94a3b8', fontSize: '13px' }}>
+              <div style={{ textAlign: 'center', padding: '30px', color: '#475569', fontSize: '13px', fontWeight: '500' }}>
                 এখনো কোনো জমি বরাদ্দ অনুরোধ পাঠানো হয়নি।
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left', color: '#94a3b8' }}>
+                    <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
                       <th style={{ padding: '10px 12px' }}>অনুরোধ নং</th>
                       <th style={{ padding: '10px 12px' }}>নাগরিক</th>
                       <th style={{ padding: '10px 12px' }}>জমির তথ্য</th>
@@ -1042,43 +1052,43 @@ export default function RegisterOfficeDashboard() {
                   </thead>
                   <tbody>
                     {sentRequests.map((req) => (
-                      <tr key={req._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                        <td style={{ padding: '12px', fontFamily: 'monospace', color: '#93c5fd' }}>
+                      <tr key={req._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '12px', fontFamily: 'monospace', color: '#1d4ed8', fontWeight: '700' }}>
                           {req.request_id}
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <strong style={{ color: '#f1f5f9' }}>{req.user_name}</strong>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {req.user_nid}</div>
+                          <strong style={{ color: '#0f172a' }}>{req.user_name}</strong>
+                          <div style={{ fontSize: '11px', color: '#475569' }}>NID: {req.user_nid}</div>
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <div>দাগ: <strong>{req.dag_no}</strong> | খতিয়ান: {req.khatian_no}</div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>মৌজা: {req.mouza} ({req.area_decimal} শতক)</div>
+                          <div style={{ color: '#0f172a' }}>দাগ: <strong>{req.dag_no}</strong> | খতিয়ান: {req.khatian_no}</div>
+                          <div style={{ fontSize: '11px', color: '#475569' }}>মৌজা: {req.mouza} ({req.area_decimal} শতক)</div>
                         </td>
                         <td style={{ padding: '12px' }}>
-                          <div>ভলিউম: <strong>{req.volume_book}</strong></div>
-                          <div style={{ fontSize: '11px', color: '#64748b' }}>পৃষ্ঠা: {req.page_no}</div>
+                          <div style={{ color: '#0f172a' }}>ভলিউম: <strong>{req.volume_book}</strong></div>
+                          <div style={{ fontSize: '11px', color: '#475569' }}>পৃষ্ঠা: {req.page_no}</div>
                         </td>
                         <td style={{ padding: '12px' }}>
                           <span style={{
-                            padding: '3px 10px',
+                            padding: '4px 10px',
                             borderRadius: '999px',
                             fontSize: '11px',
                             fontWeight: '700',
-                            background: req.status === 'Approved' ? 'rgba(34, 197, 94, 0.15)' : req.status === 'Rejected' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                            color: req.status === 'Approved' ? '#86efac' : req.status === 'Rejected' ? '#fca5a5' : '#fde047',
-                            border: `1px solid ${req.status === 'Approved' ? 'rgba(34, 197, 94, 0.3)' : req.status === 'Rejected' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
+                            background: req.status === 'Approved' ? '#dcfce7' : req.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                            color: req.status === 'Approved' ? '#166534' : req.status === 'Rejected' ? '#991b1b' : '#92400e',
+                            border: `1px solid ${req.status === 'Approved' ? '#86efac' : req.status === 'Rejected' ? '#f87171' : '#fde68a'}`
                           }}>
                             {req.status === 'Approved' ? '✅ অনুমোদিত (Approved)' : req.status === 'Rejected' ? '❌ প্রত্যাখ্যাত (Rejected)' : '⏳ এসি ল্যান্ডে অপেক্ষমান'}
                           </span>
                         </td>
-                        <td style={{ padding: '12px', fontSize: '12px', color: '#94a3b8' }}>
+                        <td style={{ padding: '12px', fontSize: '12px', color: '#1e293b' }}>
                           {req.ac_land_reviewed_by ? (
                             <div>
                               <div>কর্মকর্তা: {req.ac_land_reviewed_by}</div>
-                              {req.rejection_reason && <div style={{ color: '#ef4444' }}>কারণ: {req.rejection_reason}</div>}
+                              {req.rejection_reason && <div style={{ color: '#dc2626', fontWeight: '600' }}>কারণ: {req.rejection_reason}</div>}
                             </div>
                           ) : (
-                            <span style={{ color: '#64748b' }}>পর্যালোচনার অপেক্ষায়</span>
+                            <span style={{ color: '#475569' }}>পর্যালোচনার অপেক্ষায়</span>
                           )}
                         </td>
                       </tr>
