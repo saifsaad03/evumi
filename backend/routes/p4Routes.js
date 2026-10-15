@@ -132,6 +132,82 @@ router.post('/issue-namjari', async (req, res) => {
   }
 });
 
+// POST /api/approve-mutation
+// AC Land Officer directly approves mutation, transfers ownership, and generates Namjari Khotiyan
+router.post('/approve-mutation', async (req, res) => {
+  try {
+    const { record_id, remarks, officer_name } = req.body;
+
+    const oldRecord = await LandRecord.findById(record_id);
+    if (!oldRecord) return res.status(404).json({ success: false, message: 'রেকর্ড পাওয়া যায়নি।' });
+    if (oldRecord.status === 'Sold') {
+      return res.status(400).json({ success: false, message: 'এই জমির নামজারি ও মালিকানা হস্তান্তর ইতিমধ্যে সম্পন্ন হয়েছে।' });
+    }
+
+    // Mark old record as Sold
+    oldRecord.status = 'Sold';
+    oldRecord.payment_status = 'Paid';
+    oldRecord.namjari_issued = true;
+    oldRecord.last_updated = new Date();
+    await oldRecord.save();
+
+    // Create new Active LandRecord for buyer
+    const newQrId = `QR-NAMJARI-${oldRecord.dag_no}-${Date.now()}`;
+    const newKhatianNo = oldRecord.khatian_no.includes('-M') ? oldRecord.khatian_no : `${oldRecord.khatian_no}-M`;
+
+    const newRecord = new LandRecord({
+      record_id: `record_${Date.now()}`,
+      division: oldRecord.division || 'ঢাকা',
+      district: oldRecord.district || 'ঢাকা',
+      upazila: oldRecord.upazila || 'ধানমন্ডি',
+      mouza: oldRecord.mouza,
+      jl_no: oldRecord.jl_no,
+      khatian_no: newKhatianNo,
+      dag_no: oldRecord.dag_no,
+      owner_nid: oldRecord.buyer_nid || oldRecord.owner_nid || 'N/A',
+      owner_name: oldRecord.buyer_name || oldRecord.owner_name || 'নতুন মালিক',
+      owner_phone: oldRecord.buyer_phone || oldRecord.owner_phone || '',
+      owner_email: oldRecord.buyer_email || oldRecord.owner_email || '',
+      total_area_decimal: parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal),
+      available_area_decimal: parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal),
+      status: 'Active',
+      qr_code_id: newQrId,
+      deed_no: oldRecord.deed_no,
+      deed_year: oldRecord.deed_year,
+      deed_hash: oldRecord.deed_hash,
+      remarks: remarks || `সহকারী কমিশনার (ভূমি) কর্তৃক অনুমোদিত ই-নামজারি খতিয়ান। সাবেক খতিয়ান: ${oldRecord.khatian_no}`
+    });
+    await newRecord.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `🎉 এসি ল্যান্ড কর্তৃক নামজারি অনুমোদন সম্পন্ন! নতুন খতিয়ান নং: ${newKhatianNo} প্রস্তুত ও ক্রেতা ${newRecord.owner_name}-এর নামে অর্পিত হয়েছে।`,
+      khatian_data: {
+        new_record_id: newRecord._id,
+        division: newRecord.division,
+        district: newRecord.district,
+        upazila: newRecord.upazila,
+        mouza: newRecord.mouza,
+        jl_no: newRecord.jl_no,
+        khatian_no: newRecord.khatian_no,
+        dag_no: newRecord.dag_no,
+        owner_name: newRecord.owner_name,
+        owner_nid: newRecord.owner_nid,
+        owner_phone: newRecord.owner_phone,
+        total_area_decimal: newRecord.total_area_decimal,
+        deed_no: newRecord.deed_no,
+        deed_hash: newRecord.deed_hash,
+        qr_code_id: newRecord.qr_code_id,
+        issue_date: new Date().toLocaleDateString('bn-BD'),
+        status: 'Active'
+      }
+    });
+  } catch (err) {
+    console.error('Approve mutation error:', err);
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+  }
+});
+
 // POST /api/complete-payment
 // P4: Payment done - transfer ownership, create new Active record for buyer
 router.post('/complete-payment', async (req, res) => {
@@ -203,10 +279,14 @@ router.get('/land-records', async (req, res) => {
   try {
     const { seller_nid, dag_no, mouza } = req.query;
     const query = {};
-    if (seller_nid) query.owner_nid = seller_nid;
+    if (seller_nid) {
+      const s = seller_nid.toString().trim();
+      const engS = s.replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+      const bngS = s.replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]);
+      query.$or = [{ owner_nid: s }, { owner_nid: engS }, { owner_nid: bngS }];
+    }
     if (dag_no) query.dag_no = dag_no;
     if (mouza) query.mouza = { $regex: mouza, $options: 'i' };
-    query.status = 'Active';
 
     const records = await LandRecord.find(query);
     return res.status(200).json({ success: true, data: records });

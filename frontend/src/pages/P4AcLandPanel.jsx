@@ -26,6 +26,25 @@ export default function P4AcLandPanel() {
 
   useEffect(() => { fetchApplications(); }, []);
 
+  const handleDirectApproveMutation = async () => {
+    if (!selected) return;
+    setIssueLoading(true);
+    try {
+      const res = await axios.post('/api/approve-mutation', {
+        record_id: selected._id,
+        remarks: 'সহকারী কমিশনার (ভূমি) কর্তৃক যাচাই সাপেক্ষে নামজারি অনুমোদন ও নতুন খতিয়ান প্রদান।'
+      });
+      if (res.data.success) {
+        setKhatianData(res.data.khatian_data);
+        fetchApplications();
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'নামজারি অনুমোদন ব্যর্থ হয়েছে।');
+    } finally {
+      setIssueLoading(false);
+    }
+  };
+
   const handleIssueNamejari = async () => {
     if (!selected) return;
     setIssueLoading(true);
@@ -198,12 +217,47 @@ export default function P4AcLandPanel() {
                   </div>
                 )}
 
-                {/* Issue Namjari button */}
-                {!selected.namjari_issued && (
-                  <button onClick={handleIssueNamejari} disabled={issueLoading} className="btn-gold" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                    {issueLoading ? <><div className="loader" /> ইস্যু হচ্ছে...</> : <><CheckCircle size={16} /> নামজারি ইস্যু করুন (Issue Namjari)</>}
+                {/* Direct Approve & Issue Namjari buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <button
+                    onClick={handleDirectApproveMutation}
+                    disabled={issueLoading}
+                    className="btn-primary"
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      fontSize: '14px',
+                      fontWeight: '800',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      background: 'linear-gradient(135deg, #059669, #10b981)',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+                    }}
+                  >
+                    {issueLoading ? <><div className="loader" /> অনুমোদন হচ্ছে...</> : <><CheckCircle size={18} /> ✅ অনুমোদন ও নতুন নামজারি খতিয়ান তৈরি করুন</>}
                   </button>
-                )}
+
+                  {!selected.namjari_issued && (
+                    <button
+                      onClick={handleIssueNamejari}
+                      disabled={issueLoading}
+                      className="btn-secondary"
+                      style={{
+                        width: '100%',
+                        padding: '10px',
+                        fontSize: '13px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <Mail size={15} /> 📧 ক্রেতাকে নামজারি নোটিশ ও পেমেন্ট লিংক পাঠান
+                    </button>
+                  )}
+                </div>
 
                 {/* Issue result */}
                 {issueResult && (

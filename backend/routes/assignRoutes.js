@@ -72,6 +72,9 @@ router.get('/search-land', verifyToken, async (req, res) => {
   }
 });
 
+const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
 // GET /api/assign/search-user
 // Register Office finds citizen by NID, phone, or email
 router.get('/search-user', verifyToken, async (req, res) => {
@@ -81,11 +84,19 @@ router.get('/search-user', verifyToken, async (req, res) => {
       return res.status(400).json({ success: false, message: 'অনুসন্ধানের জন্য NID, ফোন বা ইমেইল দিন।' });
     }
 
+    const rawQuery = query.toString().trim();
+    const engQuery = toEnglishDigits(rawQuery);
+    const bngQuery = toBengaliDigits(rawQuery);
+
     const user = await User.findOne({
       $or: [
-        { nid: query.trim() },
-        { phone: query.trim() },
-        { email: query.trim().toLowerCase() }
+        { nid: rawQuery },
+        { nid: engQuery },
+        { nid: bngQuery },
+        { phone: rawQuery },
+        { phone: engQuery },
+        { phone: bngQuery },
+        { email: rawQuery.toLowerCase() }
       ]
     }).select('-password');
 
@@ -145,8 +156,19 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    // Verify citizen
-    const citizen = await User.findOne({ nid: user_nid.trim() });
+    // Verify citizen with English/Bengali digits
+    const rawNid = user_nid.toString().trim();
+    const engNid = toEnglishDigits(rawNid);
+    const bngNid = toBengaliDigits(rawNid);
+
+    const citizen = await User.findOne({
+      $or: [
+        { nid: rawNid },
+        { nid: engNid },
+        { nid: bngNid }
+      ]
+    });
+
     if (!citizen) {
       return res.status(404).json({ success: false, message: 'প্রদত্ত এনআইডিধারী নাগরিক নিবন্ধিত নয়।' });
     }
@@ -154,8 +176,10 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     // Verify citizen's email OTP
     const cleanOtp = otp.toString().trim();
     const otpRecord = await OtpVerification.findOne({
-      email: citizen.email.toLowerCase(),
-      purpose: 'LAND_ASSIGNMENT'
+      $or: [
+        { email: citizen.email.toLowerCase(), purpose: 'LAND_ASSIGNMENT' },
+        { 'metadata.citizen_nid': citizen.nid, purpose: 'LAND_ASSIGNMENT' }
+      ]
     }).sort({ createdAt: -1 });
 
     if (!otpRecord) {

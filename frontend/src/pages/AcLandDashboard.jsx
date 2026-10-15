@@ -119,42 +119,50 @@ export default function AcLandDashboard() {
         </div>
 
         {/* Tab Buttons */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setActiveTab('assign_requests')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              background: activeTab === 'assign_requests' ? '#10b981' : 'rgba(255,255,255,0.05)',
-              color: 'white',
-              fontWeight: '700',
-              fontSize: '13px',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Layers size={16} /> জমি বরাদ্দ অনুমোদন ইনবক্স ({requests.length})
-          </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('mutations')}
             style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              background: activeTab === 'mutations' ? '#10b981' : 'rgba(255,255,255,0.05)',
+              padding: '12px 20px',
+              borderRadius: '10px',
+              background: activeTab === 'mutations' ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(255,255,255,0.06)',
               color: 'white',
-              fontWeight: '700',
+              fontWeight: '800',
               fontSize: '13px',
-              border: 'none',
+              border: activeTab === 'mutations' ? '1.5px solid #6ee7b7' : '1px solid rgba(255,255,255,0.1)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              boxShadow: activeTab === 'mutations' ? '0 4px 16px rgba(16, 185, 129, 0.45)' : 'none',
+              transition: 'all 0.2s ease'
             }}
           >
-            <FileText size={16} /> ই-নামজারি ও মিউটেশন ইনবক্স
+            <FileText size={17} /> 📜 সাব-রেজিস্ট্রি দলিল ও ই-নামজারি অনুমোদন
+            <span style={{ fontSize: '10px', background: activeTab === 'mutations' ? 'rgba(255,255,255,0.2)' : 'rgba(16, 185, 129, 0.2)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+              Deed Mutation
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('assign_requests')}
+            style={{
+              padding: '12px 20px',
+              borderRadius: '10px',
+              background: activeTab === 'assign_requests' ? 'linear-gradient(135deg, #059669, #10b981)' : 'rgba(255,255,255,0.06)',
+              color: 'white',
+              fontWeight: '800',
+              fontSize: '13px',
+              border: activeTab === 'assign_requests' ? '1.5px solid #6ee7b7' : '1px solid rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: activeTab === 'assign_requests' ? '0 4px 16px rgba(16, 185, 129, 0.45)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Layers size={17} /> 🏛️ সরকারি জমি বরাদ্দ ইনবক্স ({requests.length})
           </button>
         </div>
       </div>

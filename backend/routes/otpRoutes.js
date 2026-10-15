@@ -279,6 +279,9 @@ router.post('/verify-and-register', async (req, res) => {
 // ==========================================
 // 3. Send OTP to Citizen for Land Assignment (Register Office -> AC Land)
 // ==========================================
+const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
 router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
   try {
     const { citizen_nid, citizen_email, dag_no, mouza, land_record_id } = req.body;
@@ -291,7 +294,18 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     }
 
     const cleanEmail = citizen_email.trim().toLowerCase();
-    const citizen = await User.findOne({ nid: citizen_nid.trim() });
+    const rawNid = citizen_nid.toString().trim();
+    const engNid = toEnglishDigits(rawNid);
+    const bngNid = toBengaliDigits(rawNid);
+
+    const citizen = await User.findOne({
+      $or: [
+        { nid: rawNid },
+        { nid: engNid },
+        { nid: bngNid }
+      ]
+    });
+
     if (!citizen) {
       return res.status(404).json({
         success: false,
@@ -300,12 +314,14 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     }
 
     const otp = generate6DigitOtp();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
     // Delete older unverified assignment OTPs for this citizen and land
     await OtpVerification.deleteMany({
-      email: cleanEmail,
-      purpose: 'LAND_ASSIGNMENT'
+      $or: [
+        { email: cleanEmail, purpose: 'LAND_ASSIGNMENT' },
+        { 'metadata.citizen_nid': citizen.nid, purpose: 'LAND_ASSIGNMENT' }
+      ]
     });
 
     // Save OTP
@@ -323,6 +339,8 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
       expiresAt
     });
 
+    console.log(`🔑 [LAND ASSIGN OTP for ${cleanEmail} (NID: ${citizen.nid})]: ${otp}`);
+
     // Dispatch Email
     const emailResult = await sendOtpEmail(cleanEmail, otp, 'LAND_ASSIGNMENT', {
       citizen_name: citizen.name,
@@ -334,7 +352,7 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
       success: true,
       message: `নাগরিক (${citizen.name}) এর ইমেইল '${cleanEmail}' এ জমি বরাদ্দ সম্মতির ৬ ডিজিটের ওটিপি পাঠানো হয়েছে।`,
       simulated: emailResult.simulated || false,
-      previewOtp: (emailResult.simulated || !process.env.EMAIL_USER || process.env.EMAIL_USER === 'your_email@gmail.com') ? otp : undefined
+      previewOtp: otp
     });
   } catch (err) {
     console.error('Send land assign OTP error:', err);

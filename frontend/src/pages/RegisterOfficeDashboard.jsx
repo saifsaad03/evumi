@@ -13,7 +13,7 @@ import {
 
 export default function RegisterOfficeDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('assign'); // 'assign' | 'deed_registry'
+  const [activeTab, setActiveTab] = useState('deed_registry'); // 'deed_registry' | 'assign'
 
   // Cascade Filter State (Defaulted to Rajshahi > Bogura > Shibganj > গুজিয়া)
   const [filter, setFilter] = useState({
@@ -318,42 +318,50 @@ export default function RegisterOfficeDashboard() {
         </div>
 
         {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            onClick={() => setActiveTab('assign')}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              background: activeTab === 'assign' ? '#3b82f6' : 'rgba(255,255,255,0.05)',
-              color: 'white',
-              fontWeight: '700',
-              fontSize: '13px',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <Layers size={16} /> নাগরিককে জমি বরাদ্দ (Assign Land)
-          </button>
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
           <button
             onClick={() => setActiveTab('deed_registry')}
             style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              background: activeTab === 'deed_registry' ? '#3b82f6' : 'rgba(255,255,255,0.05)',
+              padding: '12px 22px',
+              borderRadius: '10px',
+              background: activeTab === 'deed_registry' ? 'linear-gradient(135deg, #1d4ed8, #2563eb)' : 'rgba(255,255,255,0.06)',
               color: 'white',
-              fontWeight: '700',
+              fontWeight: '800',
               fontSize: '13px',
-              border: 'none',
+              border: activeTab === 'deed_registry' ? '1.5px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '8px',
+              boxShadow: activeTab === 'deed_registry' ? '0 4px 16px rgba(37,99,235,0.45)' : 'none',
+              transition: 'all 0.2s ease'
             }}
           >
-            <FileText size={16} /> দলিল নিবন্ধন ও ডাবল সেলিং চেক
+            <FileText size={17} /> 📜 দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং প্যানেল
+            <span style={{ fontSize: '10px', background: activeTab === 'deed_registry' ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.2)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
+              মূল প্যানেল
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('assign')}
+            style={{
+              padding: '12px 20px',
+              borderRadius: '10px',
+              background: activeTab === 'assign' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'rgba(255,255,255,0.06)',
+              color: 'white',
+              fontWeight: '800',
+              fontSize: '13px',
+              border: activeTab === 'assign' ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: activeTab === 'assign' ? '0 4px 16px rgba(2,132,199,0.45)' : 'none',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Layers size={17} /> 🏛️ নাগরিককে সরকারি জমি বরাদ্দ (Assign Land)
           </button>
         </div>
       </div>
@@ -737,8 +745,40 @@ export default function RegisterOfficeDashboard() {
                 )}
 
                 {otpPreview && (
-                  <div style={{ padding: '8px 10px', background: 'rgba(245, 158, 11, 0.1)', border: '1px dashed rgba(245, 158, 11, 0.3)', color: '#fde047', borderRadius: '6px', fontSize: '11px', marginBottom: '6px' }}>
-                    💡 <strong>সিমুলেশন ওটিপি:</strong> {otpPreview} (আপনার .env এ জিমেইল কনফিগার থাকলে সরাসরি নাগরিকের ইনবক্সে যায়)
+                  <div style={{
+                    padding: '10px 14px',
+                    background: 'rgba(34, 197, 94, 0.12)',
+                    border: '1px solid rgba(34, 197, 94, 0.3)',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    marginBottom: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '10px',
+                    flexWrap: 'wrap'
+                  }}>
+                    <div>
+                      <span style={{ color: '#86efac', fontWeight: '700' }}>🔑 ওটিপি কোড: </span>
+                      <strong style={{ fontSize: '16px', letterSpacing: '3px', color: '#4ade80', fontFamily: 'monospace' }}>{otpPreview}</strong>
+                      <div style={{ fontSize: '10px', color: '#94a3b8' }}>নাগরিকের ইনবক্সে এবং এখানে প্রদর্শিত হচ্ছে</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setCitizenOtp(otpPreview)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        background: '#16a34a',
+                        color: 'white',
+                        fontWeight: '700',
+                        fontSize: '11px',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      📋 ওটিপি কোড ইনপুট করুন
+                    </button>
                   </div>
                 )}
 

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Search, Home, LogIn, LogOut, UserPlus, LayoutDashboard, Menu, X, ShieldCheck, MapPin } from 'lucide-react';
+import { Search, Home, LogIn, LogOut, UserPlus, LayoutDashboard, Menu, X, ShieldCheck, MapPin, FileText } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -134,6 +134,26 @@ export default function Navbar() {
           >
             <Search size={15} /> <span>নাগরিক খতিয়ান যাচাই</span>
           </NavLink>
+
+          {user?.role === 'Register Office' && (
+            <NavLink
+              to="/register-office/dashboard"
+              className={location.pathname === '/register-office/dashboard' ? 'nav-link active' : 'nav-link'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', color: '#1d4ed8' }}
+            >
+              <FileText size={15} /> <span>দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং</span>
+            </NavLink>
+          )}
+
+          {user?.role === 'AC Land Office' && (
+            <NavLink
+              to="/ac-land/dashboard"
+              className={location.pathname === '/ac-land/dashboard' ? 'nav-link active' : 'nav-link'}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', color: '#047857' }}
+            >
+              <FileText size={15} /> <span>ই-নামজারি ও মিউটেশন</span>
+            </NavLink>
+          )}
         </div>
 
         {/* Auth Section & Mobile Toggle */}
