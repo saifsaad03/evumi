@@ -71,8 +71,10 @@ router.post('/verify-deed', async (req, res) => {
       await record.save();
     }
 
-    // Step 1: Seller NID Verification
-    if (record.owner_nid !== seller_nid) {
+    // Step 1: Seller NID Verification (normalize both to English digits for comparison)
+    const normalizedOwnerNid = toEnglishDigits(record.owner_nid);
+    const normalizedSellerNid = toEnglishDigits(seller_nid);
+    if (normalizedOwnerNid !== normalizedSellerNid) {
       // Log fraud alert
       record.fraud_alerts.push({
         type: 'FAKE_OWNER',
