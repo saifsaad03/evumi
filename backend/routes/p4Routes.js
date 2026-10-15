@@ -294,32 +294,7 @@ router.get('/land-records', async (req, res) => {
         $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
       });
 
-      // If no record exists yet, dynamically initialize it so any dag number works!
-      if (records.length === 0) {
-        const newRecord = new LandRecord({
-          record_id: `rec_${Date.now()}_${engDag}`,
-          division: 'রাজশাহী',
-          district: 'বগুড়া',
-          upazila: 'শিবগঞ্জ',
-          mouza: cleanMouza,
-          jl_no: '1',
-          khatian_no: '২৫',
-          dag_no: cleanDag,
-          owner_nid: seller_nid ? seller_nid.toString().trim() : '1998567890123',
-          owner_name: 'বর্তমান জমির মালিক',
-          owner_phone: '01711234567',
-          owner_email: 'seller@example.com',
-          total_area_decimal: 20,
-          available_area_decimal: 20,
-          volume_book: 'VOL-SHIB-2026',
-          page_no: '10',
-          deed_no: `DEED-${engDag}`,
-          sub_registry_code: 'SR-BOG-SHIB-01',
-          status: 'Active'
-        });
-        await newRecord.save();
-        records = [newRecord];
-      }
+      // Only return real records from database, do NOT auto-create mock records
     } else {
       records = await LandRecord.find({}).limit(20);
     }

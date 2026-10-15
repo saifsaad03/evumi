@@ -126,6 +126,22 @@ export default function RegisterOfficeDashboard() {
   // Sent Requests List
   const [sentRequests, setSentRequests] = useState([]);
 
+  // Check if land is actually allocated to a private citizen (not unassigned / khas)
+  const checkIsAllocated = (land) => {
+    if (!land) return false;
+    if (land.status === 'Pending_AC_Land_Review' || land.status === 'Pending_Mutation' || land.status === 'Sold') {
+      return true;
+    }
+    const isUnassigned = !land.owner_nid ||
+      land.owner_nid === '1000000000000' ||
+      land.owner_nid === 'অনলাইনে রেকর্ড নেই' ||
+      land.owner_name === 'অনলাইনে অনিবন্ধিত' ||
+      (land.owner_name && land.owner_name.includes('সরকার')) ||
+      (land.owner_name && land.owner_name.includes('খাস'));
+
+    return !isUnassigned;
+  };
+
   useEffect(() => {
     fetchSentRequests();
     handleSearchLand();
@@ -588,19 +604,12 @@ export default function RegisterOfficeDashboard() {
 
               {/* Selected Land Preview */}
               {selectedLand && (() => {
-                const isLandAllocated = selectedLand.status !== 'Active' || (
-                  selectedLand.owner_nid &&
-                  selectedLand.owner_nid !== '1000000000000' &&
-                  selectedLand.owner_nid !== 'অনলাইনে রেকর্ড নেই' &&
-                  selectedLand.owner_name &&
-                  !selectedLand.owner_name.includes('সরকার') &&
-                  selectedLand.owner_name !== 'অনলাইনে অনিবন্ধিত'
-                );
+                const isLandAllocated = checkIsAllocated(selectedLand);
                 const displayOwnerName = isLandAllocated ? selectedLand.owner_name : 'অনলাইনে অনিবন্ধিত';
                 const displayOwnerNid = isLandAllocated ? selectedLand.owner_nid : 'প্রযোজ্য নয় (অনলাইনে অনিবন্ধিত)';
 
                 return (
-                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}`, background: 'rgba(15, 23, 42, 0.85)' }}>
+                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}`, background: 'rgba(30, 41, 59, 0.75)', border: '1px solid rgba(255, 255, 255, 0.12)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                       <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>
                         নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
@@ -956,25 +965,25 @@ export default function RegisterOfficeDashboard() {
                 </div>
               )}
 
-              {/* Check if land is already allocated */}
-              {selectedLand && (selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার'))) && (
+              {/* Check if land is already allocated to another citizen */}
+              {selectedLand && checkIsAllocated(selectedLand) && (
                 <div style={{
-                  padding: '12px',
+                  padding: '14px',
                   background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.35)',
-                  borderRadius: '8px',
-                  color: '#fca5a5',
+                  border: '1px solid rgba(239, 68, 68, 0.4)',
+                  borderRadius: '10px',
+                  color: '#fee2e2',
                   fontSize: '13px',
                   marginBottom: '14px',
                   lineHeight: 1.5
                 }}>
-                  🔒 <strong>সতর্কতা:</strong> দাগ নং {selectedLand.dag_no} জমিটি ইতিমধ্যে <strong>{selectedLand.owner_name}</strong> (NID: {selectedLand.owner_nid})-এর নামে রেকর্ডভুক্ত/প্রক্রিয়াধীন রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ করা যাবে না।
+                  🔒 <strong>সতর্কতা:</strong> দাগ নং {selectedLand.dag_no} জমিটি ইতিমধ্যে <strong>{selectedLand.owner_name}</strong> (NID: {selectedLand.owner_nid})-এর নামে বরাদ্দকৃত/রেকর্ডভুক্ত রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ করা যাবে না।
                 </div>
               )}
 
               {/* THE ASSIGN BUTTON */}
               {(() => {
-                const isLandAllocated = selectedLand && (selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার')));
+                const isLandAllocated = checkIsAllocated(selectedLand);
                 return (
                   <button
                     type="button"
@@ -990,8 +999,9 @@ export default function RegisterOfficeDashboard() {
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '8px',
-                      background: isLandAllocated ? 'rgba(239, 68, 68, 0.2)' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
-                      cursor: isLandAllocated ? 'not-allowed' : 'pointer'
+                      background: isLandAllocated ? 'rgba(239, 68, 68, 0.25)' : 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                      cursor: isLandAllocated ? 'not-allowed' : 'pointer',
+                      boxShadow: isLandAllocated ? 'none' : '0 4px 16px rgba(29, 78, 216, 0.4)'
                     }}
                   >
                     <Send size={18} />

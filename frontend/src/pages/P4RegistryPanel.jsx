@@ -38,6 +38,10 @@ export default function P4RegistryPanel() {
   // Step 1: Search Land & Run Anti-Double Selling Engine
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
+    if (!searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
+      setSearchError('অনুগ্রহ করে দাগ নম্বর এবং মৌজার নাম দিন।');
+      return;
+    }
     setSearchLoading(true);
     setSearchError('');
     setLandRecord(null);
@@ -45,51 +49,27 @@ export default function P4RegistryPanel() {
     setDoubleSellAlert(null);
 
     try {
-      // 1. Live Anti-Double Selling check via P3 Fraud Engine
-      try {
-        const verifyRes = await axios.post('/api/verify-deed', {
-          seller_nid: searchForm.seller_nid?.trim(),
-          dag_no: searchForm.dag_no?.trim(),
-          mouza: searchForm.mouza?.trim(),
-          requested_area: searchForm.requested_area || '1'
-        });
-
-        if (verifyRes.data && !verifyRes.data.success) {
-          setDoubleSellAlert(verifyRes.data);
-        }
-      } catch (vErr) {
-        console.warn('Verify deed check fallback:', vErr);
-      }
-
-      // 2. Fetch Land Record
-      const res = await axios.get('/api/land-records', {
-        params: {
-          dag_no: searchForm.dag_no?.trim(),
-          mouza: searchForm.mouza?.trim()
-        }
+      // Live Anti-Double Selling & Assignment check via verify-deed
+      const verifyRes = await axios.post('/api/verify-deed', {
+        seller_nid: searchForm.seller_nid?.trim(),
+        dag_no: searchForm.dag_no?.trim(),
+        mouza: searchForm.mouza?.trim(),
+        requested_area: searchForm.requested_area || '1'
       });
 
-      if (res.data.data?.length > 0) {
-        const found = res.data.data[0];
-        setLandRecord(found);
-
-        // Check if status is locked
-        if (found.status === 'Pending_Mutation') {
-          setDoubleSellAlert({
-            alert_type: 'DOUBLE_SELL',
-            message: '🔴 ডাবল-সেলিং এলার্ট (Double-Selling Alert): এই জমির একটি দলিল ও নামজারি প্রক্রিয়া বর্তমানে চলমান! জমিটি Pending Mutation অবস্থায় লক আছে।'
-          });
-        } else if (found.status === 'Sold') {
-          setDoubleSellAlert({
-            alert_type: 'ALREADY_SOLD',
-            message: '🔴 জমিটি ইতিমধ্যে অন্য ক্রেতার কাছে বিক্রয় ও নামজারি সম্পন্ন হয়েছে (Status: Sold)।'
-          });
+      if (verifyRes.data) {
+        if (!verifyRes.data.success) {
+          // Double selling, fake owner, unassigned land, or not found alert
+          setDoubleSellAlert(verifyRes.data);
+          setLandRecord(null);
+        } else {
+          // Successfully verified against existing assigned land record
+          setLandRecord(verifyRes.data.record);
+          setDoubleSellAlert(null);
         }
-      } else {
-        setSearchError('প্রদত্ত দাগ ও মৌজায় কোনো জমির রেকর্ড পাওয়া যায়নি।');
       }
     } catch (err) {
-      setSearchError('অনুসন্ধান ব্যর্থ হয়েছে। সার্ভার চালু আছে কি?');
+      setSearchError(err.response?.data?.message || 'অনুসন্ধান ব্যর্থ হয়েছে। সার্ভার চালু আছে কি?');
     } finally {
       setSearchLoading(false);
     }
@@ -380,60 +360,65 @@ export default function P4RegistryPanel() {
             {/* Anti-Double Selling Alert Box */}
             {doubleSellAlert && (
               <div style={{
-                marginTop: '12px',
-                padding: '14px',
+                marginTop: '14px',
+                padding: '16px',
                 borderRadius: '10px',
-                background: 'rgba(239, 68, 68, 0.12)',
+                background: 'rgba(239, 68, 68, 0.15)',
                 border: '1.5px solid #ef4444',
-                color: '#fecaca',
+                color: '#fee2e2',
                 fontSize: '13px',
-                lineHeight: 1.5
+                lineHeight: 1.6
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#f87171', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '800', color: '#f87171', marginBottom: '6px' }}>
                   <ShieldAlert size={18} />
-                  {doubleSellAlert.alert_type === 'DOUBLE_SELL' ? '🚨 ডাবল-সেলিং সতর্কতা (Double-Selling Alert)' : '⚠️ ভূমি রেকর্ড সতর্কতা'}
+                  {doubleSellAlert.alert_type === 'DOUBLE_SELL' ? '🚨 ডাবল-সেলিং সতর্কতা (Double-Selling Alert)' :
+                   doubleSellAlert.alert_type === 'FAKE_OWNER' ? '🚨 জালিয়াতি সতর্কতা (Fake Owner Detected)' :
+                   doubleSellAlert.alert_type === 'UNASSIGNED_LAND' ? '⚠️ সরকারি খাস জমি সতর্কতা (Unassigned Land)' :
+                   doubleSellAlert.alert_type === 'ALREADY_SOLD' ? '🚫 পূর্বেই বিক্রিত জমি (Already Sold)' :
+                   '⚠️ ভূমি রেকর্ড যাচাইকরণ সতর্কতা'}
                 </div>
                 <div>{doubleSellAlert.message}</div>
               </div>
             )}
 
             {/* Verified Land Record Preview */}
-            {landRecord && !doubleSellAlert?.alert_type?.includes('DOUBLE_SELL') && (
+            {landRecord && !doubleSellAlert && (
               <div style={{
                 marginTop: '14px',
-                padding: '16px',
-                background: 'rgba(34, 197, 94, 0.08)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
+                padding: '18px',
+                background: 'rgba(34, 197, 94, 0.12)',
+                border: '1px solid rgba(34, 197, 94, 0.4)',
                 borderRadius: '12px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <ShieldCheck size={20} color="#22c55e" />
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: '#86efac' }}>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: '#86efac' }}>
                       জমির তথ্য ও বৈধতা যাচাইকৃত
                     </span>
                   </div>
                   <span style={{
                     fontSize: '11px',
-                    padding: '2px 8px',
+                    padding: '3px 10px',
                     borderRadius: '999px',
-                    background: landRecord.status === 'Active' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    background: landRecord.status === 'Active' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(245, 158, 11, 0.25)',
                     color: landRecord.status === 'Active' ? '#86efac' : '#fde047',
-                    fontWeight: '700'
+                    fontWeight: '700',
+                    border: '1px solid rgba(34, 197, 94, 0.4)'
                   }}>
                     স্ট্যাটাস: {landRecord.status}
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
-                  <div>মৌজা: <strong>{landRecord.mouza}</strong></div>
-                  <div>দাগ নম্বর: <strong>{landRecord.dag_no}</strong></div>
-                  <div>খতিয়ান নম্বর: <strong>{landRecord.khatian_no}</strong></div>
-                  <div>জে.এল নম্বর: <strong>{landRecord.jl_no}</strong></div>
-                  <div>বর্তমান মালিক: <strong>{landRecord.owner_name}</strong></div>
-                  <div>মালিকের NID: <strong style={{ fontFamily: 'monospace' }}>{landRecord.owner_nid}</strong></div>
-                  <div style={{ gridColumn: 'span 2', color: '#4ade80' }}>
-                    মোট বিক্রয়যোগ্য পরিমাণ: <strong>{landRecord.available_area_decimal || landRecord.total_area_decimal} শতক</strong>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '13px', color: '#e2e8f0' }}>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>মৌজা: <strong style={{ color: '#f8fafc' }}>{landRecord.mouza}</strong></div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>দাগ নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.dag_no}</strong></div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>খতিয়ান নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.khatian_no}</strong></div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>জে.এল নম্বর: <strong style={{ color: '#f8fafc' }}>{landRecord.jl_no}</strong></div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>বর্তমান মালিক: <strong style={{ color: '#38bdf8' }}>{landRecord.owner_name}</strong></div>
+                  <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '8px 12px', borderRadius: '8px' }}>মালিকের NID: <strong style={{ fontFamily: 'monospace', color: '#f8fafc' }}>{landRecord.owner_nid}</strong></div>
+                  <div style={{ gridColumn: 'span 2', background: 'rgba(34, 197, 94, 0.12)', padding: '10px 14px', borderRadius: '8px', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                    মোট বিক্রয়যোগ্য পরিমাণ: <strong style={{ fontSize: '15px' }}>{landRecord.available_area_decimal || landRecord.total_area_decimal} শতক</strong>
                   </div>
                 </div>
               </div>
@@ -441,7 +426,7 @@ export default function P4RegistryPanel() {
           </div>
 
           {/* STEP 2: Buyer Details & Deed Preparation */}
-          {landRecord && (
+          {landRecord && !doubleSellAlert && (
             <div className="glass-card" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -664,8 +649,8 @@ export default function P4RegistryPanel() {
               <div
                 ref={pdfRef}
                 style={{
-                  background: '#0b1329',
-                  border: '1.5px solid rgba(255, 255, 255, 0.12)',
+                  background: 'rgba(30, 41, 59, 0.85)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.15)',
                   borderRadius: '16px',
                   padding: '28px',
                   marginBottom: '16px',

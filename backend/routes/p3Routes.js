@@ -26,49 +26,47 @@ router.post('/verify-deed', async (req, res) => {
       $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
     });
 
-    if (record) {
-      // Check Anti-Double Selling & Assignment Lock
-      if (record.status === 'Pending_Mutation' || record.status === 'Pending_AC_Land_Review') {
-        return res.status(200).json({
-          success: false,
-          alert_type: 'DOUBLE_SELL',
-          message: `🔴 Double-Selling Alert: এই জমির একটি দলিল বা বরাদ্দ প্রক্রিয়া বর্তমানে চলমান (${record.status})! নতুন দলিল করা যাবে না।`,
-          status: record.status
-        });
-      }
-
-      if (record.status === 'Sold') {
-        return res.status(200).json({
-          success: false,
-          alert_type: 'ALREADY_SOLD',
-          message: '🔴 Error: এই জমি ইতিমধ্যে বিক্রয় ও মালিকানা হস্তান্তর সম্পন্ন হয়েছে।',
-          status: 'Sold'
-        });
-      }
-    } else {
-      // Dynamic Land Existence: Any Dag exists as available Active land
-      record = new LandRecord({
-        record_id: `rec_${Date.now()}_${engDag}`,
-        division: 'রাজশাহী',
-        district: 'বগুড়া',
-        upazila: 'শিবগঞ্জ',
-        mouza: cleanMouza,
-        jl_no: jl_no || '1',
-        khatian_no: khatian_no || '২৫',
-        dag_no: cleanDag,
-        owner_nid: seller_nid.toString().trim(),
-        owner_name: 'বর্তমান জমির মালিক',
-        owner_phone: '01711234567',
-        owner_email: 'seller@example.com',
-        total_area_decimal: 25,
-        available_area_decimal: 25,
-        volume_book: 'VOL-SHIB-2026',
-        page_no: '15',
-        deed_no: `DEED-${engDag}`,
-        sub_registry_code: 'SR-BOG-SHIB-01',
-        status: 'Active'
+    if (!record) {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'NOT_FOUND',
+        message: '⚠️ এই দাগ ও মৌজায় নিবন্ধিত কোনো জমির রেকর্ড পাওয়া যায়নি (ডাটাবেজে জমিটি অস্তিত্বহীন বা বরাদ্দপ্রাপ্ত নয়)।'
       });
-      await record.save();
+    }
+
+    // Check if land is unassigned / government khas land not assigned to any citizen
+    const isUnassigned = !record.owner_nid ||
+      record.owner_nid === '1000000000000' ||
+      record.owner_nid === 'অনলাইনে রেকর্ড নেই' ||
+      record.owner_name === 'অনলাইনে অনিবন্ধিত' ||
+      (record.owner_name && record.owner_name.includes('সরকার')) ||
+      (record.owner_name && record.owner_name.includes('খাস'));
+
+    if (isUnassigned) {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'UNASSIGNED_LAND',
+        message: '⚠️ এই জমিটি বর্তমানে অনলাইনে অনিবন্ধিত খাস জমি হিসেবে চিহ্নিত। কোনো নাগরিকের নামে বরাদ্দ না থাকায় এর দলিল রেজিস্ট্রি করা যাবে না।'
+      });
+    }
+
+    // Check Anti-Double Selling & Assignment Lock
+    if (record.status === 'Pending_Mutation' || record.status === 'Pending_AC_Land_Review') {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'DOUBLE_SELL',
+        message: `🔴 ডাবল-সেলিং সতর্কতা (Double-Selling Alert): এই জমির একটি দলিল বা নামজারি প্রক্রিয়া বর্তমানে চলমান (${record.status})! জমিটি লক আছে, নতুন দলিল করা যাবে না।`,
+        status: record.status
+      });
+    }
+
+    if (record.status === 'Sold') {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'ALREADY_SOLD',
+        message: '🔴 জমিটি ইতিমধ্যে অন্য ক্রেতার নিকট বিক্রয় ও মালিকানা হস্তান্তর সম্পন্ন হয়েছে (Status: Sold)।',
+        status: 'Sold'
+      });
     }
 
     // Step 1: Seller NID Verification (normalize both to English digits for comparison)
