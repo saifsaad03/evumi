@@ -13,7 +13,7 @@ import {
 
 export default function RegisterOfficeDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('deed_registry'); // 'deed_registry' | 'assign'
+  const [activeTab, setActiveTab] = useState('assign'); // 'assign' | 'deed_registry'
 
   // Cascade Filter State (Defaulted to Rajshahi > Bogura > Shibganj > গুজিয়া)
   const [filter, setFilter] = useState({
@@ -22,8 +22,8 @@ export default function RegisterOfficeDashboard() {
     upazila: 'শিবগঞ্জ',
     mouza: 'গুজিয়া',
     jl_no: '1',
-    khatian_no: '25',
-    dag_no: '101'
+    khatian_no: '',
+    dag_no: ''
   });
 
   // Dynamic Options
@@ -268,103 +268,181 @@ export default function RegisterOfficeDashboard() {
   };
 
   return (
-    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px' }}>
-    <div style={{ maxWidth: '1360px', margin: '30px auto', padding: '0 24px' }}>
-      {/* Header Banner */}
-      <div className="glass-card" style={{
-        padding: '24px 30px',
-        marginBottom: '26px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '20px',
-        borderLeft: '4px solid #3b82f6'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white'
-          }}>
-            <Building2 size={28} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
-                সাব-রেজিস্ট্রি অফিস ড্যাশবোর্ড
-              </h1>
-              <span style={{
-                fontSize: '11px',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                background: 'rgba(59, 130, 246, 0.15)',
-                color: '#93c5fd',
-                border: '1px solid rgba(59, 130, 246, 0.3)',
-                fontWeight: '700'
-              }}>
-                Register Office Role
-              </span>
+    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1440px', margin: '24px auto', padding: '0 20px' }}>
+        {/* Header Banner */}
+        <div className="glass-card" style={{
+          padding: '20px 28px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '16px',
+          borderLeft: '4px solid #3b82f6',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <div style={{
+              width: '52px',
+              height: '52px',
+              borderRadius: '14px',
+              background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              boxShadow: '0 4px 14px rgba(59,130,246,0.35)'
+            }}>
+              <Building2 size={26} />
             </div>
-            <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
-              কর্মকর্তা: <strong style={{ color: '#cbd5e1' }}>{user?.name}</strong> | {user?.office_details?.office_name || 'ঢাকা সদর সাব-রেজিস্ট্রি অফিস'}
-            </p>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+                  সাব-রেজিস্ট্রি অফিস ড্যাশবোর্ড
+                </h1>
+                <span style={{
+                  fontSize: '11px',
+                  padding: '3px 10px',
+                  borderRadius: '999px',
+                  background: 'rgba(59, 130, 246, 0.2)',
+                  color: '#93c5fd',
+                  border: '1px solid rgba(59, 130, 246, 0.4)',
+                  fontWeight: '700'
+                }}>
+                  Register Office
+                </span>
+              </div>
+              <p style={{ color: '#cbd5e1', fontSize: '13px', margin: '4px 0 0 0' }}>
+                কর্মকর্তা: <strong style={{ color: '#f1f5f9' }}>{user?.name || 'সাব-রেজিস্ট্রার'}</strong> | {user?.office_details?.office_name || 'উপজেলা সাব-রেজিস্ট্রি অফিস'}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Tab switcher */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setActiveTab('deed_registry')}
-            style={{
-              padding: '12px 22px',
-              borderRadius: '10px',
-              background: activeTab === 'deed_registry' ? 'linear-gradient(135deg, #1d4ed8, #2563eb)' : 'rgba(255,255,255,0.06)',
-              color: 'white',
-              fontWeight: '800',
-              fontSize: '13px',
-              border: activeTab === 'deed_registry' ? '1.5px solid #60a5fa' : '1px solid rgba(255,255,255,0.1)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'deed_registry' ? '0 4px 16px rgba(37,99,235,0.45)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <FileText size={17} /> 📜 দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং প্যানেল
-            <span style={{ fontSize: '10px', background: activeTab === 'deed_registry' ? 'rgba(255,255,255,0.2)' : 'rgba(59,130,246,0.2)', padding: '2px 8px', borderRadius: '999px', fontWeight: '700' }}>
-              মূল প্যানেল
-            </span>
-          </button>
+        {/* Dashboard Layout: Sidebar + Main Content */}
+        <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          {/* Left Sidebar */}
+          <aside style={{
+            width: '280px',
+            flexShrink: 0,
+            background: 'rgba(15, 23, 42, 0.75)',
+            backdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '16px',
+            padding: '20px 16px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+            position: 'sticky',
+            top: '20px'
+          }}>
+            <div style={{
+              fontSize: '11px',
+              fontWeight: '700',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+              color: '#94a3b8',
+              padding: '0 8px 14px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+              marginBottom: '14px'
+            }}>
+              রেজিস্ট্রি ফিচার মেনু
+            </div>
 
-          <button
-            onClick={() => setActiveTab('assign')}
-            style={{
-              padding: '12px 20px',
-              borderRadius: '10px',
-              background: activeTab === 'assign' ? 'linear-gradient(135deg, #0284c7, #0369a1)' : 'rgba(255,255,255,0.06)',
-              color: 'white',
-              fontWeight: '800',
-              fontSize: '13px',
-              border: activeTab === 'assign' ? '1.5px solid #38bdf8' : '1px solid rgba(255,255,255,0.1)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'assign' ? '0 4px 16px rgba(2,132,199,0.45)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Layers size={17} /> 🏛️ নাগরিককে সরকারি জমি বরাদ্দ (Assign Land)
-          </button>
-        </div>
-      </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {/* Feature 1: সরকারি জমি বরাদ্দ */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('assign')}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: activeTab === 'assign'
+                    ? 'linear-gradient(135deg, rgba(2, 132, 199, 0.9), rgba(3, 105, 161, 0.95))'
+                    : 'rgba(255, 255, 255, 0.04)',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  border: activeTab === 'assign' ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.08)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  textAlign: 'left',
+                  boxShadow: activeTab === 'assign' ? '0 6px 20px rgba(2, 132, 199, 0.4)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: activeTab === 'assign' ? 'rgba(255,255,255,0.2)' : 'rgba(56, 189, 248, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: activeTab === 'assign' ? '#ffffff' : '#38bdf8',
+                  flexShrink: 0
+                }}>
+                  <Layers size={18} />
+                </div>
+                <div>
+                  <div style={{ color: '#ffffff', lineHeight: 1.3 }}>🏛️ সরকারি জমি বরাদ্দ</div>
+                  <div style={{ fontSize: '11px', color: activeTab === 'assign' ? '#e0f2fe' : '#94a3b8', fontWeight: '400' }}>
+                    খাস জমি বরাদ্দ প্রস্তাব
+                  </div>
+                </div>
+              </button>
+
+              {/* Feature 2: অ্যান্টি-ডাবল সেলিং প্যানেল */}
+              <button
+                type="button"
+                onClick={() => setActiveTab('deed_registry')}
+                style={{
+                  width: '100%',
+                  padding: '14px 16px',
+                  borderRadius: '12px',
+                  background: activeTab === 'deed_registry'
+                    ? 'linear-gradient(135deg, rgba(29, 78, 216, 0.9), rgba(37, 99, 235, 0.95))'
+                    : 'rgba(255, 255, 255, 0.04)',
+                  color: '#ffffff',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  border: activeTab === 'deed_registry' ? '1.5px solid #60a5fa' : '1px solid rgba(255, 255, 255, 0.08)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  textAlign: 'left',
+                  boxShadow: activeTab === 'deed_registry' ? '0 6px 20px rgba(37, 99, 235, 0.4)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: activeTab === 'deed_registry' ? 'rgba(255,255,255,0.2)' : 'rgba(96, 165, 250, 0.15)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: activeTab === 'deed_registry' ? '#ffffff' : '#60a5fa',
+                  flexShrink: 0
+                }}>
+                  <FileText size={18} />
+                </div>
+                <div>
+                  <div style={{ color: '#ffffff', lineHeight: 1.3 }}>🛡️ অ্যান্টি-ডাবল সেলিং প্যানেল</div>
+                  <div style={{ fontSize: '11px', color: activeTab === 'deed_registry' ? '#dbeafe' : '#94a3b8', fontWeight: '400' }}>
+                    দলিল নিবন্ধন ও যাচাইকরণ
+                  </div>
+                </div>
+              </button>
+            </div>
+          </aside>
+
+          {/* Right Main Content */}
+          <main style={{ flex: 1, minWidth: 0 }}>
 
       {activeTab === 'assign' && (
         <div>
@@ -411,48 +489,48 @@ export default function RegisterOfficeDashboard() {
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '16px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>১. বিভাগ (Division)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>১. বিভাগ (Division)</label>
                     <select
                       className="input-field"
                       value={filter.division}
                       onChange={(e) => handleDivisionChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     >
                       {divisionsList.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>২. জেলা (District)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>২. জেলা (District)</label>
                     <select
                       className="input-field"
                       value={filter.district}
                       onChange={(e) => handleDistrictChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     >
                       {districtsList.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>৩. উপজেলা (Upazila)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৩. উপজেলা (Upazila)</label>
                     <select
                       className="input-field"
                       value={filter.upazila}
                       onChange={(e) => handleUpazilaChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     >
                       {upazilasList.map(u => <option key={u} value={u}>{u}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>৪. মৌজা (মৌজা ও জে.এল)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৪. মৌজা (মৌজা ও জে.এল)</label>
                     <select
                       className="input-field"
                       value={filter.mouza}
                       onChange={(e) => handleMouzaChange(e.target.value)}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     >
                       {mouzasList.map(m => (
                         <option key={m.jl_no + m.mouza} value={m.mouza}>
@@ -463,79 +541,108 @@ export default function RegisterOfficeDashboard() {
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>৫. জে.এল নং (স্বয়ংক্রিয়)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৫. জে.এল নং (স্বয়ংক্রিয়)</label>
                     <input
                       type="text"
                       readOnly
                       className="input-field"
                       value={filter.jl_no}
-                      style={{ width: '100%', fontSize: '12px', background: 'rgba(255,255,255,0.03)', color: '#86efac' }}
+                      style={{ width: '100%', fontSize: '12px', background: 'rgba(255,255,255,0.06)', color: '#86efac', fontWeight: '600' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>৬. খতিয়ান নং</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৬. খতিয়ান নং</label>
                     <input
                       type="text"
                       className="input-field"
+                      placeholder="খতিয়ান নং লিখুন"
                       value={filter.khatian_no}
                       onChange={(e) => setFilter(prev => ({ ...prev, khatian_no: e.target.value }))}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>৭. দাগ নং (প্লট)</label>
+                    <label style={{ fontSize: '12px', color: '#cbd5e1', fontWeight: '600', display: 'block', marginBottom: '4px' }}>৭. দাগ নং (প্লট)</label>
                     <input
                       type="text"
                       className="input-field"
+                      placeholder="দাগ নং লিখুন"
                       value={filter.dag_no}
                       onChange={(e) => setFilter(prev => ({ ...prev, dag_no: e.target.value }))}
-                      style={{ width: '100%', fontSize: '12px' }}
+                      style={{ width: '100%', fontSize: '12px', color: '#f8fafc' }}
                     />
                   </div>
                 </div>
-
 
                 <button
                   type="button"
                   onClick={handleSearchLand}
                   className="btn-primary"
-                  style={{ width: '100%', padding: '9px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{ width: '100%', padding: '11px', fontSize: '14px', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
-                  <Search size={15} /> জমি ফিল্টার ও নির্বাচন করুন
+                  <Search size={16} /> জমি ফিল্টার ও নির্বাচন করুন
                 </button>
               </div>
 
               {/* Selected Land Preview */}
               {selectedLand && (() => {
-                const isLandAllocated = selectedLand.status !== 'Active' || (selectedLand.owner_nid && selectedLand.owner_nid !== '1000000000000' && selectedLand.owner_name && !selectedLand.owner_name.includes('সরকার'));
+                const isLandAllocated = selectedLand.status !== 'Active' || (
+                  selectedLand.owner_nid &&
+                  selectedLand.owner_nid !== '1000000000000' &&
+                  selectedLand.owner_nid !== 'অনলাইনে রেকর্ড নেই' &&
+                  selectedLand.owner_name &&
+                  !selectedLand.owner_name.includes('সরকার') &&
+                  selectedLand.owner_name !== 'অনলাইনে অনিবন্ধিত'
+                );
+                const displayOwnerName = isLandAllocated ? selectedLand.owner_name : 'অনলাইনে অনিবন্ধিত';
+                const displayOwnerNid = isLandAllocated ? selectedLand.owner_nid : 'প্রযোজ্য নয় (অনলাইনে অনিবন্ধিত)';
+
                 return (
-                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}` }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                  <div className="glass-card" style={{ padding: '20px', borderLeft: `4px solid ${isLandAllocated ? '#ef4444' : '#10b981'}`, background: 'rgba(15, 23, 42, 0.85)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                       <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f8fafc', margin: 0 }}>
                         নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
                       </h4>
                       <span style={{
                         fontSize: '11px',
-                        padding: '2px 8px',
+                        padding: '4px 10px',
                         borderRadius: '999px',
-                        background: isLandAllocated ? 'rgba(239, 68, 68, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                        background: isLandAllocated ? 'rgba(239, 68, 68, 0.2)' : 'rgba(34, 197, 94, 0.2)',
                         color: isLandAllocated ? '#fca5a5' : '#86efac',
-                        border: `1px solid ${isLandAllocated ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}`,
+                        border: `1px solid ${isLandAllocated ? 'rgba(239, 68, 68, 0.4)' : 'rgba(34, 197, 94, 0.4)'}`,
                         fontWeight: '700'
                       }}>
                         {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য সরকারি খাস জমি'}
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '12px', color: '#cbd5e1' }}>
-                      <div>খতিয়ান: <strong>{selectedLand.khatian_no}</strong></div>
-                      <div>জে.এল নং: <strong>{selectedLand.jl_no}</strong></div>
-                      <div>মোট পরিমাণ: <strong style={{ color: '#22c55e' }}>{selectedLand.total_area_decimal} শতক</strong></div>
-                      <div>বর্তমান মালিক: <strong style={{ color: isLandAllocated ? '#fca5a5' : '#cbd5e1' }}>{selectedLand.owner_name}</strong></div>
-                      <div>মালিকের NID: <strong style={{ fontFamily: 'monospace' }}>{selectedLand.owner_nid}</strong></div>
-                      <div>উপজেলা: <strong>{selectedLand.upazila || 'শিবগঞ্জ'}</strong></div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '13px' }}>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>খতিয়ান:</span>
+                        <strong style={{ color: '#f8fafc' }}>{selectedLand.khatian_no || '১'}</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>জে.এল নং:</span>
+                        <strong style={{ color: '#f8fafc' }}>{selectedLand.jl_no}</strong>
+                      </div>
+                      <div style={{ background: 'rgba(34, 197, 94, 0.08)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(34, 197, 94, 0.25)' }}>
+                        <span style={{ color: '#86efac', display: 'block', fontSize: '11px', marginBottom: '2px' }}>মোট পরিমাণ:</span>
+                        <strong style={{ color: '#4ade80', fontSize: '14px' }}>{selectedLand.total_area_decimal} শতক</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>বর্তমান মালিক:</span>
+                        <strong style={{ color: isLandAllocated ? '#fca5a5' : '#38bdf8' }}>{displayOwnerName}</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>মালিকের NID:</span>
+                        <strong style={{ fontFamily: 'monospace', color: '#cbd5e1' }}>{displayOwnerNid}</strong>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        <span style={{ color: '#94a3b8', display: 'block', fontSize: '11px', marginBottom: '2px' }}>উপজেলা:</span>
+                        <strong style={{ color: '#f8fafc' }}>{selectedLand.upazila || 'শিবগঞ্জ'}</strong>
+                      </div>
                     </div>
                   </div>
                 );
@@ -550,7 +657,7 @@ export default function RegisterOfficeDashboard() {
 
               {/* User search */}
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '500' }}>
+                <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'block', marginBottom: '6px', fontWeight: '600' }}>
                   নাগরিক অনুসন্ধান (NID / ফোন / ইমেইল)
                 </label>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -561,34 +668,15 @@ export default function RegisterOfficeDashboard() {
                     value={userQuery}
                     onChange={(e) => setUserQuery(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearchUser(); } }}
-                    style={{ flex: 1, fontSize: '13px' }}
+                    style={{ flex: 1, fontSize: '13px', color: '#f8fafc' }}
                   />
                   <button
                     type="button"
                     onClick={handleSearchUser}
                     className="btn-secondary"
-                    style={{ padding: '8px 14px', fontSize: '12px' }}
+                    style={{ padding: '8px 16px', fontSize: '13px', fontWeight: '600' }}
                   >
                     খুঁজুন
-                  </button>
-                </div>
-
-                {/* Quick Citizen selection buttons */}
-                <div style={{ display: 'flex', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '10px', color: '#64748b', alignSelf: 'center' }}>টেস্ট নাগরিক:</span>
-                  <button
-                    type="button"
-                    onClick={() => { setUserQuery('১২৩৪৫৬৭৮৯১০'); }}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#93c5fd', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}
-                  >
-                    👤 সাদ (NID: ১২৩৪৫৬৭৮৯১০)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setUserQuery('১২৯৩৯২৮২৮২৯২৯'); }}
-                    style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#93c5fd', borderRadius: '4px', padding: '2px 8px', fontSize: '11px', cursor: 'pointer' }}
-                  >
-                    👤 তফিজার (NID: ১২৯৩৯২৮২৮২৯২৯)
                   </button>
                 </div>
               </div>
@@ -999,7 +1087,9 @@ export default function RegisterOfficeDashboard() {
           <P4RegistryPanel />
         </div>
       )}
-    </div>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

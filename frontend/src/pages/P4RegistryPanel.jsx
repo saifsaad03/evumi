@@ -11,10 +11,10 @@ import html2canvas from 'html2canvas';
 
 export default function P4RegistryPanel() {
   const [searchForm, setSearchForm] = useState({ 
-    seller_nid: '1998567890123', 
-    dag_no: '101', 
-    mouza: 'গুজিয়া',
-    requested_area: '5'
+    seller_nid: '', 
+    dag_no: '', 
+    mouza: '', 
+    requested_area: '' 
   });
   const [searchLoading, setSearchLoading] = useState(false);
   const [landRecord, setLandRecord] = useState(null);
@@ -25,11 +25,11 @@ export default function P4RegistryPanel() {
     deed_no: `DEED-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
     deed_year: new Date().getFullYear().toString(),
     sub_registry_code: 'SR-BOG-SHIB-01',
-    buyer_name: 'আব্দুল করিম',
-    buyer_nid: '2005111222333',
-    buyer_phone: '01711112233',
-    buyer_email: 'buyer.karim@gmail.com',
-    sold_area: '5',
+    buyer_name: '',
+    buyer_nid: '',
+    buyer_phone: '',
+    buyer_email: '',
+    sold_area: '',
   });
   const [grantLoading, setGrantLoading] = useState(false);
   const [grantResult, setGrantResult] = useState(null);
@@ -294,42 +294,6 @@ export default function P4RegistryPanel() {
               <span style={{ fontSize: '11px', color: '#94a3b8' }}>ধাপ ১ / ৪</span>
             </div>
 
-            {/* Quick preset buttons */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '11px', color: '#64748b', alignSelf: 'center' }}>টেস্ট ডেটা:</span>
-              <button
-                type="button"
-                onClick={() => setSearchForm({ seller_nid: '1998567890123', dag_no: '101', mouza: 'গুজিয়া', requested_area: '5' })}
-                style={{
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.25)',
-                  color: '#93c5fd',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                ⚡ গুজিয়া (দাগ ১০১ - Active)
-              </button>
-              <button
-                type="button"
-                onClick={() => setSearchForm({ seller_nid: '2001123456789', dag_no: '205', mouza: 'অনন্তবালা', requested_area: '8' })}
-                style={{
-                  background: 'rgba(59, 130, 246, 0.1)',
-                  border: '1px solid rgba(59, 130, 246, 0.25)',
-                  color: '#93c5fd',
-                  borderRadius: '6px',
-                  padding: '4px 10px',
-                  fontSize: '11px',
-                  cursor: 'pointer',
-                  fontWeight: '600'
-                }}
-              >
-                ⚡ অনন্তবালা (দাগ ২০৫)
-              </button>
-            </div>
 
             <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div style={{ gridColumn: 'span 2' }}>
@@ -480,11 +444,11 @@ export default function P4RegistryPanel() {
           {landRecord && (
             <div className="glass-card" style={{ padding: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '700', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f8fafc', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <UserCheck size={18} color="#60a5fa" />
                   ২. ক্রেতার তথ্য ও দলিলের বিবরণ
                 </h3>
-                <span style={{ fontSize: '11px', color: '#94a3b8' }}>ধাপ ২ / ৪</span>
+                <span style={{ fontSize: '11px', color: '#93c5fd', background: 'rgba(59, 130, 246, 0.15)', padding: '2px 8px', borderRadius: '4px' }}>ধাপ ২ / ৪</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -496,6 +460,7 @@ export default function P4RegistryPanel() {
                     type="text"
                     required
                     className="input-field"
+                    placeholder="যেমন: DEED-2026-101"
                     value={deedForm.deed_no}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, deed_no: e.target.value }))}
                     style={{ width: '100%', fontSize: '13px' }}
@@ -523,7 +488,7 @@ export default function P4RegistryPanel() {
                     type="text"
                     required
                     className="input-field"
-                    placeholder="আব্দুল করিম"
+                    placeholder="ক্রেতার পূর্ণ নাম লিখুন"
                     value={deedForm.buyer_name}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_name: e.target.value }))}
                     style={{ width: '100%', fontSize: '13px' }}
@@ -538,7 +503,7 @@ export default function P4RegistryPanel() {
                     type="text"
                     required
                     className="input-field"
-                    placeholder="2005111222333"
+                    placeholder="ক্রেতার জাতীয় পরিচয়পত্র (NID)"
                     value={deedForm.buyer_nid}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_nid: e.target.value }))}
                     style={{ width: '100%', fontSize: '13px' }}
@@ -552,7 +517,7 @@ export default function P4RegistryPanel() {
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="01711112233"
+                    placeholder="যেমন: ০১৭১১xxxxxx"
                     value={deedForm.buyer_phone}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_phone: e.target.value }))}
                     style={{ width: '100%', fontSize: '13px' }}
@@ -566,7 +531,7 @@ export default function P4RegistryPanel() {
                   <input
                     type="email"
                     className="input-field"
-                    placeholder="buyer@gmail.com"
+                    placeholder="ক্রেতার ইমেইল এড্রেস"
                     value={deedForm.buyer_email}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_email: e.target.value }))}
                     style={{ width: '100%', fontSize: '13px' }}

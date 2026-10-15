@@ -67,8 +67,32 @@ router.get('/search-land', verifyToken, async (req, res) => {
       $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
     });
 
-    // 2. If it does NOT exist yet, dynamically initialize it as government khas land!
+    // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
+    if (record) {
+      let changed = false;
+      if (record.owner_nid === '1000000000000' || record.owner_name?.includes('গণপ্রজাতন্ত্রী বাংলাদেশ সরকার')) {
+        record.owner_name = 'অনলাইনে অনিবন্ধিত';
+        record.owner_nid = 'অনলাইনে রেকর্ড নেই';
+        changed = true;
+      }
+      if (record.total_area_decimal === 20 && (record.owner_name === 'অনলাইনে অনিবন্ধিত' || !record.owner_nid || record.owner_nid === 'অনলাইনে রেকর্ড নেই')) {
+        const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
+        const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
+        record.total_area_decimal = variedArea;
+        record.available_area_decimal = variedArea;
+        changed = true;
+      }
+      if (changed) {
+        await record.save();
+      }
+    }
+
+    // 2. If it does NOT exist yet, dynamically initialize it as unassigned real-life plot!
     if (!record) {
+      // Calculate a varied, realistic area between 8.5 and 45.0 decimals based on dag number
+      const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
+      const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
+
       record = new LandRecord({
         record_id: `rec_${Date.now()}_${engDag}`,
         division: division || 'রাজশাহী',
@@ -78,14 +102,14 @@ router.get('/search-land', verifyToken, async (req, res) => {
         jl_no: cleanJl,
         khatian_no: cleanKhatian || '১',
         dag_no: cleanDag,
-        owner_nid: '1000000000000',
-        owner_name: 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকার (১নং খাস খতিয়ান)',
-        owner_phone: '01700000000',
-        owner_email: 'khas@evhumi.gov.bd',
-        total_area_decimal: 20,
-        available_area_decimal: 20,
+        owner_nid: 'অনলাইনে রেকর্ড নেই',
+        owner_name: 'অনলাইনে অনিবন্ধিত',
+        owner_phone: 'N/A',
+        owner_email: '',
+        total_area_decimal: variedArea,
+        available_area_decimal: variedArea,
         volume_book: 'VOL-KHAS-2026',
-        page_no: '01',
+        page_no: '০১',
         deed_no: `GOV-${engDag}-${Date.now().toString().slice(-4)}`,
         sub_registry_code: 'SR-BOG-SHIB-01',
         status: 'Active'
@@ -192,8 +216,9 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
 
-    // If land is already owned by another citizen (not government khas land)
-    if (land.owner_nid && land.owner_nid !== '1000000000000' && land.owner_nid !== rawNid && land.owner_nid !== engNid && land.owner_nid !== bngNid) {
+    // If land is already owned by another citizen (not unassigned / khas)
+    const isUnassigned = !land.owner_nid || land.owner_nid === '1000000000000' || land.owner_nid === 'অনলাইনে রেকর্ড নেই' || land.owner_name === 'অনলাইনে অনিবন্ধিত' || (land.owner_name && land.owner_name.includes('সরকার'));
+    if (!isUnassigned && land.owner_nid !== rawNid && land.owner_nid !== engNid && land.owner_nid !== bngNid) {
       return res.status(400).json({
         success: false,
         message: `এই জমিটি ইতিমধ্যে '${land.owner_name}' (NID: ${land.owner_nid})-এর নামে রেকর্ডভুক্ত রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ দেওয়া যাবে না!`
