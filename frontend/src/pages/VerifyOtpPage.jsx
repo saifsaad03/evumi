@@ -49,7 +49,6 @@ export default function VerifyOtpPage() {
   // Timers: Resend cooldown (60s) & Expiry countdown (600s = 10 mins)
   const [resendCooldown, setResendCooldown] = useState(60);
   const [expiryCountdown, setExpiryCountdown] = useState(600);
-  const [previewOtp, setPreviewOtp] = useState(regData?.previewOtp || null);
   const [resendSuccessMsg, setResendSuccessMsg] = useState(null);
 
   // Focus on first box on mount
@@ -178,9 +177,6 @@ export default function VerifyOtpPage() {
             sessionStorage.setItem('pending_registration', JSON.stringify(updated));
             return updated;
           });
-        }
-        if (res.data.previewOtp) {
-          setPreviewOtp(res.data.previewOtp);
         }
         if (inputRefs.current[0]) {
           inputRefs.current[0].focus();
@@ -512,45 +508,7 @@ export default function VerifyOtpPage() {
               </div>
             )}
 
-            {/* Simulation Preview Mode Banner (if SMTP fallback was used) */}
-            {previewOtp && (
-              <div style={{
-                padding: '12px 16px',
-                background: '#fef3c7',
-                border: '1px dashed #f59e0b',
-                borderRadius: '12px',
-                color: '#92400e',
-                fontSize: '12px',
-                marginBottom: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '12px'
-              }}>
-                <div>
-                  💡 <strong>টেস্ট মোড ওটিপি:</strong>{' '}
-                  <span style={{ fontSize: '16px', fontWeight: '800', fontFamily: 'monospace', color: '#b45309', letterSpacing: '2px' }}>
-                    {previewOtp}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleQuickFill}
-                  style={{
-                    background: '#f59e0b',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    cursor: 'pointer'
-                  }}
-                >
-                  স্বয়ংক্রিয় বসান
-                </button>
-              </div>
-            )}
+
 
             {/* ================= 6-DIGIT ANIMATED INPUT BOXES ================= */}
             <form onSubmit={handleSubmit}>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, Layers, AlertTriangle, Plus, Edit, Trash2, CheckCircle, XCircle, Search, RefreshCw, Database, Key, Check, MapPin } from 'lucide-react';
+import { Shield, Users, Layers, AlertTriangle, Plus, Edit, Trash2, CheckCircle, XCircle, Search, RefreshCw, Database, Key, Check, MapPin, X } from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 import {
   BANGLADESH_DIVISIONS,
   getDistrictsForDivision,
@@ -315,168 +316,126 @@ export default function MinistryAdminDashboard() {
     setActionMessage(msg);
     setTimeout(() => setActionMessage(null), 3000);
   };
+  const navItems = [
+    {
+      id: 'overview',
+      label: 'সিস্টেম ওভারভিউ ও অ্যানালিটিক্স',
+      icon: Shield,
+    },
+    {
+      id: 'users',
+      label: 'ইউজার ও কর্মকর্তা ম্যানেজমেন্ট',
+      icon: Users,
+      badge: users.length,
+      badgeColor: '#6d28d9',
+      badgeBg: '#f5f3ff'
+    },
+    {
+      id: 'lands',
+      label: 'ভূমি ডাটা ও আইনি স্ট্যাটাস',
+      icon: Layers,
+      badge: lands.length,
+      badgeColor: '#047857',
+      badgeBg: '#ecfdf5'
+    },
+    {
+      id: 'controls',
+      label: 'সিস্টেম কন্ট্রোল ও ডেটাবেস রিসেট',
+      icon: Database,
+    }
+  ];
+
+  const statItems = [
+    { label: 'মোট ব্যবহারকারী', value: stats?.totalUsers || users.length, color: '#6d28d9' },
+    { label: 'মোট ভূমি রেকর্ড', value: stats?.totalLands || lands.length, color: '#047857' },
+    { label: 'পেন্ডিং মিউটেশন', value: stats?.pendingMutations || 0, color: '#b45309' },
+    { label: 'প্রতিরোধকৃত ফ্রড', value: stats?.totalFraudAttempts || 0, color: '#dc2626' },
+  ];
 
   return (
-    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px' }}>
-    <div style={{ maxWidth: '1400px', margin: '30px auto', padding: '0 24px' }}>
-      {/* Top Banner */}
-      <div className="glass-card" style={{
-        padding: '24px 30px',
-        marginBottom: '26px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '20px',
-        borderLeft: '4px solid #ec4899'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
-          <div style={{
-            width: '56px',
-            height: '56px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, #be185d, #ec4899)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white'
-          }}>
-            <Shield size={28} />
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
-                ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন (Super Admin)
-              </h1>
-              <span style={{
-                fontSize: '11px',
-                padding: '3px 10px',
-                borderRadius: '999px',
-                background: 'rgba(236, 72, 153, 0.15)',
-                color: '#f472b6',
-                border: '1px solid rgba(236, 72, 153, 0.3)',
-                fontWeight: '700'
-              }}>
-                Super Admin Role
-              </span>
-            </div>
-            <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0 0' }}>
-              প্রশাসক: <strong style={{ color: '#cbd5e1' }}>{user?.name}</strong> | ইমেইল: <span style={{ fontFamily: 'monospace', color: '#f472b6' }}>{user?.email}</span>
-            </p>
-          </div>
+    <DashboardLayout
+      title="ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন (Super Admin)"
+      subtitle={`প্রশাসক: ${user?.name || 'মন্ত্রণালয় এডমিন'} | ইমেইল: ${user?.email || 'admin@evhumi.gov.bd'} | কেন্দ্রীয় জাতীয় পোর্টাল`}
+      badge={{ label: 'Super Admin' }}
+      icon={Shield}
+      roleTheme="purple"
+      stats={statItems}
+      navItems={navItems}
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      headerActions={actionMessage && (
+        <div style={{
+          padding: '8px 16px',
+          background: '#dcfce7',
+          border: '1.5px solid #86efac',
+          borderRadius: '8px',
+          color: '#065f46',
+          fontSize: '13px',
+          fontWeight: '700',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <Check size={16} /> {actionMessage}
         </div>
-
-        {/* Global Feedback Banner */}
-        {actionMessage && (
-          <div style={{
-            padding: '8px 16px',
-            background: 'rgba(34, 197, 94, 0.2)',
-            border: '1px solid rgba(34, 197, 94, 0.4)',
-            borderRadius: '8px',
-            color: '#86efac',
-            fontSize: '13px',
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <Check size={16} /> {actionMessage}
-          </div>
-        )}
-      </div>
-
-      {/* Navigation Tabs */}
-      <div style={{
-        display: 'flex',
-        gap: '10px',
-        borderBottom: '1px solid rgba(255,255,255,0.08)',
-        marginBottom: '24px',
-        paddingBottom: '4px',
-        flexWrap: 'wrap'
-      }}>
-        {[
-          { id: 'overview', label: '📊 সিস্টেম ওভারভিউ', icon: Shield },
-          { id: 'users', label: `👥 ইউজার ম্যানেজমেন্ট ও রোল পরিবর্তন (${users.length})`, icon: Users },
-          { id: 'lands', label: `🗺️ ভূমি ডাটা ও আইনি স্ট্যাটাস (${lands.length})`, icon: Layers },
-          { id: 'controls', label: '⚙️ পূর্ণ সিস্টেম কন্ট্রোল ও রিসেট', icon: Database }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '10px 18px',
-              borderRadius: '8px',
-              background: activeTab === tab.id ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
-              border: activeTab === tab.id ? '1px solid rgba(236, 72, 153, 0.4)' : '1px solid transparent',
-              color: activeTab === tab.id ? '#f472b6' : '#94a3b8',
-              fontWeight: '700',
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      )}
+    >
 
       {/* TAB 1: System Overview */}
       {activeTab === 'overview' && stats && (
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '28px' }}>
-            <div className="glass-card" style={{ padding: '22px', borderTop: '3px solid #3b82f6' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>মোট নিবন্ধিত ব্যবহারকারী</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#60a5fa', margin: '6px 0' }}>
+            <div className="glass-card" style={{ padding: '22px', borderTop: '4px solid #2563eb', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', textTransform: 'uppercase', fontWeight: '700' }}>মোট নিবন্ধিত ব্যবহারকারী</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: '#1d4ed8', margin: '6px 0' }}>
                 {stats.totalUsers}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>নাগরিক ও কর্মকর্তা মিলিয়ে</div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>নাগরিক ও কর্মকর্তা মিলিয়ে</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '22px', borderTop: '3px solid #10b981' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>মোট সংরক্ষিত জমি</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#34d399', margin: '6px 0' }}>
+            <div className="glass-card" style={{ padding: '22px', borderTop: '4px solid #059669', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', textTransform: 'uppercase', fontWeight: '700' }}>মোট সংরক্ষিত জমি</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: '#047857', margin: '6px 0' }}>
                 {stats.totalLands}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>সক্রিয় রেকর্ড: {stats.activeLands}টি</div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>সক্রিয় রেকর্ড: {stats.activeLands}টি</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '22px', borderTop: '3px solid #f59e0b' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>পেন্ডিং জমি বরাদ্দ (AC Land)</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#fbbf24', margin: '6px 0' }}>
+            <div className="glass-card" style={{ padding: '22px', borderTop: '4px solid #d97706', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', textTransform: 'uppercase', fontWeight: '700' }}>পেন্ডিং জমি বরাদ্দ (AC Land)</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: '#b45309', margin: '6px 0' }}>
                 {stats.pendingAssignments}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>অনুমোদিত বরাদ্দ: {stats.approvedAssignments}টি</div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>অনুমোদিত বরাদ্দ: {stats.approvedAssignments}টি</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '22px', borderTop: '3px solid #8b5cf6' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>পেন্ডিং ই-নামজারি</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#a78bfa', margin: '6px 0' }}>
+            <div className="glass-card" style={{ padding: '22px', borderTop: '4px solid #7c3aed', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', textTransform: 'uppercase', fontWeight: '700' }}>পেন্ডিং ই-নামজারি</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: '#6d28d9', margin: '6px 0' }}>
                 {stats.pendingMutations}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>মিউটেশন প্রক্রিয়ারধীন</div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>মিউটেশন প্রক্রিয়ারধীন</div>
             </div>
 
-            <div className="glass-card" style={{ padding: '22px', borderTop: '3px solid #ef4444' }}>
-              <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase' }}>সনাক্তকৃত জালিয়াতির চেষ্টা</div>
-              <div style={{ fontSize: '32px', fontWeight: '800', color: '#f87171', margin: '6px 0' }}>
+            <div className="glass-card" style={{ padding: '22px', borderTop: '4px solid #dc2626', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+              <div style={{ fontSize: '12px', color: '#475569', textTransform: 'uppercase', fontWeight: '700' }}>সনাক্তকৃত জালিয়াতির চেষ্টা</div>
+              <div style={{ fontSize: '32px', fontWeight: '900', color: '#b91c1c', margin: '6px 0' }}>
                 {stats.totalFraudAttempts}
               </div>
-              <div style={{ fontSize: '11px', color: '#64748b' }}>P3 ইঞ্জিন দ্বারা প্রতিরোধকৃত</div>
+              <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>P3 ইঞ্জিন দ্বারা প্রতিরোধকৃত</div>
             </div>
           </div>
 
           {/* User distribution by role */}
-          <div className="glass-card" style={{ padding: '24px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#f8fafc', marginBottom: '16px' }}>
+          <div className="glass-card" style={{ padding: '24px', marginBottom: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>
               👥 রোলের ভিত্তিতে ব্যবহারকারী বণ্টন
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
               {stats.usersByRole?.map((r) => (
-                <div key={r._id} style={{ background: 'rgba(255,255,255,0.02)', padding: '14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ fontSize: '13px', fontWeight: '600', color: '#cbd5e1' }}>{r._id}</div>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#f472b6', marginTop: '4px' }}>{r.count} জন</div>
+                <div key={r._id} style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#475569' }}>{r._id}</div>
+                  <div style={{ fontSize: '24px', fontWeight: '900', color: '#6d28d9', marginTop: '4px' }}>{r.count} জন</div>
                 </div>
               ))}
             </div>
@@ -486,20 +445,20 @@ export default function MinistryAdminDashboard() {
 
       {/* TAB 2: Users Management & Role Switcher */}
       {activeTab === 'users' && (
-        <div className="glass-card" style={{ padding: '24px' }}>
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                 ব্যবহারকারী ব্যবস্থাপনা ও ভূমিকা পরিবর্তন (CRUD Operation)
               </h2>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+              <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>
                 মন্ত্রণালয় এডমিন যেকোনো ব্যবহারকারীর রোল পরিবর্তন করে 'Register Office' বা 'AC Land Office' এ রূপান্তর করতে পারেন
               </p>
             </div>
 
             <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={() => setShowAddUserModal(true)} className="btn-primary" style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Plus size={14} /> নতুন ইউজার/কর্মকর্তা যোগ করুন
+              <button onClick={() => setShowAddUserModal(true)} className="btn-primary" style={{ padding: '9px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={15} /> নতুন ইউজার/কর্মকর্তা যোগ করুন
               </button>
             </div>
           </div>
@@ -514,7 +473,7 @@ export default function MinistryAdminDashboard() {
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && fetchUsers()}
-                style={{ width: '100%', fontSize: '13px' }}
+                style={{ width: '100%', fontSize: '13px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 14px', borderRadius: '8px' }}
               />
             </div>
 
@@ -525,7 +484,7 @@ export default function MinistryAdminDashboard() {
                 setUserRoleFilter(e.target.value);
                 setTimeout(fetchUsers, 50);
               }}
-              style={{ minWidth: '180px', fontSize: '13px' }}
+              style={{ minWidth: '180px', fontSize: '13px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }}
             >
               <option value="">সব রোল (All Roles)</option>
               <option value="User">User (নাগরিক)</option>
@@ -534,7 +493,7 @@ export default function MinistryAdminDashboard() {
               <option value="Super Admin">Super Admin (মন্ত্রণালয়)</option>
             </select>
 
-            <button onClick={fetchUsers} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '12px' }}>
+            <button onClick={fetchUsers} className="btn-secondary" style={{ padding: '9px 18px', fontSize: '13px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700' }}>
               খুঁজুন
             </button>
           </div>
@@ -543,7 +502,7 @@ export default function MinistryAdminDashboard() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left', color: '#94a3b8' }}>
+                <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc', fontWeight: '700' }}>
                   <th style={{ padding: '12px' }}>ব্যবহারকারী</th>
                   <th style={{ padding: '12px' }}>NID ও ঠিকানা</th>
                   <th style={{ padding: '12px' }}>যোগাযোগ</th>
@@ -554,19 +513,19 @@ export default function MinistryAdminDashboard() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                  <tr key={u._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '12px' }}>
-                      <strong style={{ color: '#f1f5f9' }}>{u.name}</strong>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                      <strong style={{ color: '#0f172a', fontSize: '14px' }}>{u.name}</strong>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
                         পিতা: {u.father_name} | মাতা: {u.mother_name}
                       </div>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <div style={{ fontFamily: 'monospace', color: '#22c55e', fontWeight: '600' }}>{u.nid}</div>
+                      <div style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>{u.nid}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{u.upazila}, {u.district}</div>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <div style={{ color: '#cbd5e1' }}>{u.phone}</div>
+                      <div style={{ color: '#0f172a', fontWeight: '600' }}>{u.phone}</div>
                       <div style={{ fontSize: '11px', color: '#64748b' }}>{u.email}</div>
                     </td>
                     <td style={{ padding: '12px' }}>
@@ -575,12 +534,12 @@ export default function MinistryAdminDashboard() {
                         value={u.role}
                         onChange={(e) => handleRoleChange(u._id, e.target.value)}
                         style={{
-                          padding: '6px 10px',
-                          borderRadius: '6px',
-                          background: u.role === 'Super Admin' ? 'rgba(236,72,153,0.15)' : u.role === 'Register Office' ? 'rgba(59,130,246,0.15)' : u.role === 'AC Land Office' ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)',
-                          border: `1px solid ${u.role === 'Super Admin' ? '#ec4899' : u.role === 'Register Office' ? '#3b82f6' : u.role === 'AC Land Office' ? '#10b981' : '#f59e0b'}50`,
-                          color: u.role === 'Super Admin' ? '#f472b6' : u.role === 'Register Office' ? '#93c5fd' : u.role === 'AC Land Office' ? '#6ee7b7' : '#fde047',
-                          fontWeight: '700',
+                          padding: '6px 12px',
+                          borderRadius: '8px',
+                          background: u.role === 'Super Admin' ? '#fdf2f8' : u.role === 'Register Office' ? '#eff6ff' : u.role === 'AC Land Office' ? '#ecfdf5' : '#fffbeb',
+                          border: `1.5px solid ${u.role === 'Super Admin' ? '#f472b6' : u.role === 'Register Office' ? '#93c5fd' : u.role === 'AC Land Office' ? '#6ee7b7' : '#fde047'}`,
+                          color: u.role === 'Super Admin' ? '#9d174d' : u.role === 'Register Office' ? '#1e40af' : u.role === 'AC Land Office' ? '#065f46' : '#92400e',
+                          fontWeight: '800',
                           fontSize: '12px',
                           cursor: 'pointer'
                         }}
@@ -595,17 +554,17 @@ export default function MinistryAdminDashboard() {
                       <button
                         onClick={() => handleStatusToggle(u._id, u.status)}
                         style={{
-                          padding: '3px 8px',
+                          padding: '4px 10px',
                           borderRadius: '999px',
                           fontSize: '11px',
-                          fontWeight: '700',
-                          background: u.status === 'Active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                          color: u.status === 'Active' ? '#86efac' : '#fca5a5',
-                          border: `1px solid ${u.status === 'Active' ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)'}`,
+                          fontWeight: '800',
+                          border: u.status === 'Active' ? '1px solid #86efac' : '1px solid #fca5a5',
+                          background: u.status === 'Active' ? '#dcfce7' : '#fee2e2',
+                          color: u.status === 'Active' ? '#047857' : '#991b1b',
                           cursor: 'pointer'
                         }}
                       >
-                        {u.status === 'Active' ? 'Active' : 'Blocked'}
+                        {u.status === 'Active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
                       </button>
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
@@ -641,70 +600,71 @@ export default function MinistryAdminDashboard() {
             <div style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.8)',
+              background: 'rgba(15, 23, 42, 0.7)',
+              backdropFilter: 'blur(4px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 2000, padding: '20px'
             }}>
-              <div className="glass-card" style={{ maxWidth: '600px', width: '100%', padding: '30px', maxHeight: '90vh', overflowY: 'auto' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', marginBottom: '16px' }}>
+              <div className="glass-card" style={{ maxWidth: '600px', width: '100%', padding: '30px', maxHeight: '90vh', overflowY: 'auto', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>
                   নতুন ব্যবহারকারী বা কর্মকর্তা তৈরি
                 </h3>
 
                 <form onSubmit={handleCreateUser} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>নাম *</label>
-                      <input type="text" required className="input-field" value={newUser.name} onChange={(e) => setNewUser(p => ({ ...p, name: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>নাম *</label>
+                      <input type="text" required className="input-field" value={newUser.name} onChange={(e) => setNewUser(p => ({ ...p, name: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>NID *</label>
-                      <input type="text" required className="input-field" value={newUser.nid} onChange={(e) => setNewUser(p => ({ ...p, nid: e.target.value }))} style={{ width: '100%' }} />
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>পিতার নাম *</label>
-                      <input type="text" required className="input-field" value={newUser.father_name} onChange={(e) => setNewUser(p => ({ ...p, father_name: e.target.value }))} style={{ width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মাতার নাম *</label>
-                      <input type="text" required className="input-field" value={newUser.mother_name} onChange={(e) => setNewUser(p => ({ ...p, mother_name: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>NID *</label>
+                      <input type="text" required className="input-field" value={newUser.nid} onChange={(e) => setNewUser(p => ({ ...p, nid: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>ইমেইল *</label>
-                      <input type="email" required className="input-field" value={newUser.email} onChange={(e) => setNewUser(p => ({ ...p, email: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>পিতার নাম *</label>
+                      <input type="text" required className="input-field" value={newUser.father_name} onChange={(e) => setNewUser(p => ({ ...p, father_name: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>ফোন *</label>
-                      <input type="tel" required className="input-field" value={newUser.phone} onChange={(e) => setNewUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মাতার নাম *</label>
+                      <input type="text" required className="input-field" value={newUser.mother_name} onChange={(e) => setNewUser(p => ({ ...p, mother_name: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>ইমেইল *</label>
+                      <input type="email" required className="input-field" value={newUser.email} onChange={(e) => setNewUser(p => ({ ...p, email: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>ফোন *</label>
+                      <input type="tel" required className="input-field" value={newUser.phone} onChange={(e) => setNewUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
 
                   {/* Administrative Address Cascade for Bangladesh */}
-                  <div style={{ background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: '11px', color: '#86efac', fontWeight: '700', marginBottom: '8px' }}>
+                  <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1.5px solid #e2e8f0' }}>
+                    <div style={{ fontSize: '12px', color: '#047857', fontWeight: '800', marginBottom: '8px' }}>
                       📍 ঠিকানা নির্ধারণ (বিভাগ ➔ জেলা ➔ উপজেলা)
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                       <div>
-                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>বিভাগ *</label>
-                        <select className="input-field" value={newUser.division} onChange={(e) => handleAdminUserDivisionChange(e.target.value)} style={{ width: '100%', fontSize: '12px' }}>
+                        <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>বিভাগ *</label>
+                        <select className="input-field" value={newUser.division} onChange={(e) => handleAdminUserDivisionChange(e.target.value)} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
                           {BANGLADESH_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>জেলা *</label>
-                        <select className="input-field" value={newUser.district} onChange={(e) => handleAdminUserDistrictChange(e.target.value)} style={{ width: '100%', fontSize: '12px' }}>
+                        <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>জেলা *</label>
+                        <select className="input-field" value={newUser.district} onChange={(e) => handleAdminUserDistrictChange(e.target.value)} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
                           {adminUserDistricts.map(d => <option key={d} value={d}>{d}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label style={{ fontSize: '11px', color: '#94a3b8' }}>উপজেলা *</label>
-                        <select className="input-field" value={newUser.upazila} onChange={(e) => setNewUser(p => ({ ...p, upazila: e.target.value }))} style={{ width: '100%', fontSize: '12px' }}>
+                        <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>উপজেলা *</label>
+                        <select className="input-field" value={newUser.upazila} onChange={(e) => setNewUser(p => ({ ...p, upazila: e.target.value }))} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
                           {adminUserUpazilas.map(u => <option key={u} value={u}>{u}</option>)}
                         </select>
                       </div>
@@ -713,12 +673,12 @@ export default function MinistryAdminDashboard() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>পাসওয়ার্ড *</label>
-                      <input type="password" required className="input-field" value={newUser.password} onChange={(e) => setNewUser(p => ({ ...p, password: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>পাসওয়ার্ড *</label>
+                      <input type="password" required className="input-field" value={newUser.password} onChange={(e) => setNewUser(p => ({ ...p, password: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>নির্ধারিত রোল *</label>
-                      <select className="input-field" value={newUser.role} onChange={(e) => setNewUser(p => ({ ...p, role: e.target.value }))} style={{ width: '100%' }}>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>নির্ধারিত রোল *</label>
+                      <select className="input-field" value={newUser.role} onChange={(e) => setNewUser(p => ({ ...p, role: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }}>
                         <option value="User">User (নাগরিক)</option>
                         <option value="Register Office">Register Office (সাব-রেজিস্ট্রি)</option>
                         <option value="AC Land Office">AC Land Office (এসি ল্যান্ড)</option>
@@ -728,8 +688,8 @@ export default function MinistryAdminDashboard() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" onClick={() => setShowAddUserModal(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>বাতিল</button>
-                    <button type="submit" className="btn-primary" style={{ padding: '8px 18px' }}>সংরক্ষণ করুন</button>
+                    <button type="button" onClick={() => setShowAddUserModal(false)} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
+                    <button type="submit" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>সংরক্ষণ করুন</button>
                   </div>
                 </form>
               </div>
@@ -741,29 +701,30 @@ export default function MinistryAdminDashboard() {
             <div style={{
               position: 'fixed',
               top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.8)',
+              background: 'rgba(15, 23, 42, 0.7)',
+              backdropFilter: 'blur(4px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 2000, padding: '20px'
             }}>
-              <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '28px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', marginBottom: '16px' }}>
+              <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '28px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '16px' }}>
                   ব্যবহারকারী তথ্য সম্পাদনা
                 </h3>
 
                 <form onSubmit={handleSaveEditedUser} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1' }}>নাম</label>
-                    <input type="text" className="input-field" value={editingUser.name} onChange={(e) => setEditingUser(p => ({ ...p, name: e.target.value }))} style={{ width: '100%' }} />
+                    <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>নাম</label>
+                    <input type="text" className="input-field" value={editingUser.name} onChange={(e) => setEditingUser(p => ({ ...p, name: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1' }}>ফোন নম্বর</label>
-                    <input type="tel" className="input-field" value={editingUser.phone} onChange={(e) => setEditingUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%' }} />
+                    <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>ফোন নম্বর</label>
+                    <input type="tel" className="input-field" value={editingUser.phone} onChange={(e) => setEditingUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1' }}>রোল (Role)</label>
-                    <select className="input-field" value={editingUser.role} onChange={(e) => setEditingUser(p => ({ ...p, role: e.target.value }))} style={{ width: '100%' }}>
+                    <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>রোল (Role)</label>
+                    <select className="input-field" value={editingUser.role} onChange={(e) => setEditingUser(p => ({ ...p, role: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }}>
                       <option value="User">User (নাগরিক)</option>
                       <option value="Register Office">Register Office</option>
                       <option value="AC Land Office">AC Land Office</option>
@@ -772,8 +733,8 @@ export default function MinistryAdminDashboard() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" onClick={() => setEditingUser(null)} className="btn-secondary" style={{ padding: '8px 16px' }}>বাতিল</button>
-                    <button type="submit" className="btn-primary" style={{ padding: '8px 18px' }}>আপডেট নিশ্চিত করুন</button>
+                    <button type="button" onClick={() => setEditingUser(null)} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
+                    <button type="submit" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>আপডেট নিশ্চিত করুন</button>
                   </div>
                 </form>
               </div>
@@ -786,16 +747,16 @@ export default function MinistryAdminDashboard() {
       {activeTab === 'lands' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Lands section */}
-          <div className="glass-card" style={{ padding: '24px' }}>
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                   ভূমি রেকর্ড ডাটাবেজ (Land Records CRUD)
                 </h2>
-                <p style={{ fontSize: '12px', color: '#64748b' }}>সিস্টেমের সমস্ত জমির রেকর্ড পর্যবেক্ষণ ও সংশোধন</p>
+                <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>সিস্টেমের সমস্ত জমির রেকর্ড পর্যবেক্ষণ ও সংশোধন</p>
               </div>
-              <button onClick={() => setShowAddLandModal(true)} className="btn-primary" style={{ padding: '8px 16px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Plus size={14} /> নতুন জমির রেকর্ড যুক্ত করুন
+              <button onClick={() => setShowAddLandModal(true)} className="btn-primary" style={{ padding: '9px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={15} /> নতুন জমির রেকর্ড যুক্ত করুন
               </button>
             </div>
 
@@ -803,49 +764,51 @@ export default function MinistryAdminDashboard() {
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', textAlign: 'left', color: '#94a3b8' }}>
-                    <th style={{ padding: '10px' }}>দাগ ও খতিয়ান</th>
-                    <th style={{ padding: '10px' }}>মৌজা ও জে.এল</th>
-                    <th style={{ padding: '10px' }}>মালিক ও এনআইডি</th>
-                    <th style={{ padding: '10px' }}>পরিমাণ (শতক)</th>
-                    <th style={{ padding: '10px' }}>স্ট্যাটাস</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>একশন</th>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc', fontWeight: '700' }}>
+                    <th style={{ padding: '12px 10px' }}>দাগ ও খতিয়ান</th>
+                    <th style={{ padding: '12px 10px' }}>মৌজা ও জে.এল</th>
+                    <th style={{ padding: '12px 10px' }}>মালিক ও এনআইডি</th>
+                    <th style={{ padding: '12px 10px' }}>পরিমাণ (শতক)</th>
+                    <th style={{ padding: '12px 10px' }}>স্ট্যাটাস</th>
+                    <th style={{ padding: '12px 10px', textAlign: 'center' }}>একশন</th>
                   </tr>
                 </thead>
                 <tbody>
                   {lands.map((l) => (
-                    <tr key={l._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <td style={{ padding: '10px' }}>
-                        দাগ: <strong>{l.dag_no}</strong> | খতিয়ান: {l.khatian_no}
+                    <tr key={l._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px 10px' }}>
+                        <div style={{ color: '#0f172a' }}>দাগ: <strong style={{ color: '#059669' }}>{l.dag_no}</strong> | খতিয়ান: <strong style={{ color: '#059669' }}>{l.khatian_no}</strong></div>
                       </td>
-                      <td style={{ padding: '10px' }}>
+                      <td style={{ padding: '12px 10px', color: '#0f172a', fontWeight: '600' }}>
                         {l.mouza} (জে.এল: {l.jl_no})
                       </td>
-                      <td style={{ padding: '10px' }}>
-                        <strong>{l.owner_name}</strong>
+                      <td style={{ padding: '12px 10px' }}>
+                        <strong style={{ color: '#0f172a' }}>{l.owner_name}</strong>
                         <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>{l.owner_nid}</div>
                       </td>
-                      <td style={{ padding: '10px', color: '#22c55e', fontWeight: '700' }}>
+                      <td style={{ padding: '12px 10px', color: '#059669', fontWeight: '800' }}>
                         {l.total_area_decimal} শতক
                       </td>
-                      <td style={{ padding: '10px' }}>
+                      <td style={{ padding: '12px 10px' }}>
                         <span style={{
-                          padding: '2px 8px',
+                          padding: '3px 10px',
                           borderRadius: '999px',
                           fontSize: '11px',
-                          background: l.status === 'Active' ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)',
-                          color: l.status === 'Active' ? '#86efac' : '#fde047'
+                          fontWeight: '800',
+                          background: l.status === 'Active' ? '#dcfce7' : '#fef3c7',
+                          color: l.status === 'Active' ? '#047857' : '#92400e',
+                          border: `1px solid ${l.status === 'Active' ? '#86efac' : '#fde68a'}`
                         }}>
                           {l.status}
                         </span>
                       </td>
-                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                      <td style={{ padding: '12px 10px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                          <button onClick={() => setEditingLand(l)} className="btn-secondary" style={{ padding: '4px 8px', fontSize: '11px' }}>
-                            <Edit size={12} />
+                          <button onClick={() => setEditingLand(l)} className="btn-secondary" style={{ padding: '5px 10px', fontSize: '11px', background: '#f8fafc', border: '1px solid #cbd5e1', color: '#0f172a' }}>
+                            <Edit size={13} />
                           </button>
-                          <button onClick={() => handleDeleteLand(l._id)} className="btn-danger" style={{ padding: '4px 8px', fontSize: '11px' }}>
-                            <Trash2 size={12} />
+                          <button onClick={() => handleDeleteLand(l._id)} className="btn-danger" style={{ padding: '5px 10px', fontSize: '11px' }}>
+                            <Trash2 size={13} />
                           </button>
                         </div>
                       </td>
@@ -857,39 +820,39 @@ export default function MinistryAdminDashboard() {
           </div>
 
           {/* Legal status section */}
-          <div className="glass-card" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px' }}>
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#f8fafc', margin: 0 }}>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                   আইনি স্থিতি ও খাস জমি নোটিশ (Legal Statuses)
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748b' }}>খাস জমি, মামলার স্টে অর্ডার বা সরকারি অধিগ্রহণ রেকর্ড</p>
+                <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>খাস জমি, মামলার স্টে অর্ডার বা সরকারি অধিগ্রহণ রেকর্ড</p>
               </div>
-              <button onClick={() => setShowAddLegalModal(true)} className="btn-primary" style={{ padding: '7px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Plus size={14} /> আইনি নোটিশ যুক্ত করুন
+              <button onClick={() => setShowAddLegalModal(true)} className="btn-primary" style={{ padding: '9px 18px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Plus size={15} /> আইনি নোটিশ যুক্ত করুন
               </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '14px' }}>
               {legalStatuses.map((leg) => (
                 <div key={leg._id} style={{
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
+                  background: '#fef2f2',
+                  border: '1.5px solid #fecaca',
                   borderRadius: '10px',
                   padding: '16px'
                 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <strong style={{ color: '#fca5a5', fontSize: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <strong style={{ color: '#991b1b', fontSize: '14px' }}>
                       দাগ নং {leg.dag_no} ({leg.mouza})
                     </strong>
-                    <button onClick={() => handleDeleteLegal(leg._id)} className="btn-danger" style={{ padding: '2px 6px', fontSize: '10px' }}>
+                    <button onClick={() => handleDeleteLegal(leg._id)} className="btn-danger" style={{ padding: '3px 8px', fontSize: '11px' }}>
                       মুছুন
                     </button>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#cbd5e1' }}>
-                    {leg.is_khas && <div style={{ color: '#ef4444' }}>🚫 সরকারি খাস জমি: {leg.khas_reason}</div>}
-                    {leg.has_court_case && <div style={{ color: '#f59e0b' }}>⚖️ বিচারাধীন মামলা: {leg.case_details}</div>}
-                    {leg.stay_order && <div style={{ color: '#dc2626' }}>⛔ আদালতের Stay Order সক্রিয়</div>}
+                  <div style={{ fontSize: '12.5px', color: '#475569' }}>
+                    {leg.is_khas && <div style={{ color: '#dc2626', fontWeight: '700' }}>🚫 সরকারি খাস জমি: {leg.khas_reason}</div>}
+                    {leg.has_court_case && <div style={{ color: '#d97706', fontWeight: '700', marginTop: '2px' }}>⚖️ বিচারাধীন মামলা: {leg.case_details}</div>}
+                    {leg.stay_order && <div style={{ color: '#b91c1c', fontWeight: '800', marginTop: '2px' }}>⛔ আদালতের Stay Order সক্রিয়</div>}
                   </div>
                 </div>
               ))}
@@ -900,51 +863,52 @@ export default function MinistryAdminDashboard() {
           {showAddLandModal && (
             <div style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 2000, padding: '20px'
             }}>
-              <div className="glass-card" style={{ maxWidth: '550px', width: '100%', padding: '28px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', marginBottom: '14px' }}>
+              <div className="glass-card" style={{ maxWidth: '550px', width: '100%', padding: '28px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '14px' }}>
                   নতুন জমির রেকর্ড তৈরি
                 </h3>
                 <form onSubmit={handleCreateLand} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মৌজা</label>
-                      <input type="text" required className="input-field" value={newLand.mouza} onChange={(e) => setNewLand(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মৌজা</label>
+                      <input type="text" required className="input-field" value={newLand.mouza} onChange={(e) => setNewLand(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>দাগ নং</label>
-                      <input type="text" required className="input-field" value={newLand.dag_no} onChange={(e) => setNewLand(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%' }} />
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>খতিয়ান নং</label>
-                      <input type="text" required className="input-field" value={newLand.khatian_no} onChange={(e) => setNewLand(p => ({ ...p, khatian_no: e.target.value }))} style={{ width: '100%' }} />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>জে.এল নং</label>
-                      <input type="text" required className="input-field" value={newLand.jl_no} onChange={(e) => setNewLand(p => ({ ...p, jl_no: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>দাগ নং</label>
+                      <input type="text" required className="input-field" value={newLand.dag_no} onChange={(e) => setNewLand(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মালিকের নাম</label>
-                      <input type="text" required className="input-field" value={newLand.owner_name} onChange={(e) => setNewLand(p => ({ ...p, owner_name: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>খতিয়ান নং</label>
+                      <input type="text" required className="input-field" value={newLand.khatian_no} onChange={(e) => setNewLand(p => ({ ...p, khatian_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মালিকের NID</label>
-                      <input type="text" required className="input-field" value={newLand.owner_nid} onChange={(e) => setNewLand(p => ({ ...p, owner_nid: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>জে.এল নং</label>
+                      <input type="text" required className="input-field" value={newLand.jl_no} onChange={(e) => setNewLand(p => ({ ...p, jl_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মালিকের নাম</label>
+                      <input type="text" required className="input-field" value={newLand.owner_name} onChange={(e) => setNewLand(p => ({ ...p, owner_name: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মালিকের NID</label>
+                      <input type="text" required className="input-field" value={newLand.owner_nid} onChange={(e) => setNewLand(p => ({ ...p, owner_nid: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মোট পরিমাণ (শতক)</label>
-                    <input type="number" required className="input-field" value={newLand.total_area_decimal} onChange={(e) => setNewLand(p => ({ ...p, total_area_decimal: parseFloat(e.target.value) || 0, available_area_decimal: parseFloat(e.target.value) || 0 }))} style={{ width: '100%' }} />
+                    <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মোট পরিমাণ (শতক)</label>
+                    <input type="number" required className="input-field" value={newLand.total_area_decimal} onChange={(e) => setNewLand(p => ({ ...p, total_area_decimal: parseFloat(e.target.value) || 0, available_area_decimal: parseFloat(e.target.value) || 0 }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                   </div>
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '8px' }}>
-                    <button type="button" onClick={() => setShowAddLandModal(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>বাতিল</button>
-                    <button type="submit" className="btn-primary" style={{ padding: '8px 18px' }}>সংরক্ষণ</button>
+                    <button type="button" onClick={() => setShowAddLandModal(false)} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
+                    <button type="submit" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>সংরক্ষণ</button>
                   </div>
                 </form>
               </div>
@@ -955,48 +919,49 @@ export default function MinistryAdminDashboard() {
           {showAddLegalModal && (
             <div style={{
               position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-              background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(4px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               zIndex: 2000, padding: '20px'
             }}>
-              <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '28px' }}>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', marginBottom: '14px' }}>
+              <div className="glass-card" style={{ maxWidth: '500px', width: '100%', padding: '28px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '14px' }}>
                   আইনি নোটিশ যুক্তকরণ
                 </h3>
                 <form onSubmit={handleCreateLegal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>দাগ নং *</label>
-                      <input type="text" required className="input-field" value={newLegal.dag_no} onChange={(e) => setNewLegal(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>দাগ নং *</label>
+                      <input type="text" required className="input-field" value={newLegal.dag_no} onChange={(e) => setNewLegal(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                     <div>
-                      <label style={{ fontSize: '12px', color: '#cbd5e1' }}>মৌজা *</label>
-                      <input type="text" required className="input-field" value={newLegal.mouza} onChange={(e) => setNewLegal(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%' }} />
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মৌজা *</label>
+                      <input type="text" required className="input-field" value={newLegal.mouza} onChange={(e) => setNewLegal(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input type="checkbox" checked={newLegal.is_khas} onChange={(e) => setNewLegal(p => ({ ...p, is_khas: e.target.checked }))} /> এটি সরকারি খাস জমি
                     </label>
                     {newLegal.is_khas && (
-                      <input type="text" placeholder="খাস জমির বিবরণ/অধিগ্রহণ কারণ" className="input-field" value={newLegal.khas_reason} onChange={(e) => setNewLegal(p => ({ ...p, khas_reason: e.target.value }))} style={{ width: '100%', marginTop: '6px' }} />
+                      <input type="text" placeholder="খাস জমির বিবরণ/অধিগ্রহণ কারণ" className="input-field" value={newLegal.khas_reason} onChange={(e) => setNewLegal(p => ({ ...p, khas_reason: e.target.value }))} style={{ width: '100%', marginTop: '6px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     )}
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input type="checkbox" checked={newLegal.has_court_case} onChange={(e) => setNewLegal(p => ({ ...p, has_court_case: e.target.checked }))} /> আদালতে মামলা রয়েছে
                     </label>
                     {newLegal.has_court_case && (
-                      <input type="text" placeholder="মামলা নম্বর ও আদালতের বিবরণ" className="input-field" value={newLegal.case_details} onChange={(e) => setNewLegal(p => ({ ...p, case_details: e.target.value }))} style={{ width: '100%', marginTop: '6px' }} />
+                      <input type="text" placeholder="মামলা নম্বর ও আদালতের বিবরণ" className="input-field" value={newLegal.case_details} onChange={(e) => setNewLegal(p => ({ ...p, case_details: e.target.value }))} style={{ width: '100%', marginTop: '6px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     )}
                   </div>
                   <div>
-                    <label style={{ fontSize: '12px', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <label style={{ fontSize: '13px', color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <input type="checkbox" checked={newLegal.stay_order} onChange={(e) => setNewLegal(p => ({ ...p, stay_order: e.target.checked }))} /> Stay Order সক্রিয়
                     </label>
                   </div>
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" onClick={() => setShowAddLegalModal(false)} className="btn-secondary" style={{ padding: '8px 16px' }}>বাতিল</button>
-                    <button type="submit" className="btn-primary" style={{ padding: '8px 18px' }}>সংরক্ষণ</button>
+                    <button type="button" onClick={() => setShowAddLegalModal(false)} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
+                    <button type="submit" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>সংরক্ষণ</button>
                   </div>
                 </form>
               </div>
@@ -1008,11 +973,11 @@ export default function MinistryAdminDashboard() {
       {/* TAB 4: System Control & Seed */}
       {activeTab === 'controls' && (
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div className="glass-card" style={{ padding: '32px', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#f8fafc', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Database size={20} color="#f472b6" /> ডেমো ডেটাবেজ রিসেট ও পুনর্নির্মাণ
+          <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Database size={20} color="#7c3aed" /> ডেমো ডেটাবেজ রিসেট ও পুনর্নির্মাণ
             </h3>
-            <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '20px' }}>
+            <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.6, marginBottom: '20px' }}>
               হ্যাকার্থন বা মূল্যায়নের জন্য যেকোনো সময় ডেটাবেজকে মূল অবস্থায় ফিরিয়ে নিন। এটি ৪টি প্রাথমিক ভূমিকা ইউজার (Admin, Register Office, AC Land, Citizen) এবং সকল ডেমো জমি ও আইনি নোটিশ নতুন করে তৈরি করবে।
             </p>
 
@@ -1034,28 +999,27 @@ export default function MinistryAdminDashboard() {
             </button>
           </div>
 
-          <div className="glass-card" style={{ padding: '28px' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', color: '#f1f5f9', marginBottom: '14px' }}>
+          <div className="glass-card" style={{ padding: '28px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+            <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '14px' }}>
               🔑 ৪টি রোলের স্থায়ী ক্রেডেনশিয়াল রেফারেন্স
             </h4>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', fontSize: '13px' }}>
-              <div style={{ background: 'rgba(236,72,153,0.1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(236,72,153,0.3)', color: '#fbcfe8' }}>
+              <div style={{ background: '#fdf2f8', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #fbcfe8', color: '#9d174d', fontWeight: '600' }}>
                 👑 <strong>Super Admin:</strong> admin@gmail.com | পাসওয়ার্ড: 123456
               </div>
-              <div style={{ background: 'rgba(59,130,246,0.1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(59,130,246,0.3)', color: '#bfdbfe' }}>
+              <div style={{ background: '#eff6ff', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #bfdbfe', color: '#1e40af', fontWeight: '600' }}>
                 🏛️ <strong>Register Office:</strong> registry@evhumi.gov.bd | পাসওয়ার্ড: 123456
               </div>
-              <div style={{ background: 'rgba(16,185,129,0.1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.3)', color: '#a7f3d0' }}>
+              <div style={{ background: '#ecfdf5', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #a7f3d0', color: '#065f46', fontWeight: '600' }}>
                 ⚖️ <strong>AC Land Office:</strong> acland@evhumi.gov.bd | পাসওয়ার্ড: 123456
               </div>
-              <div style={{ background: 'rgba(245,158,11,0.1)', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.3)', color: '#fde68a' }}>
+              <div style={{ background: '#fffbeb', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #fde68a', color: '#92400e', fontWeight: '600' }}>
                 👤 <strong>Citizen User:</strong> citizen@example.com | পাসওয়ার্ড: 123456 (NID: 1998567890123)
               </div>
             </div>
           </div>
         </div>
       )}
-    </div>
-    </div>
+    </DashboardLayout>
   );
 }

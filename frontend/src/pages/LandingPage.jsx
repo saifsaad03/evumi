@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
   Shield, Search, ArrowRight, CheckCircle, Lock, Zap,
   LogIn, UserPlus, Database, MapPin, FileText, Star,
-  ChevronRight, Globe, Award, TrendingUp, Sparkles, Check, PhoneCall
+  ChevronRight, Globe, Award, TrendingUp, Sparkles, Check, PhoneCall,
+  ShieldCheck, ShieldAlert, AlertTriangle
 } from 'lucide-react';
 
 /* ─── Data ─────────────────────────────────────────────── */
@@ -117,17 +119,65 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [activeRole, setActiveRole] = useState(null);
 
+  // Public quick verification states
+  const [verifyForm, setVerifyForm] = useState({ dag_no: '', khatian_no: '', mouza: 'গুজিয়া' });
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyResult, setVerifyResult] = useState(null);
+  const [verifyError, setVerifyError] = useState('');
+  const [landingMouzas, setLandingMouzas] = useState(['গুজিয়া', 'ধানমন্ডি', 'মিরপুর', 'শিবগঞ্জ', 'চকসারকার', 'মহাস্থান', 'পাইকপাড়া']);
+
+  useEffect(() => {
+    axios.get('/api/mouzas')
+      .then(res => {
+        if (res.data.success && res.data.mouzas?.length) {
+          setLandingMouzas(res.data.mouzas);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleQuickVerify = async (e) => {
+    if (e) e.preventDefault();
+    if (!verifyForm.dag_no?.trim() && !verifyForm.khatian_no?.trim()) {
+      setVerifyError('অনুগ্রহ করে দাগ নম্বর অথবা খতিয়ান নম্বর প্রদান করুন।');
+      return;
+    }
+    setVerifyLoading(true);
+    setVerifyError('');
+    setVerifyResult(null);
+
+    try {
+      const res = await axios.get('/api/verify-land', {
+        params: {
+          dag_no: verifyForm.dag_no?.trim(),
+          khatian_no: verifyForm.khatian_no?.trim(),
+          mouza: verifyForm.mouza?.trim()
+        }
+      });
+      if (res.data) {
+        setVerifyResult(res.data);
+      }
+    } catch (err) {
+      setVerifyError(err.response?.data?.message || 'যাচাইকরণে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
+
   return (
     <div style={{ background: '#f8fafc', color: '#0f172a', minHeight: '100vh', overflowX: 'hidden' }}>
 
       {/* ══════════════════════════════════════════
-          HERO SECTION — 100% LIGHT MODE WITH BANGLADESH LANDSCAPE
+          HERO SECTION — WITH EXISTING "bg.png" BACKGROUND
       ══════════════════════════════════════════ */}
-      <section className="bd-pattern-bg" style={{
+      <section style={{
         position: 'relative',
-        padding: '48px 20px 80px',
-        background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 60%, #f8fafc 100%)',
-        borderBottom: '1px solid #e2e8f0',
+        padding: '54px 20px 84px',
+        backgroundImage: `linear-gradient(135deg, rgba(255, 255, 255, 0.93) 0%, rgba(240, 253, 244, 0.90) 50%, rgba(255, 255, 255, 0.92) 100%), url('/images/bg.png')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        borderBottom: '1.5px solid #cbd5e1',
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
@@ -146,7 +196,7 @@ export default function LandingPage() {
               fontWeight: '700',
               boxShadow: '0 2px 8px rgba(6,95,70,0.06)'
             }}>
-              <img src="/images/bd_land_seal.png" alt="" style={{ width: '18px', height: '18px' }} />
+              <img src="/images/logo.png" alt="e-ভূমি" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
               গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · ভূমি মন্ত্রণালয়
               <span style={{
                 display: 'inline-block',
@@ -348,37 +398,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════
-          TICKER STRIP — SCROLLING INFO BAR
-      ══════════════════════════════════════════ */}
-      <div className="ticker-strip">
-        <div className="ticker-track">
-          {[
-            { icon: '🛡️', text: 'SHA-256 ক্রিপ্টো সুরক্ষিত দলিল' },
-            { icon: '📍', text: '৯টি সিড মৌজা — শিবগঞ্জ পাইলট' },
-            { icon: '⚡', text: 'QR কোডযুক্ত ডিজিটাল খতিয়ান' },
-            { icon: '🔒', text: 'ডাবল-সেলিং Pending Lock সিস্টেম' },
-            { icon: '📧', text: 'ইমেইল OTP ভেরিফিকেশন' },
-            { icon: '🏛️', text: 'সাব-রেজিস্ট্রি ও এসি ল্যান্ড সংযুক্ত' },
-            { icon: '☁️', text: 'MongoDB Atlas ক্লাউড ডেটাবেস' },
-            { icon: '🤳', text: 'মোবাইলে QR স্ক্যান করে যাচাই' },
-          ].concat([
-            { icon: '🛡️', text: 'SHA-256 ক্রিপ্টো সুরক্ষিত দলিল' },
-            { icon: '📍', text: '৯টি সিড মৌজা — শিবগঞ্জ পাইলট' },
-            { icon: '⚡', text: 'QR কোডযুক্ত ডিজিটাল খতিয়ান' },
-            { icon: '🔒', text: 'ডাবল-সেলিং Pending Lock সিস্টেম' },
-            { icon: '📧', text: 'ইমেইল OTP ভেরিফিকেশন' },
-            { icon: '🏛️', text: 'সাব-রেজিস্ট্রি ও এসি ল্যান্ড সংযুক্ত' },
-            { icon: '☁️', text: 'MongoDB Atlas ক্লাউড ডেটাবেস' },
-            { icon: '🤳', text: 'মোবাইলে QR স্ক্যান করে যাচাই' },
-          ]).map((item, i) => (
-            <span key={i} className="ticker-item">
-              <span>{item.icon}</span>
-              {item.text}
-            </span>
-          ))}
-        </div>
-      </div>
+
 
       {/* ══════════════════════════════════════════
           STATS BAR — LIGHT & ELEGANT
@@ -427,6 +447,194 @@ export default function LandingPage() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          PUBLIC VERIFICATION SECTION — DIRECT OPEN VERIFICATION
+      ══════════════════════════════════════════ */}
+      <section id="public-verify" style={{ padding: '60px 20px 20px', background: '#f8fafc' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div style={{
+            background: '#ffffff',
+            border: '2px solid #bbf7d0',
+            borderLeft: '6px solid #16a34a',
+            borderRadius: '20px',
+            padding: '36px 32px',
+            boxShadow: '0 10px 30px rgba(22, 163, 74, 0.08)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '999px', background: '#dcfce7', border: '1px solid #86efac', color: '#166534', fontSize: '12px', fontWeight: '800', marginBottom: '8px' }}>
+                  <ShieldCheck size={16} /> সর্বসাধারণের জন্য উন্মুক্ত জমি যাচাইকরণ সেবা
+                </div>
+                <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#0f172a', margin: '4px 0' }}>
+                  জমি কেনার পূর্বে সরাসরি সত্যতা ও মালিকানা যাচাই করুন
+                </h2>
+                <p style={{ color: '#475569', fontSize: '14px', margin: 0 }}>
+                  দাগ নম্বর, খতিয়ান নম্বর ও মৌজা দিয়ে যে কেউ জমির বর্তমান মালিকানা, আইনি স্থিতি (Stay Order/মামলা) এবং জমিটি ইতোমধ্যে বিক্রিত (Sold) কি না তা লাইভ যাচাই করতে পারবেন।
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/verify')}
+                className="btn-secondary"
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  color: '#166534',
+                  borderColor: '#86efac',
+                  background: '#f0fdf4',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                পূর্ণাঙ্গ যাচাইকরণ পোর্টালে যান <ArrowRight size={15} />
+              </button>
+            </div>
+
+            {/* Quick Verification Form */}
+            <form onSubmit={handleQuickVerify} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', alignItems: 'flex-end', background: '#f8fafc', padding: '20px', borderRadius: '14px', border: '1px solid #e2e8f0' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
+                  মৌজার নাম নির্বাচন করুন
+                </label>
+                <select
+                  className="input-field"
+                  value={verifyForm.mouza}
+                  onChange={(e) => setVerifyForm(p => ({ ...p, mouza: e.target.value }))}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px', color: '#0f172a' }}
+                >
+                  {landingMouzas.map((m, idx) => (
+                    <option key={idx} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
+                  দাগ নম্বর (Plot No)
+                </label>
+                <input
+                  type="text"
+                  placeholder="যেমন: ১০১"
+                  className="input-field"
+                  value={verifyForm.dag_no}
+                  onChange={(e) => setVerifyForm(p => ({ ...p, dag_no: e.target.value }))}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 12px', color: '#0f172a' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '6px' }}>
+                  খতিয়ান নম্বর (ঐচ্ছিক)
+                </label>
+                <input
+                  type="text"
+                  placeholder="যেমন: ১ বা ১০-M"
+                  className="input-field"
+                  value={verifyForm.khatian_no}
+                  onChange={(e) => setVerifyForm(p => ({ ...p, khatian_no: e.target.value }))}
+                  style={{ width: '100%', height: '42px', fontSize: '13px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 12px', color: '#0f172a' }}
+                />
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  disabled={verifyLoading}
+                  className="btn-primary"
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    background: 'linear-gradient(135deg, #059669, #10b981)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(16,185,129,0.3)'
+                  }}
+                >
+                  <Search size={16} /> {verifyLoading ? 'যাচাই হচ্ছে...' : 'জমি যাচাই করুন'}
+                </button>
+              </div>
+            </form>
+
+            {/* Error Message */}
+            {verifyError && (
+              <div style={{ marginTop: '14px', padding: '12px 16px', background: '#fef2f2', border: '1px solid #f87171', borderRadius: '10px', color: '#991b1b', fontSize: '13px', fontWeight: '600' }}>
+                ⚠️ {verifyError}
+              </div>
+            )}
+
+            {/* Live Verification Result Box */}
+            {verifyResult && (
+              <div style={{
+                marginTop: '18px',
+                padding: '20px',
+                borderRadius: '14px',
+                background: verifyResult.signal === 'safe' ? '#f0fdf4' : verifyResult.signal === 'warning' ? '#fffbeb' : '#fef2f2',
+                border: `2px solid ${verifyResult.signal === 'safe' ? '#86efac' : verifyResult.signal === 'warning' ? '#fcd34d' : '#f87171'}`,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    {verifyResult.signal === 'safe' ? (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#22c55e', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <CheckCircle size={22} />
+                      </div>
+                    ) : verifyResult.signal === 'warning' ? (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#f59e0b', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <AlertTriangle size={22} />
+                      </div>
+                    ) : (
+                      <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: '#ef4444', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ShieldAlert size={22} />
+                      </div>
+                    )}
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: verifyResult.signal === 'safe' ? '#166534' : verifyResult.signal === 'warning' ? '#92400e' : '#991b1b' }}>
+                        {verifyResult.signal === 'safe' ? '🟢 নিরাপদ: বৈধ ও সক্রিয় জমি' : verifyResult.signal === 'warning' ? '🟡 সতর্কতা: মিউটেশন বা লেনদেন চলমান' : '🔴 ঝুঁকি: জমিটি বিক্রিত (Sold) অথবা আইনি বিরোধ'}
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#334155', marginTop: '2px', fontWeight: '600' }}>
+                        {verifyResult.message}
+                      </div>
+                    </div>
+                  </div>
+
+                  <span style={{
+                    fontSize: '12px',
+                    padding: '4px 12px',
+                    borderRadius: '999px',
+                    fontWeight: '800',
+                    background: verifyResult.signal === 'safe' ? '#dcfce7' : verifyResult.signal === 'warning' ? '#fef3c7' : '#fee2e2',
+                    color: verifyResult.signal === 'safe' ? '#166534' : verifyResult.signal === 'warning' ? '#92400e' : '#991b1b',
+                    border: '1px solid currentColor'
+                  }}>
+                    স্ট্যাটাস: {verifyResult.data?.status || (verifyResult.success ? 'যাচাইকৃত' : 'রেকর্ড নেই')}
+                  </span>
+                </div>
+
+                {verifyResult.data && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px' }}>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মৌজা: <strong style={{ color: '#0f172a' }}>{verifyResult.data.mouza}</strong></div>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>দাগ নং: <strong style={{ color: '#0f172a' }}>{verifyResult.data.dag_no}</strong></div>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>খতিয়ান নং: <strong style={{ color: '#0f172a' }}>{verifyResult.data.khatian_no}</strong></div>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মালিক: <strong style={{ color: '#1d4ed8' }}>{verifyResult.data.owner_name}</strong></div>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মোট জমি: <strong style={{ color: '#16a34a' }}>{verifyResult.data.total_area_decimal} শতক</strong></div>
+                    <div style={{ background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>মালিকের NID (গোপনীয়): <strong style={{ fontFamily: 'monospace' }}>{verifyResult.data.owner_nid}</strong></div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </section>
 

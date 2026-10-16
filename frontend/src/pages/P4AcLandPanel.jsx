@@ -104,258 +104,291 @@ export default function P4AcLandPanel() {
   };
 
   return (
-    <div className="dashboard-dark" style={{ paddingTop: '1px', paddingBottom: '40px' }}>
-    <div style={{ maxWidth: '1300px', margin: '30px auto', padding: '0 24px' }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(139,92,246,0.2), rgba(167,139,250,0.1))', border: '1px solid rgba(139,92,246,0.3)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Users size={24} color="#a78bfa" />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#f1f5f9' }}>P4 — এসি ল্যান্ড অফিস ড্যাশবোর্ড</h1>
-            <p style={{ fontSize: '13px', color: '#94a3b8' }}>AC Land e-Mutation Dashboard · ই-নামজারি আবেদন ব্যবস্থাপনা</p>
-          </div>
-        </div>
-        <button onClick={fetchApplications} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '8px 16px' }}>
-          <RefreshCw size={14} className={loading ? 'animate-spin-slow' : ''} /> রিফ্রেশ
-        </button>
-      </div>
-
-      {/* Stats bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '28px' }}>
-        {[
-          { label: 'মোট আবেদন', value: applications.length, color: '#a78bfa' },
-          { label: 'নামজারি ইস্যু বাকি', value: applications.filter(a => !a.namjari_issued).length, color: '#f59e0b' },
-          { label: 'পেমেন্ট বাকি', value: applications.filter(a => a.payment_status === 'Pending').length, color: '#f87171' },
-        ].map(stat => (
-          <div key={stat.label} className="glass-card-light" style={{ padding: '16px', textAlign: 'center' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: stat.color }}>{stat.value}</div>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>{stat.label}</div>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }}>
-        {/* Applications List */}
-        <div className="glass-card" style={{ padding: '24px', maxHeight: '600px', overflowY: 'auto' }}>
-          <h2 style={{ fontSize: '15px', fontWeight: '700', color: '#f1f5f9', marginBottom: '16px' }}>
-            📥 Pending আবেদনসমূহ ({applications.length})
-          </h2>
-          {loading && <div style={{ textAlign: 'center', padding: '20px' }}><div className="loader" style={{ margin: '0 auto' }} /></div>}
-          {!loading && applications.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '32px', color: '#64748b' }}>
-              <div style={{ fontSize: '40px', marginBottom: '12px' }}>📭</div>
-              <div>কোনো Pending আবেদন নেই।<br /><small>P4 রেজিস্ট্রি প্যানেল থেকে দলিল করুন।</small></div>
+    <div style={{ paddingBottom: '30px' }}>
+      <div style={{ maxWidth: '1300px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)', border: '1.5px solid #86efac', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Users size={24} color="#059669" />
             </div>
-          )}
-          {applications.map(app => (
-            <div
-              key={app._id}
-              onClick={() => { setSelected(app); setIssueResult(null); setKhatianData(null); }}
-              style={{
-                padding: '16px', marginBottom: '10px', borderRadius: '12px', cursor: 'pointer',
-                transition: 'all 0.2s',
-                background: selected?._id === app._id ? 'rgba(139,92,246,0.15)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${selected?._id === app._id ? 'rgba(139,92,246,0.4)' : 'rgba(255,255,255,0.06)'}`,
-              }}
-              onMouseEnter={e => { if (selected?._id !== app._id) e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; }}
-              onMouseLeave={e => { if (selected?._id !== app._id) e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#f1f5f9' }}>দাগ: {app.dag_no} · {app.mouza}</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>বিক্রেতা: {app.owner_name}</div>
-                </div>
-                <div className="badge-pending">Pending</div>
+            <div>
+              <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#0f172a', margin: 0 }}>ই-নামজারি আবেদন ও মিউটেশন অনুমোদন</h1>
+              <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>AC Land e-Mutation Panel · ভূমি নামজারি আবেদন প্রক্রিয়াকরণ ও চূড়ান্ত খতিয়ান সনদ</p>
+            </div>
+          </div>
+          <button onClick={fetchApplications} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', padding: '8px 16px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+            <RefreshCw size={14} className={loading ? 'animate-spin-slow' : ''} /> রিফ্রেশ
+          </button>
+        </div>
+
+        {/* Stats bar */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+          {[
+            { label: 'মোট আবেদন', value: applications.length, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+            { label: 'নামজারি ইস্যু বাকি', value: applications.filter(a => !a.namjari_issued).length, color: '#d97706', bg: '#fffbeb', border: '#fde68a' },
+            { label: 'পেমেন্ট বাকি', value: applications.filter(a => a.payment_status === 'Pending').length, color: '#dc2626', bg: '#fef2f2', border: '#fecaca' },
+          ].map(stat => (
+            <div key={stat.label} style={{ background: '#ffffff', border: `1.5px solid ${stat.border}`, borderRadius: '14px', padding: '16px 20px', boxShadow: '0 2px 8px rgba(15,23,42,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: '600', color: '#475569' }}>{stat.label}</div>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: stat.color, marginTop: '2px' }}>{stat.value}</div>
               </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8' }}>ক্রেতা: {app.buyer_name}</div>
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                {app.namjari_issued && <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '6px', color: '#86efac' }}>নামজারি ইস্যু ✓</span>}
-                {app.payment_status === 'Pending' && <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '6px', color: '#fcd34d' }}>পেমেন্ট বাকি</span>}
-                {app.payment_status === 'Paid' && <span style={{ fontSize: '10px', padding: '2px 8px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: '6px', color: '#86efac' }}>পেমেন্ট সম্পন্ন ✓</span>}
+              <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: stat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CheckCircle size={20} color={stat.color} />
               </div>
             </div>
           ))}
         </div>
 
-        {/* Right Panel */}
-        <div>
-          {!selected && !khatianData && (
-            <div className="glass-card-light" style={{ padding: '40px', textAlign: 'center', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ fontSize: '60px', marginBottom: '16px', opacity: 0.3 }}>🏛️</div>
-              <div style={{ color: '#64748b' }}>বাম থেকে একটি আবেদন নির্বাচন করুন</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.3fr)', gap: '24px' }}>
+          {/* Applications List */}
+          <div style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '24px', maxHeight: '650px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(15,23,42,0.04)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h2 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                📥 পেন্ডিং আবেদনসমূহ ({applications.length})
+              </h2>
+              <span style={{ fontSize: '11px', background: '#f1f5f9', color: '#475569', padding: '3px 8px', borderRadius: '6px', fontWeight: '600' }}>ক্লিক করে বিস্তারিত দেখুন</span>
             </div>
-          )}
-
-          {selected && !khatianData && (
-            <div className="animate-fade-in-up">
-              {/* Selected application details */}
-              <div className="glass-card" style={{ padding: '24px', marginBottom: '16px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#f1f5f9', marginBottom: '16px' }}>📋 আবেদনের বিস্তারিত</h3>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                  {[
-                    ['মৌজা', selected.mouza], ['দাগ নং', selected.dag_no],
-                    ['খতিয়ান', selected.khatian_no], ['জমির পরিমাণ', `${selected.total_area_decimal} শতাংশ`],
-                    ['বিক্রেতা', selected.owner_name], ['বিক্রেতার NID', selected.owner_nid],
-                    ['ক্রেতা', selected.buyer_name], ['ক্রেতার NID', selected.buyer_nid],
-                    ['ক্রেতার ফোন', selected.buyer_phone || 'N/A'], ['ক্রেতার ইমেইল', selected.buyer_email || 'N/A'],
-                    ['দলিল নং', selected.deed_no || 'N/A'], ['দলিলের সাল', selected.deed_year || 'N/A'],
-                  ].map(([k, v]) => (
-                    <div key={k} style={{ padding: '8px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#64748b' }}>{k}</div>
-                      <div style={{ fontSize: '12px', color: '#f1f5f9', fontWeight: '600' }}>{v}</div>
+            {loading && <div style={{ textAlign: 'center', padding: '20px' }}><div className="loader" style={{ margin: '0 auto' }} /></div>}
+            {!loading && applications.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '36px 20px', color: '#64748b', background: '#f8fafc', borderRadius: '12px', border: '1.5px dashed #cbd5e1' }}>
+                <div style={{ fontSize: '36px', marginBottom: '10px' }}>📭</div>
+                <div style={{ fontWeight: '700', color: '#1e293b' }}>কোনো Pending আবেদন নেই</div>
+                <small style={{ color: '#64748b' }}>রেজিস্ট্রি অফিস থেকে নতুন দলিল নিবন্ধিত হলে এখানে আসবে।</small>
+              </div>
+            )}
+            {applications.map(app => {
+              const isSelected = selected?._id === app._id;
+              return (
+                <div
+                  key={app._id}
+                  onClick={() => { setSelected(app); setIssueResult(null); setKhatianData(null); }}
+                  style={{
+                    padding: '16px',
+                    marginBottom: '12px',
+                    borderRadius: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    background: isSelected ? '#f0fdf4' : '#ffffff',
+                    border: `1.5px solid ${isSelected ? '#16a34a' : '#e2e8f0'}`,
+                    boxShadow: isSelected ? '0 4px 12px rgba(22, 163, 74, 0.12)' : '0 1px 3px rgba(15,23,42,0.03)'
+                  }}
+                  onMouseEnter={e => { if (!isSelected) { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; } }}
+                  onMouseLeave={e => { if (!isSelected) { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e2e8f0'; } }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>দাগ নং: {app.dag_no} · মৌজা: {app.mouza}</div>
+                      <div style={{ fontSize: '12px', color: '#475569', marginTop: '2px' }}>বিক্রেতা: <strong style={{ color: '#0f172a' }}>{app.owner_name}</strong></div>
                     </div>
-                  ))}
-                </div>
-
-                {/* Hash verification */}
-                {selected.deed_hash && (
-                  <div style={{ padding: '12px', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '10px', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}><Hash size={12} /> SHA-256 দলিল হ্যাশ (যাচাই করুন)</div>
-                    <div style={{ fontSize: '10px', color: '#93c5fd', fontFamily: 'monospace', wordBreak: 'break-all' }}>{selected.deed_hash}</div>
+                    <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>পেন্ডিং</span>
                   </div>
-                )}
+                  <div style={{ fontSize: '12px', color: '#475569' }}>ক্রেতা: <strong style={{ color: '#0f172a' }}>{app.buyer_name}</strong> ({app.total_area_decimal || app.sold_area} শতাংশ)</div>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                    {app.namjari_issued && <span style={{ fontSize: '11px', fontWeight: '600', padding: '3px 8px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46' }}>নামজারি ইস্যু ✓</span>}
+                    {app.payment_status === 'Pending' && <span style={{ fontSize: '11px', fontWeight: '600', padding: '3px 8px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', color: '#92400e' }}>পেমেন্ট বাকি</span>}
+                    {app.payment_status === 'Paid' && <span style={{ fontSize: '11px', fontWeight: '600', padding: '3px 8px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46' }}>পেমেন্ট সম্পন্ন ✓</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
 
-                {/* Direct Approve & Issue Namjari buttons */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <button
-                    onClick={handleDirectApproveMutation}
-                    disabled={issueLoading}
-                    className="btn-primary"
-                    style={{
-                      width: '100%',
-                      padding: '12px',
-                      fontSize: '14px',
-                      fontWeight: '800',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                      background: 'linear-gradient(135deg, #059669, #10b981)',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
-                    }}
-                  >
-                    {issueLoading ? <><div className="loader" /> অনুমোদন হচ্ছে...</> : <><CheckCircle size={18} /> ✅ অনুমোদন ও নতুন নামজারি খতিয়ান তৈরি করুন</>}
-                  </button>
+          {/* Right Panel */}
+          <div>
+            {!selected && !khatianData && (
+              <div style={{ background: '#ffffff', border: '1.5px dashed #cbd5e1', borderRadius: '16px', padding: '40px', textAlign: 'center', minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(15,23,42,0.03)' }}>
+                <div style={{ fontSize: '50px', marginBottom: '14px', opacity: 0.7 }}>🏛️</div>
+                <div style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>বাম তালিকা থেকে একটি আবেদন নির্বাচন করুন</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>আবেদনের তথ্য যাচাই করে নামজারি অনুমোদন বা নোটিশ পাঠান</div>
+              </div>
+            )}
 
-                  {!selected.namjari_issued && (
+            {selected && !khatianData && (
+              <div className="animate-fade-in-up">
+                {/* Selected application details */}
+                <div style={{ background: '#ffffff', border: '1.5px solid #e2e8f0', borderRadius: '16px', padding: '24px', marginBottom: '16px', boxShadow: '0 4px 12px rgba(15,23,42,0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>📋 আবেদনের পূর্ণাঙ্গ বিবরণী</h3>
+                    <span style={{ fontSize: '11px', color: '#047857', background: '#ecfdf5', padding: '3px 8px', borderRadius: '6px', fontWeight: '700' }}>দাগ #{selected.dag_no}</span>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
+                    {[
+                      ['মৌজা', selected.mouza], ['দাগ নং', selected.dag_no],
+                      ['খতিয়ান', selected.khatian_no], ['জমির পরিমাণ', `${selected.total_area_decimal || selected.sold_area} শতাংশ`],
+                      ['বিক্রেতা', selected.owner_name], ['বিক্রেতার NID', selected.owner_nid],
+                      ['ক্রেতা', selected.buyer_name], ['ক্রেতার NID', selected.buyer_nid],
+                      ['ক্রেতার ফোন', selected.buyer_phone || 'N/A'], ['ক্রেতার ইমেইল', selected.buyer_email || 'N/A'],
+                      ['দলিল নং', selected.deed_no || 'N/A'], ['দলিলের সাল', selected.deed_year || 'N/A'],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ padding: '10px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>{k}</div>
+                        <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '700', marginTop: '2px', wordBreak: 'break-all' }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Hash verification */}
+                  {selected.deed_hash && (
+                    <div style={{ padding: '12px 14px', background: '#eff6ff', border: '1.5px solid #bfdbfe', borderRadius: '10px', marginBottom: '16px' }}>
+                      <div style={{ fontSize: '11px', color: '#1e40af', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '700' }}>
+                        <Hash size={13} /> SHA-256 ডিজিটাল দলিল সিকিউরিটি হ্যাশ
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#1d4ed8', fontFamily: 'monospace', wordBreak: 'break-all', background: '#ffffff', padding: '6px 8px', borderRadius: '6px', border: '1px solid #dbeafe' }}>
+                        {selected.deed_hash}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Direct Approve & Issue Namjari buttons */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <button
-                      onClick={handleIssueNamejari}
+                      onClick={handleDirectApproveMutation}
                       disabled={issueLoading}
-                      className="btn-secondary"
                       style={{
                         width: '100%',
-                        padding: '10px',
-                        fontSize: '13px',
+                        padding: '13px',
+                        fontSize: '14px',
+                        fontWeight: '800',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px'
+                        gap: '8px',
+                        background: 'linear-gradient(135deg, #059669, #10b981)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
                       }}
                     >
-                      <Mail size={15} /> 📧 ক্রেতাকে নামজারি নোটিশ ও পেমেন্ট লিংক পাঠান
+                      {issueLoading ? <><div className="loader" /> অনুমোদন হচ্ছে...</> : <><CheckCircle size={18} /> ✅ অনুমোদন ও নতুন নামজারি খতিয়ান তৈরি করুন</>}
                     </button>
-                  )}
-                </div>
 
-                {/* Issue result */}
-                {issueResult && (
-                  <div className="animate-fade-in-up" style={{
-                    marginTop: '16px', padding: '16px',
-                    background: issueResult.success ? 'rgba(34,197,94,0.08)' : 'rgba(220,38,38,0.08)',
-                    border: `1px solid ${issueResult.success ? 'rgba(34,197,94,0.25)' : 'rgba(220,38,38,0.25)'}`,
-                    borderRadius: '12px',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Mail size={16} color={issueResult.success ? '#22c55e' : '#dc2626'} />
-                      <span style={{ fontSize: '13px', fontWeight: '700', color: issueResult.success ? '#86efac' : '#fca5a5' }}>
-                        {issueResult.success ? '✅ নামজারি ইস্যু ও ইমেইল পাঠানো হয়েছে!' : '❌ ' + issueResult.message}
-                      </span>
-                    </div>
-                    {issueResult.success && (
-                      <>
-                        <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>
-                          📧 পেমেন্ট লিংক পাঠানো হয়েছে: <span style={{ color: '#60a5fa' }}>{issueResult.buyer_email}</span>
-                        </div>
-                        <div style={{ fontSize: '11px', padding: '8px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '8px', color: '#93c5fd', marginBottom: '12px', wordBreak: 'break-all' }}>
-                          🔗 {issueResult.payment_link}
-                        </div>
-                        <button onClick={handleCompletePayment} className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                          💳 পেমেন্ট সম্পন্ন করুন → খতিয়ান তৈরি করুন
-                        </button>
-                      </>
+                    {!selected.namjari_issued && (
+                      <button
+                        onClick={handleIssueNamejari}
+                        disabled={issueLoading}
+                        style={{
+                          width: '100%',
+                          padding: '11px',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          background: '#ffffff',
+                          color: '#0f172a',
+                          border: '1.5px solid #cbd5e1',
+                          borderRadius: '10px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <Mail size={15} color="#2563eb" /> 📧 ক্রেতাকে নামজারি নোটিশ ও পেমেন্ট লিংক পাঠান
+                      </button>
                     )}
                   </div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {/* New Khatian PDF */}
-          {khatianData && (
-            <div className="animate-fade-in-up">
-              <div style={{ padding: '16px 20px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <CheckCircle size={20} color="#22c55e" />
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#86efac' }}>🎉 মালিকানা হস্তান্তর সম্পন্ন!</div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>নতুন নামজারি খতিয়ান তৈরি হয়েছে। QR কোড সহ PDF ডাউনলোড করুন।</div>
-                </div>
-              </div>
-
-              {/* Khatian PDF */}
-              <div ref={khatianRef} style={{ background: '#0d1629', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '28px', marginBottom: '16px' }}>
-                <div style={{ textAlign: 'center', borderBottom: '1px solid rgba(255,255,255,0.08)', paddingBottom: '16px', marginBottom: '20px' }}>
-                  <div style={{ fontSize: '22px', fontWeight: '800', color: '#f1f5f9' }}>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-                  <div style={{ fontSize: '15px', color: '#a78bfa', fontWeight: '600', marginTop: '4px' }}>নামজারি খতিয়ান</div>
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>Namjari Khatian Certificate · e-Vhumi</div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
-                  {[
-                    ['মৌজা', khatianData.mouza],
-                    ['জে.এল নম্বর', khatianData.jl_no],
-                    ['খতিয়ান নম্বর', khatianData.khatian_no],
-                    ['দাগ নম্বর', khatianData.dag_no],
-                    ['নতুন মালিক', khatianData.owner_name],
-                    ['মালিকের NID', khatianData.owner_nid],
-                    ['জমির পরিমাণ', `${khatianData.total_area_decimal} শতাংশ`],
-                    ['ইস্যুর তারিখ', new Date().toLocaleDateString('bn-BD')],
-                  ].map(([k, v]) => (
-                    <div key={k} style={{ padding: '10px', background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.15)', borderRadius: '8px' }}>
-                      <div style={{ fontSize: '10px', color: '#94a3b8', marginBottom: '2px' }}>{k}</div>
-                      <div style={{ fontSize: '13px', color: '#f1f5f9', fontWeight: '600' }}>{v}</div>
+                  {/* Issue result */}
+                  {issueResult && (
+                    <div className="animate-fade-in-up" style={{
+                      marginTop: '16px', padding: '16px',
+                      background: issueResult.success ? '#f0fdf4' : '#fef2f2',
+                      border: `1.5px solid ${issueResult.success ? '#86efac' : '#fca5a5'}`,
+                      borderRadius: '12px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <Mail size={16} color={issueResult.success ? '#16a34a' : '#dc2626'} />
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: issueResult.success ? '#166534' : '#991b1b' }}>
+                          {issueResult.success ? '✅ নামজারি নোটিশ ও ইমেইল পাঠানো হয়েছে!' : '❌ ' + issueResult.message}
+                        </span>
+                      </div>
+                      {issueResult.success && (
+                        <>
+                          <div style={{ fontSize: '12px', color: '#334155', marginBottom: '10px' }}>
+                            📧 পেমেন্ট লিংক প্রেরিত হয়েছে: <strong style={{ color: '#1d4ed8' }}>{issueResult.buyer_email}</strong>
+                          </div>
+                          <div style={{ fontSize: '11px', padding: '8px 12px', background: '#eff6ff', borderRadius: '8px', color: '#1e40af', marginBottom: '12px', wordBreak: 'break-all', border: '1px solid #bfdbfe' }}>
+                            🔗 {issueResult.payment_link}
+                          </div>
+                          <button onClick={handleCompletePayment} className="btn-primary" style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            💳 পেমেন্ট সম্পন্ন করুন → খতিয়ান তৈরি করুন
+                          </button>
+                        </>
+                      )}
                     </div>
-                  ))}
+                  )}
                 </div>
+              </div>
+            )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: 'rgba(255,255,255,0.03)', borderRadius: '12px' }}>
-                  <QRCodeSVG
-                    value={`${window.location.origin}/qr-verify/${khatianData.qr_code_id}`}
-                    size={100}
-                    fgColor="#f1f5f9"
-                    bgColor="transparent"
-                    level="H"
-                  />
+            {/* New Khatian PDF */}
+            {khatianData && (
+              <div className="animate-fade-in-up">
+                <div style={{ padding: '16px 20px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <CheckCircle size={22} color="#16a34a" />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: '#a78bfa', marginBottom: '6px' }}>QR কোড স্ক্যান করুন</div>
-                    <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.7 }}>
-                      QR ID: <span style={{ color: '#60a5fa', fontFamily: 'monospace' }}>{khatianData.qr_code_id}</span><br />
-                      এই QR স্ক্যান করে যেকোনো সময়<br />খতিয়ানের বৈধতা যাচাই করা যাবে।
-                    </div>
-                    <div className="badge-active" style={{ display: 'inline-block', marginTop: '8px' }}>🟢 Active</div>
+                    <div style={{ fontSize: '15px', fontWeight: '800', color: '#166534' }}>🎉 নামজারি সম্পন্ন ও খতিয়ান প্রস্তুত!</div>
+                    <div style={{ fontSize: '12px', color: '#475569' }}>নতুন নামজারি খতিয়ান তৈরি হয়েছে। QR কোড সহ PDF ডাউনলোড করুন।</div>
                   </div>
                 </div>
-              </div>
 
-              <button onClick={downloadKhatianPDF} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%' }}>
-                <Download size={16} /> নামজারি খতিয়ান PDF ডাউনলোড করুন
-              </button>
-            </div>
-          )}
+                {/* Khatian PDF */}
+                <div ref={khatianRef} style={{ background: '#ffffff', border: '2px solid #059669', borderRadius: '16px', padding: '28px', marginBottom: '16px', boxShadow: '0 6px 18px rgba(5,150,105,0.08)' }}>
+                  <div style={{ textAlign: 'center', borderBottom: '2px solid #e2e8f0', paddingBottom: '16px', marginBottom: '20px' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a' }}>গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
+                    <div style={{ fontSize: '16px', color: '#059669', fontWeight: '800', marginTop: '4px' }}>ই-নামজারি খতিয়ান সনদ</div>
+                    <div style={{ fontSize: '12px', color: '#64748b' }}>Namjari Khatian Certificate · e-Vhumi Land Portal</div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '20px' }}>
+                    {[
+                      ['মৌজা', khatianData.mouza],
+                      ['জে.এল নম্বর', khatianData.jl_no],
+                      ['খতিয়ান নম্বর', khatianData.khatian_no],
+                      ['দাগ নম্বর', khatianData.dag_no],
+                      ['নতুন মালিক', khatianData.owner_name],
+                      ['মালিকের NID', khatianData.owner_nid],
+                      ['জমির পরিমাণ', `${khatianData.total_area_decimal} শতাংশ`],
+                      ['ইস্যুর তারিখ', new Date().toLocaleDateString('bn-BD')],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ padding: '10px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '600', marginBottom: '2px' }}>{k}</div>
+                        <div style={{ fontSize: '13px', color: '#0f172a', fontWeight: '800' }}>{v}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', flexWrap: 'wrap' }}>
+                    <QRCodeSVG
+                      value={`${window.location.origin}/qr-verify/${khatianData.qr_code_id}`}
+                      size={100}
+                      fgColor="#0f172a"
+                      bgColor="transparent"
+                      level="H"
+                    />
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#065f46', marginBottom: '6px' }}>QR কোড স্ক্যান করে অনলাইন যাচাই</div>
+                      <div style={{ fontSize: '11px', color: '#334155', lineHeight: 1.7 }}>
+                        QR ID: <span style={{ color: '#047857', fontFamily: 'monospace', fontWeight: '700' }}>{khatianData.qr_code_id}</span><br />
+                        যেকোনো নাগরিক বা প্রতিষ্ঠান এই QR স্ক্যান করে খতিয়ান যাচাই করতে পারবেন।
+                      </div>
+                      <div className="badge-active" style={{ display: 'inline-block', marginTop: '8px' }}>🟢 Active & Verified</div>
+                    </div>
+                  </div>
+                </div>
+
+                <button onClick={downloadKhatianPDF} className="btn-primary" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', width: '100%', padding: '12px' }}>
+                  <Download size={16} /> নামজারি খতিয়ান PDF ডাউনলোড করুন
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }

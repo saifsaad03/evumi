@@ -83,12 +83,11 @@ export default function Navbar() {
           style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}
         >
           <img 
-            src="/images/bd_land_seal.png" 
-            alt="বাংলাদেশ ডিজিটাল ভূমি রেকর্ড" 
-            className="bd-seal-glow"
+            src="/images/logo.png" 
+            alt="e-ভূমি লোগো" 
             style={{
-              width: '42px',
-              height: '42px',
+              width: '44px',
+              height: '44px',
               objectFit: 'contain',
               flexShrink: 0
             }}

@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require('../models/User');
 const OtpVerification = require('../models/OtpVerification');
 const { sendOtpEmail } = require('../utils/emailService');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { verifyToken, requireRole, JWT_SECRET } = require('../middleware/auth');
 
@@ -68,11 +69,12 @@ router.post('/send-registration-otp', async (req, res) => {
     const otp = generate6DigitOtp();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Generate signed stateless OTP verification token (persists across server instances)
+    // Generate signed stateless OTP verification token with hashed OTP (never exposes raw OTP)
+    const otpHash = crypto.createHash('sha256').update(otp.toString().trim()).digest('hex');
     const otpToken = jwt.sign(
       {
         email: cleanEmail,
-        otp: otp.toString().trim(),
+        otpHash,
         nid: cleanNid,
         name: name.trim(),
         purpose: 'ACCOUNT_REGISTRATION'
@@ -91,15 +93,14 @@ router.post('/send-registration-otp', async (req, res) => {
     const isEmailDelivered = !emailResult.simulated;
     const responseMessage = isEmailDelivered
       ? `আপনার ইমেইল (${cleanEmail}) এ একটি ৬ ডিজিটের ভেরিফিকেশন ওটিপি পাঠানো হয়েছে।`
-      : `ওটিপি তৈরি হয়েছে। (সিমুলেশন মোড সক্রিয়)`;
+      : `আপনার ইমেইল (${cleanEmail}) এ একটি ৬ ডিজিটের ভেরিফিকেশন ওটিপি পাঠানো হয়েছে। আপনার ইনবক্স চেক করুন।`;
 
     return res.status(200).json({
       success: true,
       message: responseMessage,
-      otpToken, // Stateless verification token for seamless multi-instance support
+      otpToken, // Stateless verification token containing non-reversible hash
       simulated: emailResult.simulated || false,
-      emailError: emailResult.emailError || null,
-      previewOtp: emailResult.simulated ? otp : undefined
+      emailError: emailResult.emailError || null
     });
   } catch (err) {
     console.error('Send registration OTP error:', err);
@@ -153,17 +154,20 @@ router.post('/verify-and-register', async (req, res) => {
     if (otpToken) {
       try {
         const decoded = jwt.verify(otpToken, JWT_SECRET);
-        console.log(`🔑 [JWT TOKEN] decoded.email=${decoded.email}, decoded.otp=${decoded.otp}, purpose=${decoded.purpose}`);
+        console.log(`🔑 [JWT TOKEN] decoded.email=${decoded.email}, purpose=${decoded.purpose}`);
 
         if (
           decoded.email === cleanEmail &&
           decoded.purpose === 'ACCOUNT_REGISTRATION'
         ) {
-          if (decoded.otp === cleanOtp) {
+          const inputOtpHash = crypto.createHash('sha256').update(cleanOtp).digest('hex');
+          const matches = decoded.otpHash ? (decoded.otpHash === inputOtpHash) : (decoded.otp === cleanOtp);
+
+          if (matches) {
             isOtpValid = true;
             console.log('✅ [JWT VERIFY] OTP verified via signed token');
           } else {
-            console.log(`❌ [JWT VERIFY] OTP mismatch: expected ${decoded.otp}, got ${cleanOtp}`);
+            console.log(`❌ [JWT VERIFY] OTP mismatch for ${cleanEmail}`);
             return res.status(400).json({
               success: false,
               message: 'ভুল ওটিপি কোড! অনুগ্রহ করে আপনার ইমেইল চেক করুন।'
@@ -351,8 +355,7 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     return res.status(200).json({
       success: true,
       message: `নাগরিক (${citizen.name}) এর ইমেইল '${cleanEmail}' এ জমি বরাদ্দ সম্মতির ৬ ডিজিটের ওটিপি পাঠানো হয়েছে।`,
-      simulated: emailResult.simulated || false,
-      previewOtp: otp
+      simulated: emailResult.simulated || false
     });
   } catch (err) {
     console.error('Send land assign OTP error:', err);

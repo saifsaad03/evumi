@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Building2, Search, CheckCircle, FileText, Download, Hash, 
   ShieldAlert, AlertTriangle, ShieldCheck, ArrowRight, UserCheck, 
-  Check, Sparkles, Send, Lock, Clock, Info
+  Check, Sparkles, Send, Lock, Clock, Info, UserX, Loader2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import jsPDF from 'jspdf';
@@ -21,6 +21,15 @@ export default function P4RegistryPanel() {
   const [searchError, setSearchError] = useState('');
   const [doubleSellAlert, setDoubleSellAlert] = useState(null);
 
+  // Mouza list state for dropdown
+  const [mouzasList, setMouzasList] = useState(['গুজিয়া', 'ধানমন্ডি', 'মিরপুর', 'শিবগঞ্জ', 'চকসারকার', 'মহাস্থান', 'পাইকপাড়া', 'তেজগাঁও', 'উত্তরা']);
+
+  // Buyer verification states
+  const [buyerVerifying, setBuyerVerifying] = useState(false);
+  const [buyerVerified, setBuyerVerified] = useState(false);
+  const [buyerVerifyMsg, setBuyerVerifyMsg] = useState(null);
+  const [buyerVerifyError, setBuyerVerifyError] = useState(null);
+
   const [deedForm, setDeedForm] = useState({
     deed_no: `DEED-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`,
     deed_year: new Date().getFullYear().toString(),
@@ -35,11 +44,60 @@ export default function P4RegistryPanel() {
   const [grantResult, setGrantResult] = useState(null);
   const pdfRef = useRef(null);
 
+  useEffect(() => {
+    fetchMouzas();
+  }, []);
+
+  const fetchMouzas = async () => {
+    try {
+      const res = await axios.get('/api/mouzas');
+      if (res.data.success && res.data.mouzas && res.data.mouzas.length > 0) {
+        setMouzasList(res.data.mouzas);
+      }
+    } catch (err) {
+      console.warn('Failed to load mouzas list, fallback list active:', err);
+    }
+  };
+
+  // Buyer NID live verification in database
+  const handleVerifyBuyer = async (customNid) => {
+    const targetNid = (customNid || deedForm.buyer_nid || '').toString().trim();
+    if (!targetNid) {
+      setBuyerVerifyError('অনুগ্রহ করে ক্রেতার NID নম্বর লিখুন।');
+      return;
+    }
+
+    setBuyerVerifying(true);
+    setBuyerVerifyError(null);
+    setBuyerVerifyMsg(null);
+
+    try {
+      const res = await axios.get(`/api/verify-buyer/${encodeURIComponent(targetNid)}`);
+      if (res.data.success && res.data.buyer) {
+        setDeedForm(prev => ({
+          ...prev,
+          buyer_nid: res.data.buyer.nid,
+          buyer_name: res.data.buyer.name,
+          buyer_phone: res.data.buyer.phone || prev.buyer_phone,
+          buyer_email: res.data.buyer.email || prev.buyer_email
+        }));
+        setBuyerVerified(true);
+        setBuyerVerifyMsg(`✅ ক্রেতার অ্যাকাউন্ট যাচাই সম্পন্ন: ${res.data.buyer.name} (ইমেইল: ${res.data.buyer.email || 'N/A'})`);
+      }
+    } catch (err) {
+      setBuyerVerified(false);
+      setBuyerVerifyError(err.response?.data?.message || 'ক্রেতার অ্যাকাউন্ট ডাটাবেজে পাওয়া যায়নি। ক্রেতাকে প্রথমে নাগরিক হিসেবে নিবন্ধন করতে হবে।');
+    } finally {
+      setBuyerVerifying(false);
+    }
+  };
+
   // Step 1: Search Land & Run Anti-Double Selling Engine
+  // Requires ALL THREE: Seller NID + Mouza + Dag Number
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    if (!searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
-      setSearchError('অনুগ্রহ করে দাগ নম্বর এবং মৌজার নাম দিন।');
+    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, দাগ নম্বর এবং মৌজা — এই ৩টি তথ্যই প্রদান করুন।');
       return;
     }
     setSearchLoading(true);
@@ -47,9 +105,12 @@ export default function P4RegistryPanel() {
     setLandRecord(null);
     setGrantResult(null);
     setDoubleSellAlert(null);
+    setBuyerVerified(false);
+    setBuyerVerifyMsg(null);
+    setBuyerVerifyError(null);
 
     try {
-      // Live Anti-Double Selling & Assignment check via verify-deed
+      // Live Anti-Double Selling & Ownership check via verify-deed
       const verifyRes = await axios.post('/api/verify-deed', {
         seller_nid: searchForm.seller_nid?.trim(),
         dag_no: searchForm.dag_no?.trim(),
@@ -84,6 +145,11 @@ export default function P4RegistryPanel() {
 
     if (landRecord.status !== 'Active') {
       alert(`এই জমিটি বর্তমানে '${landRecord.status}' অবস্থায় থাকায় দলিল সম্পাদন করা সম্ভব নয়!`);
+      return;
+    }
+
+    if (!buyerVerified) {
+      alert('দলিল অনুমোদন করার পূর্বে অবশ্যই ক্রেতার NID সিস্টেমে যাচাই সম্পন্ন হতে হবে!');
       return;
     }
 
@@ -280,21 +346,22 @@ export default function P4RegistryPanel() {
             <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
               <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  বিক্রেতার জাতীয় পরিচয়পত্র (NID) নম্বর
+                  বিক্রেতার জাতীয় পরিচয়পত্র (NID) নম্বর <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
+                  required
                   className="input-field"
                   placeholder="যেমন: 1998567890123"
                   value={searchForm.seller_nid}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, seller_nid: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  দাগ নম্বর (Plot No)
+                  দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -303,23 +370,26 @@ export default function P4RegistryPanel() {
                   placeholder="১০১"
                   value={searchForm.dag_no}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                 />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  মৌজার নাম
+                  মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   className="input-field"
-                  placeholder="গুজিয়া"
                   value={searchForm.mouza}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
-                />
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                >
+                  <option value="">-- মৌজা নির্বাচন করুন --</option>
+                  {mouzasList.map((m, idx) => (
+                    <option key={idx} value={m}>{m}</option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
@@ -441,6 +511,70 @@ export default function P4RegistryPanel() {
                 <span style={{ fontSize: '11px', color: '#1e40af', background: '#dbeafe', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>ধাপ ২ / ৪</span>
               </div>
 
+              {/* Buyer NID Verification Box */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '12px',
+                padding: '16px',
+                marginBottom: '16px'
+              }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '800' }}>
+                  ক্রেতার জাতীয় পরিচয়পত্র (NID) যাচাই <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="text"
+                    required
+                    className="input-field"
+                    placeholder="ক্রেতার ১৩/১৭ বা ১০ ডিজিটের NID লিখুন"
+                    value={deedForm.buyer_nid}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDeedForm(prev => ({ ...prev, buyer_nid: val }));
+                      setBuyerVerified(false);
+                      setBuyerVerifyMsg(null);
+                      setBuyerVerifyError(null);
+                    }}
+                    style={{ flex: 1, fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleVerifyBuyer()}
+                    disabled={buyerVerifying || !deedForm.buyer_nid?.trim()}
+                    className="btn-primary"
+                    style={{
+                      padding: '10px 18px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    {buyerVerifying ? <Loader2 size={16} className="animate-spin" /> : <UserCheck size={16} />}
+                    {buyerVerifying ? 'যাচাই হচ্ছে...' : 'ক্রেতা যাচাই করুন'}
+                  </button>
+                </div>
+
+                {buyerVerifyMsg && (
+                  <div style={{ marginTop: '10px', padding: '10px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '12px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={16} color="#16a34a" />
+                    <span>{buyerVerifyMsg}</span>
+                  </div>
+                )}
+
+                {buyerVerifyError && (
+                  <div style={{ marginTop: '10px', padding: '10px 14px', background: '#fef2f2', border: '1px solid #f87171', borderRadius: '8px', color: '#991b1b', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <UserX size={16} color="#dc2626" />
+                    <span>{buyerVerifyError}</span>
+                  </div>
+                )}
+              </div>
+
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
@@ -453,7 +587,7 @@ export default function P4RegistryPanel() {
                     placeholder="যেমন: DEED-2026-101"
                     value={deedForm.deed_no}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, deed_no: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
 
@@ -466,37 +600,22 @@ export default function P4RegistryPanel() {
                     className="input-field"
                     value={deedForm.deed_year}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, deed_year: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                    ক্রেতার নাম <span style={{ color: '#dc2626' }}>*</span>
+                    ক্রেতার নাম (স্বয়ংক্রিয় তথ্য) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
                     required
                     className="input-field"
-                    placeholder="ক্রেতার পূর্ণ নাম লিখুন"
+                    placeholder="ক্রেতা যাচাইয়ের পর নাম প্রদর্শিত হবে"
                     value={deedForm.buyer_name}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_name: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                    ক্রেতার NID নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    className="input-field"
-                    placeholder="ক্রেতার জাতীয় পরিচয়পত্র (NID)"
-                    value={deedForm.buyer_nid}
-                    onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_nid: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: buyerVerified ? '#f0fdf4' : '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
 
@@ -510,25 +629,26 @@ export default function P4RegistryPanel() {
                     placeholder="যেমন: ০১৭১১xxxxxx"
                     value={deedForm.buyer_phone}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_phone: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                    ক্রেতার ইমেইল (বিজ্ঞপ্তি প্রাপ্তির জন্য)
+                    ক্রেতার ইমেইল (পেমেন্ট নোটিফিকেশনের জন্য) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="email"
+                    required
                     className="input-field"
                     placeholder="ক্রেতার ইমেইল এড্রেস"
                     value={deedForm.buyer_email}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, buyer_email: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: buyerVerified ? '#f0fdf4' : '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
 
-                <div style={{ gridColumn: 'span 2' }}>
+                <div>
                   <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                     বিক্রীত জমির পরিমাণ (শতক)
                   </label>
@@ -538,7 +658,7 @@ export default function P4RegistryPanel() {
                     className="input-field"
                     value={deedForm.sold_area}
                     onChange={(e) => setDeedForm(prev => ({ ...prev, sold_area: e.target.value }))}
-                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
               </div>
@@ -548,7 +668,7 @@ export default function P4RegistryPanel() {
                 <button
                   type="button"
                   onClick={handleGrantDeed}
-                  disabled={grantLoading || landRecord.status !== 'Active'}
+                  disabled={grantLoading || landRecord.status !== 'Active' || !buyerVerified}
                   className="btn-primary"
                   style={{
                     width: '100%',
@@ -559,16 +679,19 @@ export default function P4RegistryPanel() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    background: 'linear-gradient(135deg, #16a34a, #15803d)',
+                    background: buyerVerified ? 'linear-gradient(135deg, #16a34a, #15803d)' : '#94a3b8',
+                    cursor: buyerVerified ? 'pointer' : 'not-allowed',
                     color: '#ffffff',
-                    boxShadow: '0 4px 16px rgba(22, 163, 74, 0.35)'
+                    boxShadow: buyerVerified ? '0 4px 16px rgba(22, 163, 74, 0.35)' : 'none'
                   }}
                 >
                   <CheckCircle size={18} />
                   {grantLoading ? 'দলিল সম্পাদন হচ্ছে...' : '৩. Grant Deed অনুমোদন করুন ➔ এসি ল্যান্ডে পাঠান'}
                 </button>
-                <div style={{ fontSize: '11px', color: '#475569', textAlign: 'center', marginTop: '8px', fontWeight: '500' }}>
-                  🔒 Grant Deed করার সাথে সাথে SHA-256 হ্যাশ তৈরি হবে এবং জমিটি Pending_Mutation-এ লক হবে।
+                <div style={{ fontSize: '11px', color: buyerVerified ? '#475569' : '#dc2626', textAlign: 'center', marginTop: '8px', fontWeight: '600' }}>
+                  {buyerVerified 
+                    ? '🔒 Grant Deed করার সাথে সাথে SHA-256 হ্যাশ তৈরি হবে এবং ক্রেতার ইমেইলে নোটিফিকেশন যাবে।'
+                    : '⚠️ দলিল সম্পন্ন করতে প্রথমে ওপরের "ক্রেতা যাচাই করুন" বাটনে ক্লিক করে ক্রেতার NID যাচাই করুন।'}
                 </div>
               </div>
             </div>

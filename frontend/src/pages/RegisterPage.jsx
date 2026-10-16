@@ -139,7 +139,6 @@ export default function RegisterPage() {
           nid: formData.nid.trim(),
           name: formData.name.trim(),
           otpToken: res.data.otpToken || null,
-          previewOtp: res.data.previewOtp || null,
           otpMessage: res.data.message
         };
 

@@ -1178,3 +1178,30 @@ select option:checked {
   }
 }
 
+/* Keyframe for mobile drawer */
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* High visibility rules for dashboard content */
+.dashboard-dark {
+  background-color: #e8edf2 !important;
+  color: #0f172a !important;
+}
+
+/* Ensure all glass-card elements on dashboards have crisp dark text and white background */
+.dashboard-dark .glass-card,
+.dashboard-dark .glass-card-light {
+  background: #ffffff !important;
+  border: 1.5px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05) !important;
+}
+

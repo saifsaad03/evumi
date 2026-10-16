@@ -32,6 +32,7 @@ const LandRecordSchema = new mongoose.Schema({
   buyer_name: { type: String },
   buyer_phone: { type: String },
   buyer_email: { type: String },
+  sold_area: { type: Number },
   payment_status: { type: String, enum: ['Pending', 'Paid', null], default: null },
   namjari_issued: { type: Boolean, default: false },
   // P3 audit log embedded
