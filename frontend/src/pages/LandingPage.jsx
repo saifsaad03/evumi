@@ -209,189 +209,130 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Hero Grid: Left Content, Right Bangladesh Land Illustration */}
+          {/* Hero Content — Centered & Clean */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '40px',
-            alignItems: 'center',
+            maxWidth: '860px',
+            margin: '0 auto',
+            textAlign: 'center',
           }}>
-            {/* Left Column: Headlines & Call to Actions */}
-            <div>
-              <h1 style={{
-                fontSize: 'clamp(32px, 5.5vw, 56px)',
-                fontWeight: '900',
-                lineHeight: 1.15,
-                color: '#0f172a',
-                marginBottom: '20px',
-                letterSpacing: '-0.02em',
+            <h1 style={{
+              fontSize: 'clamp(32px, 5.5vw, 56px)',
+              fontWeight: '900',
+              lineHeight: 1.18,
+              color: '#0f172a',
+              marginBottom: '20px',
+              letterSpacing: '-0.02em',
+            }}>
+              ডিজিটাল ভূমিসেবা ও{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #047857 0%, #16a34a 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
               }}>
-                ডিজিটাল ভূমিসেবা ও{' '}
-                <span style={{
-                  background: 'linear-gradient(135deg, #047857 0%, #16a34a 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  ই-নামজারি নেটওয়ার্ক
-                </span>
-              </h1>
+                ই-নামজারি নেটওয়ার্ক
+              </span>
+            </h1>
 
-              <p style={{
-                fontSize: 'clamp(15px, 1.8vw, 17px)',
-                color: '#475569',
-                lineHeight: 1.75,
-                marginBottom: '32px',
-                maxWidth: '560px'
-              }}>
-                নাগরিকের ভূমির অধিকার সুরক্ষায় অত্যাধুনিক প্রযুক্তি। সাব-রেজিস্ট্রার দলিল নিবন্ধন,
-                এসি ল্যান্ড নামজারি এবং নাগরিকের QR-কোডযুক্ত খতিয়ান যাচাইয়ের সমন্বিত সরকারি প্ল্যাটফর্ম।
-              </p>
+            <p style={{
+              fontSize: 'clamp(15px, 1.8vw, 18px)',
+              color: '#334155',
+              lineHeight: 1.8,
+              marginBottom: '36px',
+              maxWidth: '720px',
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}>
+              নাগরিকের ভূমির অধিকার সুরক্ষায় অত্যাধুনিক প্রযুক্তি। সাব-রেজিস্ট্রার দলিল নিবন্ধন,
+              এসি ল্যান্ড নামজারি এবং নাগরিকের QR-কোডযুক্ত খতিয়ান যাচাইয়ের সমন্বিত সরকারি প্ল্যাটফর্ম।
+            </p>
 
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '32px' }}>
-                <button
-                  onClick={() => navigate('/login')}
-                  className="btn-primary"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '13px 28px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    background: 'linear-gradient(135deg, #065f46, #059669)',
-                    boxShadow: '0 4px 14px rgba(6,95,70,0.25)',
-                  }}
-                >
-                  <LogIn size={17} /> পোর্টালে লগইন <ArrowRight size={15} />
-                </button>
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '14px',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              marginBottom: '36px',
+            }}>
+              <button
+                onClick={() => navigate('/login')}
+                className="btn-primary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '14px 32px',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  background: 'linear-gradient(135deg, #065f46, #059669)',
+                  boxShadow: '0 4px 16px rgba(6,95,70,0.25)',
+                }}
+              >
+                <LogIn size={18} /> পোর্টালে লগইন <ArrowRight size={16} />
+              </button>
 
-                <button
-                  onClick={() => navigate('/verify')}
-                  className="btn-secondary"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '13px 24px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    color: '#065f46',
-                    borderColor: '#a7f3d0',
-                    background: '#f0fdf4',
-                  }}
-                >
-                  <Search size={17} /> খতিয়ান ও জমি যাচাই
-                </button>
+              <button
+                onClick={() => navigate('/verify')}
+                className="btn-secondary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '14px 28px',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  color: '#065f46',
+                  borderColor: '#a7f3d0',
+                  background: '#f0fdf4',
+                }}
+              >
+                <Search size={18} /> খতিয়ান ও জমি যাচাই
+              </button>
 
-                <button
-                  onClick={() => navigate('/register')}
-                  className="btn-secondary"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '13px 20px',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                  }}
-                >
-                  <UserPlus size={17} /> নাগরিক নিবন্ধন
-                </button>
-              </div>
-
-              {/* Trust Micro Indicators */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-                flexWrap: 'wrap',
-                paddingTop: '16px',
-                borderTop: '1px solid #e2e8f0',
-                fontSize: '13px',
-                color: '#64748b'
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle size={15} color="#16a34a" /> সরকারি গ্যাজেট ও ভূমি আইনসম্মত
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Shield size={15} color="#0284c7" /> এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ
-                </span>
-              </div>
+              <button
+                onClick={() => navigate('/register')}
+                className="btn-secondary"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '14px 24px',
+                  borderRadius: '12px',
+                  fontSize: '15px',
+                  fontWeight: '700',
+                  background: '#ffffff',
+                  borderColor: '#cbd5e1',
+                  color: '#0f172a',
+                }}
+              >
+                <UserPlus size={18} /> নাগরিক নিবন্ধন
+              </button>
             </div>
 
-            {/* Right Column: Bangladesh Land Infographic SVG */}
-            <div style={{ position: 'relative' }}>
-              {/* Main SVG Infographic */}
-              <div className="bd-infographic-wrap">
-                <img
-                  src="/images/bd_land_infographic.svg"
-                  alt="বাংলাদেশের নদীমাতৃক ভূমি ও ডিজিটাল ভূমি ব্যবস্থাপনা"
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block',
-                  }}
-                />
-              </div>
-
-              {/* Floating Stat Badges */}
-              <div style={{
-                position: 'absolute',
-                top: '-16px',
-                right: '-10px',
-                background: 'white',
-                borderRadius: '14px',
-                padding: '10px 16px',
-                border: '1.5px solid #bbf7d0',
-                boxShadow: '0 8px 24px rgba(22,163,74,0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                zIndex: 2,
-              }}>
-                <span className="live-dot"/>
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: '800', color: '#065f46' }}>সার্ভিস সক্রিয়</div>
-                  <div style={{ fontSize: '10px', color: '#64748b' }}>রিয়েলটাইম আপডেট</div>
-                </div>
-              </div>
-
-              {/* Bottom caption overlay */}
-              <div style={{
-                position: 'absolute',
-                bottom: '12px',
-                left: '12px',
-                right: '12px',
-                background: 'rgba(255,255,255,0.92)',
-                backdropFilter: 'blur(8px)',
-                padding: '10px 16px',
-                borderRadius: '12px',
-                border: '1px solid rgba(22,163,74,0.25)',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '10px',
-                zIndex: 2,
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{
-                    width: '36px', height: '36px', borderRadius: '10px',
-                    background: '#ecfdf5', border: '1px solid #a7f3d0',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '18px', flexShrink: 0
-                  }}>🌾</div>
-                  <div>
-                    <div style={{ fontSize: '12px', fontWeight: '800', color: '#065f46' }}>শিবগঞ্জ মৌজা — ডিজিটাল ক্যাডাস্ট্রাল ম্যাপ</div>
-                    <div style={{ fontSize: '10px', color: '#64748b' }}>GIS দাগ নম্বর, QR খতিয়ান ও SHA-256 হ্যাশ সংযুক্ত</div>
-                  </div>
-                </div>
-                <span style={{
-                  fontSize: '10px', fontWeight: '800', color: '#047857',
-                  background: '#dcfce7', padding: '3px 8px', borderRadius: '6px', whiteSpace: 'nowrap'
-                }}>লাইভ রেকর্ড</span>
-              </div>
+            {/* Trust Micro Indicators */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '24px',
+              flexWrap: 'wrap',
+              paddingTop: '20px',
+              borderTop: '1px solid rgba(203, 213, 225, 0.8)',
+              fontSize: '13.5px',
+              color: '#475569',
+              fontWeight: '600',
+            }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle size={16} color="#16a34a" /> সরকারি গ্যাজেট ও ভূমি আইনসম্মত
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Shield size={16} color="#0284c7" /> এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className="live-dot" style={{ display: 'inline-block' }} /> ২৪/৭ ডিজিটাল অনলাইন সেবা
+              </span>
             </div>
           </div>
 
