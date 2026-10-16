@@ -45,8 +45,8 @@ export default function P5CitizenVerify() {
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    if (!searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
-      setSearchError('অনুগ্রহ করে দাগ নম্বর এবং মৌজার নাম দিন।');
+    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, দাগ নম্বর এবং মৌজা — এই ৩টি তথ্যই প্রদান করুন (৩টি ফিল্ডই আবশ্যক)।');
       return;
     }
 
@@ -162,10 +162,11 @@ export default function P5CitizenVerify() {
           <form onSubmit={handleSearch} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                বিক্রেতার জাতীয় পরিচয়পত্র (NID) নম্বর
+                বিক্রেতার জাতীয় পরিচয়পত্র (NID) নম্বর <span style={{ color: '#dc2626' }}>*</span>
               </label>
               <input
                 type="text"
+                required
                 className="input-field"
                 placeholder="যেমন: 1998567890123"
                 value={searchForm.seller_nid}
@@ -396,10 +397,11 @@ export default function P5CitizenVerify() {
                      alertData.alert_type === 'FAKE_OWNER' ? '🚨 জালিয়াতি সতর্কতা (Fake Owner Detected)' :
                      alertData.alert_type === 'UNASSIGNED_LAND' ? '⚠️ সরকারি খাস জমি সতর্কতা (Unassigned Land)' :
                      alertData.alert_type === 'ALREADY_SOLD' ? '🚫 পূর্বেই বিক্রিত জমি (Already Sold)' :
+                     alertData.alert_type === 'NOT_FOUND' ? '🔍 রেকর্ড পাওয়া যায়নি (Record Not Found)' :
                      '⚠️ ভূমি রেকর্ড যাচাইকরণ সতর্কতা'}
                   </h4>
                   <span style={{ fontSize: '11px', color: '#b91c1c', fontWeight: '700' }}>
-                    আইনি সিদ্ধান্ত: এই জমিটি কেনা অথবা বায়না করা ঝুঁকিপূর্ণ / সম্পূর্ণ নিষিদ্ধ
+                    {alertData.alert_type === 'NOT_FOUND' ? 'যাচাইকরণের ফলাফল: কোনো সঠিক মালিকানা তথ্য পাওয়া যায়নি' : 'আইনি সিদ্ধান্ত: এই জমিটি কেনা অথবা বায়না করা ঝুঁকিপূর্ণ / সম্পূর্ণ নিষিদ্ধ'}
                   </span>
                 </div>
               </div>
