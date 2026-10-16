@@ -5,6 +5,13 @@ const User = require('../models/User');
 const LandAssignRequest = require('../models/LandAssignRequest');
 const OtpVerification = require('../models/OtpVerification');
 const { verifyToken, requireRole } = require('../middleware/auth');
+const {
+  findUserByNid,
+  findUserByEmail,
+  findLatestAssignOtp,
+  updateOtpRecord,
+  deleteAssignOtps
+} = require('../utils/dbStore');
 
 // GET /api/assign/filter-options
 // Provides distinct cascade dropdown options
@@ -248,26 +255,32 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    const citizen = await User.findOne({
-      $or: [
-        { nid: rawNid },
-        { nid: engNid },
-        { nid: bngNid }
-      ]
-    });
+    let citizen = null;
+    try {
+      citizen = await User.findOne({
+        $or: [
+          { nid: rawNid },
+          { nid: engNid },
+          { nid: bngNid }
+        ]
+      });
+    } catch (e) {
+      console.warn('DB lookup failed in create-request:', e.message);
+    }
+
+    if (!citizen) {
+      citizen = (await findUserByNid(rawNid)) ||
+                (await findUserByNid(engNid)) ||
+                (await findUserByNid(bngNid));
+    }
 
     if (!citizen) {
       return res.status(404).json({ success: false, message: 'প্রদত্ত এনআইডিধারী নাগরিক নিবন্ধিত নয়।' });
     }
 
-    // Verify citizen's email OTP
+    // Verify citizen's email OTP (Resilient: Atlas + disk + memory)
     const cleanOtp = otp.toString().trim();
-    const otpRecord = await OtpVerification.findOne({
-      $or: [
-        { email: citizen.email.toLowerCase(), purpose: 'LAND_ASSIGNMENT' },
-        { 'metadata.citizen_nid': citizen.nid, purpose: 'LAND_ASSIGNMENT' }
-      ]
-    }).sort({ createdAt: -1 });
+    const otpRecord = await findLatestAssignOtp(citizen.email, citizen.nid);
 
     if (!otpRecord) {
       return res.status(400).json({
@@ -276,7 +289,7 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    if (new Date() > otpRecord.expiresAt) {
+    if (new Date() > new Date(otpRecord.expiresAt)) {
       return res.status(400).json({
         success: false,
         message: 'ওটিপির মেয়াদ শেষ হয়ে গেছে। নাগরিকের ইমেইলে পুনরায় নতুন ওটিপি পাঠান।'
@@ -291,18 +304,17 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     }
 
     if (otpRecord.otp !== cleanOtp) {
-      otpRecord.attempts += 1;
-      await otpRecord.save();
+      const newAttempts = (otpRecord.attempts || 0) + 1;
+      await updateOtpRecord(otpRecord, { attempts: newAttempts });
       return res.status(400).json({
         success: false,
-        message: `ভুল ওটিপি কোড! নাগরিকের ইমেইল (${citizen.email}) এ প্রেরিত কোডটি দিন। (বাকি চেষ্টা: ${5 - otpRecord.attempts})`
+        message: `ভুল ওটিপি কোড! নাগরিকের ইমেইল (${citizen.email}) এ প্রেরিত কোডটি দিন। (বাকি চেষ্টা: ${5 - newAttempts})`
       });
     }
 
     // Mark OTP as verified and clean up
-    otpRecord.verified = true;
-    await otpRecord.save();
-    await OtpVerification.deleteMany({ email: citizen.email.toLowerCase(), purpose: 'LAND_ASSIGNMENT' });
+    await updateOtpRecord(otpRecord, { verified: true });
+    await deleteAssignOtps(citizen.email, citizen.nid);
 
     const requestId = 'REQ-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
 

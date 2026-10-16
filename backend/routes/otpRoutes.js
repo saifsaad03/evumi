@@ -14,7 +14,10 @@ const {
   createRegistrationOtp,
   findLatestRegistrationOtp,
   updateOtpRecord,
-  deleteRegistrationOtps
+  deleteRegistrationOtps,
+  createAssignOtp,
+  findLatestAssignOtp,
+  deleteAssignOtps
 } = require('../utils/dbStore');
 
 // Helper to generate 6-digit OTP
@@ -302,13 +305,27 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
 
-    const citizen = await User.findOne({
-      $or: [
-        { nid: rawNid },
-        { nid: engNid },
-        { nid: bngNid }
-      ]
-    });
+    // Resilient Citizen lookup (Atlas + local store)
+    let citizen = null;
+    try {
+      citizen = await User.findOne({
+        $or: [
+          { nid: rawNid },
+          { nid: engNid },
+          { nid: bngNid },
+          { email: cleanEmail }
+        ]
+      });
+    } catch (e) {
+      console.warn('DB lookup failed in send-land-assign-otp:', e.message);
+    }
+
+    if (!citizen) {
+      citizen = (await findUserByNid(rawNid)) ||
+                (await findUserByNid(engNid)) ||
+                (await findUserByNid(bngNid)) ||
+                (await findUserByEmail(cleanEmail));
+    }
 
     if (!citizen) {
       return res.status(404).json({
@@ -317,44 +334,36 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
       });
     }
 
+    const citizenName = citizen.name || 'সম্মানিত নাগরিক';
+    const targetEmail = (citizen.email || cleanEmail).trim().toLowerCase();
+
     const otp = generate6DigitOtp();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
-    // Delete older unverified assignment OTPs for this citizen and land
-    await OtpVerification.deleteMany({
-      $or: [
-        { email: cleanEmail, purpose: 'LAND_ASSIGNMENT' },
-        { 'metadata.citizen_nid': citizen.nid, purpose: 'LAND_ASSIGNMENT' }
-      ]
-    });
+    // Save to resilient storage (Atlas + persistent disk + memory)
+    await createAssignOtp(targetEmail, otp, citizen.nid, citizenName, {
+      land_record_id,
+      dag_no,
+      mouza
+    }, expiresAt);
 
-    // Save OTP
-    await OtpVerification.create({
-      email: cleanEmail,
-      otp,
-      purpose: 'LAND_ASSIGNMENT',
-      metadata: {
-        citizen_nid: citizen.nid,
-        citizen_name: citizen.name,
-        land_record_id,
-        dag_no,
-        mouza
-      },
-      expiresAt
-    });
+    console.log(`🔑 [LAND ASSIGN OTP for ${targetEmail} (NID: ${citizen.nid})]: ${otp}`);
 
-    console.log(`🔑 [LAND ASSIGN OTP for ${cleanEmail} (NID: ${citizen.nid})]: ${otp}`);
-
-    // Dispatch Email
-    const emailResult = await sendOtpEmail(cleanEmail, otp, 'LAND_ASSIGNMENT', {
-      citizen_name: citizen.name,
+    // Dispatch real email to citizen (Never exposes raw OTP to frontend)
+    const emailResult = await sendOtpEmail(targetEmail, otp, 'LAND_ASSIGNMENT', {
+      citizen_name: citizenName,
       dag_no,
       mouza
     });
 
+    const isEmailDelivered = !emailResult.simulated;
+    const responseMessage = isEmailDelivered
+      ? `নাগরিক (${citizenName}) এর ইমেইল '${targetEmail}' এ জমি বরাদ্দ সম্মতির ৬ ডিজিটের ওটিপি সফলভাবে পাঠানো হয়েছে।`
+      : `নাগরিক (${citizenName}) এর ইমেইল '${targetEmail}' এ ওটিপি পাঠানো হয়েছে। ইনবক্স চেক করুন।`;
+
     return res.status(200).json({
       success: true,
-      message: `নাগরিক (${citizen.name}) এর ইমেইল '${cleanEmail}' এ জমি বরাদ্দ সম্মতির ৬ ডিজিটের ওটিপি পাঠানো হয়েছে।`,
+      message: responseMessage,
       simulated: emailResult.simulated || false
     });
   } catch (err) {

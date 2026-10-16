@@ -290,6 +290,127 @@ const deleteRegistrationOtps = async (cleanEmail) => {
   }
 };
 
+const createAssignOtp = async (cleanEmail, otp, citizenNid, citizenName, extraData = {}, expiresAt) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const rawNid = (citizenNid || '').toString().trim();
+
+  const otpRecord = {
+    _id: 'otp_' + Date.now(),
+    email: emailLower,
+    otp: otp.toString().trim(),
+    purpose: 'LAND_ASSIGNMENT',
+    metadata: {
+      citizen_nid: rawNid,
+      citizen_name: citizenName,
+      ...extraData
+    },
+    attempts: 0,
+    verified: false,
+    createdAt: new Date(),
+    expiresAt: new Date(expiresAt)
+  };
+
+  // 1. Save to in-memory store
+  global._memoryOtps = global._memoryOtps.filter(
+    o => !(o.purpose === 'LAND_ASSIGNMENT' && (o.email === emailLower || (rawNid && o.metadata?.citizen_nid === rawNid)))
+  );
+  global._memoryOtps.push(otpRecord);
+
+  // 2. Save to persistent JSON file on disk
+  saveJsonFile(OTPS_FILE, global._memoryOtps);
+
+  // 3. Save to MongoDB Atlas if connected
+  const ready = await ensureDbConnected();
+  if (ready) {
+    try {
+      const orConds = [{ email: emailLower }];
+      if (rawNid) orConds.push({ 'metadata.citizen_nid': rawNid });
+
+      await OtpVerification.deleteMany({
+        purpose: 'LAND_ASSIGNMENT',
+        $or: orConds
+      });
+
+      await OtpVerification.create({
+        email: emailLower,
+        otp: otpRecord.otp,
+        purpose: 'LAND_ASSIGNMENT',
+        metadata: otpRecord.metadata,
+        expiresAt: otpRecord.expiresAt
+      });
+      console.log('✅ Land Assign OTP persisted to Atlas:', emailLower);
+    } catch (err) {
+      console.warn('⚠️ Could not save Assign OTP to MongoDB Atlas (saved to disk/memory):', err.message);
+    }
+  }
+
+  return otpRecord;
+};
+
+const findLatestAssignOtp = async (cleanEmail, citizenNid) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const rawNid = (citizenNid || '').toString().trim();
+
+  return safeDbCall(
+    async () => {
+      const orConditions = [];
+      if (emailLower) orConditions.push({ email: emailLower });
+      if (rawNid) orConditions.push({ 'metadata.citizen_nid': rawNid });
+
+      const query = {
+        purpose: 'LAND_ASSIGNMENT',
+        ...(orConditions.length > 0 ? { $or: orConditions } : {})
+      };
+
+      const doc = await OtpVerification.findOne(query).sort({ createdAt: -1 });
+      return doc;
+    },
+    () => {
+      const otps = global._memoryOtps.length > 0 ? global._memoryOtps : loadJsonFile(OTPS_FILE);
+      const matching = otps
+        .filter(o => {
+          if (o.purpose !== 'LAND_ASSIGNMENT') return false;
+          if (emailLower && o.email && o.email.toLowerCase() === emailLower) return true;
+          if (rawNid && o.metadata && o.metadata.citizen_nid === rawNid) return true;
+          return false;
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return matching[0] || null;
+    }
+  );
+};
+
+const deleteAssignOtps = async (cleanEmail, citizenNid) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const rawNid = (citizenNid || '').toString().trim();
+
+  global._memoryOtps = global._memoryOtps.filter(o => {
+    if (o.purpose !== 'LAND_ASSIGNMENT') return true;
+    if (emailLower && o.email && o.email.toLowerCase() === emailLower) return false;
+    if (rawNid && o.metadata && o.metadata.citizen_nid === rawNid) return false;
+    return true;
+  });
+  saveJsonFile(OTPS_FILE, global._memoryOtps);
+
+  const ready = await ensureDbConnected();
+  if (ready) {
+    try {
+      const orConditions = [];
+      if (emailLower) orConditions.push({ email: emailLower });
+      if (rawNid) orConditions.push({ 'metadata.citizen_nid': rawNid });
+
+      if (orConditions.length > 0) {
+        await OtpVerification.deleteMany({
+          purpose: 'LAND_ASSIGNMENT',
+          $or: orConditions
+        });
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not delete Assign OTPs from DB:', err.message);
+    }
+  }
+};
+
 module.exports = {
   isDbReady,
   ensureDbConnected,
@@ -299,5 +420,8 @@ module.exports = {
   createRegistrationOtp,
   findLatestRegistrationOtp,
   updateOtpRecord,
-  deleteRegistrationOtps
+  deleteRegistrationOtps,
+  createAssignOtp,
+  findLatestAssignOtp,
+  deleteAssignOtps
 };

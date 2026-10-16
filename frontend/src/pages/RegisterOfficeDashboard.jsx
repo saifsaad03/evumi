@@ -205,13 +205,16 @@ export default function RegisterOfficeDashboard() {
       alert('অনুগ্রহ করে প্রথমে লক্ষ্য নাগরিক খুঁজে বের করুন!');
       return;
     }
+    if (!foundUser.email) {
+      alert('নাগরিকের কোনো নিবন্ধিত ইমেইল ঠিকানা নেই!');
+      return;
+    }
     if (!selectedLand) {
       alert('অনুগ্রহ করে জমি নির্বাচন করুন!');
       return;
     }
     setSendingCitizenOtp(true);
     setOtpSentMessage(null);
-    setOtpPreview(null);
     setOtpError(null);
     try {
       const res = await axios.post('/api/otp/send-land-assign-otp', {
@@ -222,7 +225,7 @@ export default function RegisterOfficeDashboard() {
         land_record_id: selectedLand._id
       });
       if (res.data.success) {
-        setOtpSentMessage(res.data.message);
+        setOtpSentMessage(res.data.message || `নাগরিকের ইমেইল (${foundUser.email}) এ ৬ ডিজিটের ওটিপি সফলভাবে পাঠানো হয়েছে।`);
       }
     } catch (err) {
       setOtpError(err.response?.data?.message || 'নাগরিকের ইমেইলে ওটিপি পাঠানো যায়নি।');
