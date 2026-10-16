@@ -982,10 +982,9 @@ export default function LandingPage() {
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
           <img
-            src="/images/bd_land_seal.png"
-            alt="বাংলাদেশ ভূমি সেবা সিল"
-            className="bd-seal-glow"
-            style={{ width: '80px', height: '80px', margin: '0 auto 20px', display: 'block' }}
+            src="/images/logo.png"
+            alt="e-ভূমি লোগো"
+            style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 20px', display: 'block' }}
           />
 
           <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 46px)', fontWeight: '900', color: '#065f46', marginBottom: '16px', lineHeight: 1.2 }}>
@@ -1055,7 +1054,7 @@ export default function LandingPage() {
             borderBottom: '1px solid #f1f5f9'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <img src="/images/bd_land_seal.png" alt="" style={{ width: '38px', height: '38px' }} />
+              <img src="/images/logo.png" alt="e-ভূমি লোগো" style={{ width: '38px', height: '38px', objectFit: 'contain' }} />
               <div>
                 <div style={{ fontSize: '16px', fontWeight: '900', color: '#065f46' }}>e-ভূমি বাংলাদেশ</div>
                 <div style={{ fontSize: '11px', color: '#64748b' }}>ডিজিটাল ভূমি ব্যবস্থাপনা ও রেকর্ড নেটওয়ার্ক</div>

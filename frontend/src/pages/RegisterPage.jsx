@@ -174,12 +174,11 @@ export default function RegisterPage() {
         {/* Top Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           <img 
-            src="/images/bd_land_seal.png" 
-            alt="বাংলাদেশ ডিজিটাল ভূমি রেকর্ড সিল" 
-            className="bd-seal-glow"
+            src="/images/logo.png" 
+            alt="e-ভূমি লোগো" 
             style={{
-              width: '64px',
-              height: '64px',
+              width: '68px',
+              height: '68px',
               objectFit: 'contain',
               margin: '0 auto 12px',
               display: 'block'

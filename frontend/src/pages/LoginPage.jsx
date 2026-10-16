@@ -46,88 +46,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bd-pattern-bg" style={{
+    <div style={{
       minHeight: 'calc(100vh - 64px)',
       display: 'flex',
-      alignItems: 'stretch',
+      alignItems: 'center',
       justifyContent: 'center',
-      background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 100%)',
+      padding: '40px 20px',
       position: 'relative',
+      backgroundImage: `linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(255, 255, 255, 0.94) 100%), url('/images/bg.png')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      backgroundAttachment: 'fixed',
     }}>
-      {/* Left Panel: BD Land Infographic (hidden on mobile) */}
-      <div className="hide-on-mobile" style={{
-        flex: '1',
-        maxWidth: '500px',
-        background: 'linear-gradient(135deg, #064e3b 0%, #065f46 40%, #0f766e 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 36px',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* Background pattern */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backgroundImage: 'url(/images/bd_land_pattern.jpg)',
-          backgroundRepeat: 'repeat', backgroundSize: '400px',
-          opacity: 0.05, pointerEvents: 'none',
-        }}/>
-        {/* Infographic SVG */}
-        <img
-          src="/images/bd_land_infographic.svg"
-          alt="e-ভূমি বাংলাদেশ"
-          style={{ width: '100%', maxWidth: '360px', height: 'auto', borderRadius: '16px', position: 'relative', zIndex: 1 }}
-        />
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', marginTop: '24px' }}>
-          <div style={{ fontSize: '20px', fontWeight: '900', color: '#f0fdf4', marginBottom: '8px' }}>
-            e-ভূমি বাংলাদেশ
-          </div>
-          <div style={{ fontSize: '13px', color: '#86efac', lineHeight: 1.6, maxWidth: '300px' }}>
-            ডিজিটাল ভূমি ব্যবস্থাপনা — SHA-256 এনক্রিপ্টেড দলিল,
-            QR খতিয়ান এবং NID যাচাইয়ের সমন্বিত প্ল্যাটফর্ম।
-          </div>
-          {/* Mini stats */}
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
-            {[
-              { val: '৯', label: 'মৌজা' },
-              { val: 'SHA-256', label: 'এনক্রিপ্টেড' },
-              { val: 'QR', label: 'খতিয়ান' },
-            ].map((s, i) => (
-              <div key={i} style={{
-                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                borderRadius: '12px', padding: '10px 16px', textAlign: 'center',
-              }}>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: '#f0fdf4' }}>{s.val}</div>
-                <div style={{ fontSize: '10px', color: '#86efac', marginTop: '2px' }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Right Panel: Login Form */}
       <div style={{
-        flex: '1',
-        maxWidth: '480px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '32px 24px',
-      }}>
-      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
+        width: '100%',
+        maxWidth: '460px',
+        position: 'relative',
+        zIndex: 1,
+        background: '#ffffff',
+        border: '1.5px solid #cbd5e1',
+        borderRadius: '24px',
+        padding: '36px 32px',
+        boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.1)',
+      }} className="animate-fade-in-up">
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '28px' }}>
           {/* Bangladesh Land Seal */}
           <img 
-            src="/images/bd_land_seal.png" 
-            alt="বাংলাদেশ ডিজিটাল ভূমি রেকর্ড সিল" 
-            className="bd-seal-glow"
+            src="/images/logo.png" 
+            alt="e-ভূমি লোগো" 
             style={{
-              width: '72px',
-              height: '72px',
+              width: '68px',
+              height: '68px',
               objectFit: 'contain',
               margin: '0 auto 14px',
               display: 'block'
@@ -320,7 +272,6 @@ export default function LoginPage() {
           🔒 এই পোর্টালটি বাংলাদেশ সরকারের অনুমোদিত সংস্থার জন্য সংরক্ষিত।
           অননুমোদিত প্রবেশ আইনত দণ্ডনীয়।
         </p>
-      </div>
       </div>
     </div>
   );

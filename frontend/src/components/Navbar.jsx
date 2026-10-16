@@ -40,31 +40,6 @@ export default function Navbar() {
       zIndex: 1000,
       boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
     }}>
-      {/* Top micro banner with national identity */}
-      <div style={{
-        background: 'linear-gradient(90deg, #065f46 0%, #047857 50%, #065f46 100%)',
-        color: '#f0fdf4',
-        fontSize: '11px',
-        padding: '3px 16px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        letterSpacing: '0.2px',
-        fontWeight: '500'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span>🏛️ গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</span>
-          <span style={{ opacity: 0.5 }}>|</span>
-          <span className="hide-on-mobile">ভূমি মন্ত্রণালয় — ডিজিটাল ভূমি ব্যবস্থাপনা ও রেকর্ড নেটওয়ার্ক</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '10px' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', display: 'inline-block' }}></span>
-            সার্ভিস সক্রিয়
-          </span>
-          <span className="hide-on-mobile">সহায়তা: ১৬১২২</span>
-        </div>
-      </div>
 
       {/* Main Navigation Bar */}
       <div style={{
@@ -96,18 +71,6 @@ export default function Navbar() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '18px', fontWeight: '900', color: '#065f46', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
                 e-ভূমি
-              </span>
-              <span style={{
-                fontSize: '9px',
-                fontWeight: '800',
-                background: '#dcfce7',
-                color: '#15803d',
-                padding: '1px 6px',
-                borderRadius: '4px',
-                border: '1px solid #bbf7d0',
-                textTransform: 'uppercase'
-              }}>
-                BD GovTech
               </span>
             </div>
             <div style={{ fontSize: '10px', color: '#64748b', lineHeight: 1.2, fontWeight: '500' }}>
