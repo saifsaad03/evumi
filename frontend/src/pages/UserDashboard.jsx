@@ -963,7 +963,7 @@ export default function UserDashboard() {
               {/* 7. Live Online Verification QR Code & Hash Block */}
               {(() => {
                 const qrId = selectedLandForPdf.qr_code_id || selectedLandForPdf.record_id || selectedLandForPdf._id;
-                const verifyUrl = `${window.location.origin}/qr-verify/${qrId}`;
+                const verifyUrl = `${window.location.origin}/#/qr-verify/${qrId}`;
                 return (
                   <div style={{
                     border: '1.5px solid #000000',
