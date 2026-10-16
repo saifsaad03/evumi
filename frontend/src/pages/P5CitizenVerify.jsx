@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Search, ShieldAlert, ShieldCheck, CheckCircle, AlertTriangle, 
@@ -17,6 +17,31 @@ export default function P5CitizenVerify() {
   const [searchError, setSearchError] = useState('');
   const [landRecord, setLandRecord] = useState(null);
   const [alertData, setAlertData] = useState(null);
+
+  // Dynamic Mouza List from database
+  const [mouzasList, setMouzasList] = useState([]);
+  const [mouzaLoading, setMouzaLoading] = useState(false);
+
+  useEffect(() => {
+    fetchMouzas();
+  }, []);
+
+  const fetchMouzas = async () => {
+    setMouzaLoading(true);
+    try {
+      const res = await axios.get('/api/mouzas');
+      if (res.data?.success && Array.isArray(res.data.mouzas) && res.data.mouzas.length > 0) {
+        setMouzasList(res.data.mouzas);
+      } else {
+        setMouzasList(['গুজিয়া', 'অনন্তবালা', 'চক অনন্তবালা', 'কিচক', 'বেলাই', 'হরিপুর', 'চক হরিপুর', 'বিশা', 'কানাইডাঙ্গা', 'সর্দারপাড়া', 'জানগ্রাম', 'রামচন্দ্রপুর', 'ধাওয়া', 'চক ধাওয়া', 'চণ্ডীহারা', 'চক চণ্ডীহারা', 'করতকোলা', 'শোলাগাড়ী', 'বুড়িগঞ্জ', 'সাদুল্লাপুর']);
+      }
+    } catch (err) {
+      console.warn('Could not load mouzas dynamically, applying fallback list:', err);
+      setMouzasList(['গুজিয়া', 'অনন্তবালা', 'চক অনন্তবালা', 'কিচক', 'বেলাই', 'হরিপুর', 'চক হরিপুর', 'বিশা', 'কানাইডাঙ্গা', 'সর্দারপাড়া', 'জানগ্রাম', 'রামচন্দ্রপুর', 'ধাওয়া', 'চক ধাওয়া', 'চণ্ডীহারা', 'চক চণ্ডীহারা', 'করতকোলা', 'শোলাগাড়ী', 'বুড়িগঞ্জ', 'সাদুল্লাপুর']);
+    } finally {
+      setMouzaLoading(false);
+    }
+  };
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
@@ -170,17 +195,30 @@ export default function P5CitizenVerify() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                  মৌজার নাম <span style={{ color: '#dc2626' }}>*</span>
+                  মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   className="input-field"
-                  placeholder="যেমন: গুজিয়া"
                   value={searchForm.mouza}
                   onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
-                />
+                  style={{
+                    width: '100%',
+                    fontSize: '13px',
+                    color: '#0f172a',
+                    background: '#ffffff',
+                    height: '42px',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '8px',
+                    padding: '0 10px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">{mouzaLoading ? 'মৌজা লোড হচ্ছে...' : '-- মৌজা নির্বাচন করুন --'}</option>
+                  {mouzasList.map((m, idx) => (
+                    <option key={idx} value={m}>{m}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
