@@ -155,23 +155,42 @@ router.get('/verify-land', async (req, res) => {
 // GET /api/verify-by-qr/:qr_code_id - QR Code scan verification
 router.get('/verify-by-qr/:qr_code_id', async (req, res) => {
   try {
-    const record = await LandRecord.findOne({ qr_code_id: req.params.qr_code_id });
-    if (!record) return res.status(404).json({ success: false, message: 'QR কোড যাচাই ব্যর্থ হয়েছে। রেকর্ড পাওয়া যায়নি।' });
+    const rawCode = (req.params.qr_code_id || '').trim();
+    const mongoose = require('mongoose');
+    const queryConditions = [
+      { qr_code_id: rawCode },
+      { record_id: rawCode },
+      { deed_hash: rawCode }
+    ];
+    if (mongoose.Types.ObjectId.isValid(rawCode)) {
+      queryConditions.push({ _id: rawCode });
+    }
+
+    const record = await LandRecord.findOne({ $or: queryConditions });
+    if (!record) return res.status(404).json({ success: false, message: 'QR কোড যাচাই ব্যর্থ হয়েছে। ডেটাবেজে কোনো রেকর্ড পাওয়া যায়নি।' });
 
     return res.status(200).json({
       success: true,
-      message: '✅ QR কোড যাচাই সম্পন্ন। খতিয়ান বৈধ।',
+      message: '✅ QR কোড যাচাই সম্পন্ন। খতিয়ান ও মালিকানা রেকর্ড সম্পূর্ণ বৈধ।',
       data: {
         mouza: record.mouza,
         jl_no: record.jl_no,
         khatian_no: record.khatian_no,
         dag_no: record.dag_no,
         owner_name: record.owner_name,
+        owner_nid: record.owner_nid,
+        division: record.division,
+        district: record.district,
+        upazila: record.upazila,
         total_area_decimal: record.total_area_decimal,
+        available_area_decimal: record.available_area_decimal,
+        volume_book: record.volume_book,
+        page_no: record.page_no,
+        deed_no: record.deed_no,
         status: record.status,
         deed_hash: record.deed_hash,
-        qr_code_id: record.qr_code_id,
-        last_updated: record.last_updated
+        qr_code_id: record.qr_code_id || rawCode,
+        last_updated: record.last_updated || record.updatedAt
       }
     });
   } catch (err) {
