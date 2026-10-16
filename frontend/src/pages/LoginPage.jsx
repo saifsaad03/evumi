@@ -47,41 +47,43 @@ export default function LoginPage() {
 
   return (
     <div style={{
-      minHeight: 'calc(100vh - 64px)',
+      height: 'calc(100vh - 62px)',
+      minHeight: '480px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '40px 20px',
+      padding: '12px 16px',
       position: 'relative',
-      backgroundImage: `linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(240, 253, 244, 0.88) 50%, rgba(255, 255, 255, 0.94) 100%), url('/images/bg.png')`,
+      backgroundImage: `linear-gradient(135deg, rgba(255, 255, 255, 0.93) 0%, rgba(240, 253, 244, 0.89) 50%, rgba(255, 255, 255, 0.94) 100%), url('/images/bg.png')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundRepeat: 'no-repeat',
-      backgroundAttachment: 'fixed',
+      boxSizing: 'border-box',
+      overflow: 'hidden',
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '460px',
+        maxWidth: '400px',
         position: 'relative',
         zIndex: 1,
         background: '#ffffff',
         border: '1.5px solid #cbd5e1',
-        borderRadius: '24px',
-        padding: '36px 32px',
-        boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.1)',
-      }} className="animate-fade-in-up">
+        borderRadius: '18px',
+        padding: '24px 24px 20px',
+        boxShadow: '0 12px 32px -8px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(16, 185, 129, 0.1)',
+        boxSizing: 'border-box'
+      }} className="login-card-animate">
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-          {/* Bangladesh Land Seal */}
+        <div style={{ textAlign: 'center', marginBottom: '14px' }}>
           <img 
             src="/images/logo.png" 
             alt="e-ভূমি লোগো" 
             style={{
-              width: '68px',
-              height: '68px',
+              width: '44px',
+              height: '44px',
               objectFit: 'contain',
-              margin: '0 auto 14px',
+              margin: '0 auto 8px',
               display: 'block'
             }} 
           />
@@ -89,188 +91,167 @@ export default function LoginPage() {
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
-            padding: '5px 14px',
+            gap: '5px',
+            padding: '3px 12px',
             borderRadius: '999px',
             background: '#ecfdf5',
             border: '1px solid #a7f3d0',
             color: '#15803d',
             fontSize: '11px',
             fontWeight: '700',
-            marginBottom: '14px',
-            letterSpacing: '0.02em',
+            marginBottom: '6px',
           }}>
-            <ShieldCheck size={12} /> সুরক্ষিত সরকারি প্রবেশদ্বার · e-ভূমি বাংলাদেশ
+            <ShieldCheck size={12} /> সুরক্ষিত সরকারি প্রবেশদ্বার
           </div>
 
-          <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
-            ই-ভূমি সিস্টেমে লগইন করুন
+          <h1 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: '0 0 3px', lineHeight: 1.2 }}>
+            ই-ভূমি সিস্টেমে লগইন
           </h1>
-          <p style={{ color: '#64748b', fontSize: '13px', lineHeight: 1.65, margin: 0 }}>
-            আপনার ইমেইল ও পাসওয়ার্ড দিন। সিস্টেম রোল অনুযায়ী স্বয়ংক্রিয়ভাবে পোর্টালে নিয়ে যাবে।
+          <p style={{ color: '#64748b', fontSize: '11.5px', margin: 0 }}>
+            আপনার ইমেইল ও পাসওয়ার্ড দিয়ে প্রবেশ করুন
           </p>
         </div>
 
-        {/* Card */}
-        <div className="glass-card" style={{ padding: '32px' }}>
+        {/* Success Alert from Registration Verification */}
+        {successMessage && (
+          <div style={{
+            padding: '8px 12px',
+            background: '#ecfdf5',
+            border: '1.5px solid #86efac',
+            borderRadius: '8px',
+            color: '#15803d',
+            fontSize: '11.5px',
+            marginBottom: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            fontWeight: '600',
+          }}>
+            <CheckCircle2 size={16} style={{ color: '#16a34a', flexShrink: 0 }} />
+            <span>{successMessage}</span>
+          </div>
+        )}
 
-          {/* Card Header */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            <div style={{
-              width: '40px',
+        {/* Error Alert */}
+        {error && (
+          <div style={{
+            padding: '8px 12px',
+            background: '#fee2e2',
+            border: '1px solid #fca5a5',
+            borderRadius: '8px',
+            color: '#991b1b',
+            fontSize: '11.5px',
+            marginBottom: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontWeight: '600',
+          }}>
+            <AlertCircle size={14} style={{ flexShrink: 0 }} /> <span>{error}</span>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '11px' }}>
+          {/* Email */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '11.5px',
+              color: '#374151',
+              marginBottom: '3px',
+              fontWeight: '700',
+            }}>
+              ইমেইল ঠিকানা
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="email"
+                required
+                autoFocus
+                className="input-field"
+                placeholder="নাম@gov.bd বা email@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: '100%', height: '38px', paddingLeft: '34px', fontSize: '12.5px', borderRadius: '8px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1' }}
+              />
+              <Mail size={15} color="#64748b" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '11.5px',
+              color: '#374151',
+              marginBottom: '3px',
+              fontWeight: '700',
+            }}>
+              পাসওয়ার্ড
+            </label>
+            <div style={{ position: 'relative' }}>
+              <input
+                type="password"
+                required
+                className="input-field"
+                placeholder="আপনার পাসওয়ার্ড লিখুন"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                style={{ width: '100%', height: '38px', paddingLeft: '34px', fontSize: '12.5px', borderRadius: '8px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1' }}
+              />
+              <Lock size={15} color="#64748b" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary"
+            style={{
+              padding: '10px',
               height: '40px',
-              borderRadius: '10px',
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
+              fontSize: '13.5px',
+              fontWeight: '700',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '18px',
-            }}>🔐</div>
-            <div>
-              <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', margin: 0 }}>একক লগইন পোর্টাল</h2>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>স্বয়ংক্রিয় রোল-ভিত্তিক রিডাইরেক্ট</p>
-            </div>
-          </div>
-
-          {/* Success Alert from Registration Verification */}
-          {successMessage && (
-            <div style={{
-              padding: '12px 14px',
-              background: '#ecfdf5',
-              border: '1.5px solid #86efac',
-              borderRadius: '10px',
-              color: '#15803d',
-              fontSize: '13px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(22, 163, 74, 0.08)'
-            }}>
-              <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
-              <span>{successMessage}</span>
-            </div>
-          )}
-
-          {/* Error Alert */}
-          {error && (
-            <div style={{
-              padding: '11px 14px',
-              background: '#fee2e2',
-              border: '1px solid #fca5a5',
+              gap: '6px',
+              marginTop: '4px',
+              width: '100%',
               borderRadius: '8px',
-              color: '#991b1b',
-              fontSize: '13px',
-              marginBottom: '20px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontWeight: '500',
-            }}>
-              <AlertCircle size={15} /> {error}
-            </div>
-          )}
+              background: 'linear-gradient(135deg, #059669, #10b981)',
+              boxShadow: '0 4px 12px rgba(16,185,129,0.25)',
+              cursor: 'pointer'
+            }}
+          >
+            {loading ? (
+              <><span className="loader" style={{ width: '16px', height: '16px', borderTopColor: '#fff' }} /> যাচাই হচ্ছে...</>
+            ) : (
+              <><LogIn size={16} /> লগইন করুন</>
+            )}
+          </button>
+        </form>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-            {/* Email */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '13px',
-                color: '#374151',
-                marginBottom: '6px',
-                fontWeight: '600',
-              }}>
-                ইমেইল ঠিকানা
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="email"
-                  required
-                  autoFocus
-                  className="input-field"
-                  placeholder="নাম@gov.bd বা email@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              </div>
-            </div>
-
-            {/* Password */}
-            <div>
-              <label style={{
-                display: 'block',
-                fontSize: '13px',
-                color: '#374151',
-                marginBottom: '6px',
-                fontWeight: '600',
-              }}>
-                পাসওয়ার্ড
-              </label>
-              <div style={{ position: 'relative' }}>
-                <input
-                  type="password"
-                  required
-                  className="input-field"
-                  placeholder="আপনার পাসওয়ার্ড লিখুন"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{ width: '100%', paddingLeft: '40px' }}
-                />
-                <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-              </div>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="btn-primary"
-              style={{
-                padding: '13px',
-                fontSize: '15px',
-                fontWeight: '700',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                marginTop: '4px',
-                width: '100%',
-              }}
-            >
-              {loading ? (
-                <><span className="loader" style={{ width: '18px', height: '18px', borderTopColor: '#fff' }} /> যাচাই হচ্ছে...</>
-              ) : (
-                <><LogIn size={17} /> লগইন করুন</>
-              )}
-            </button>
-          </form>
-
-          {/* Register Link */}
-          <div style={{
-            marginTop: '22px',
-            paddingTop: '18px',
-            borderTop: '1px solid #e2e8f0',
-            textAlign: 'center',
-            fontSize: '13px',
-            color: '#64748b',
-          }}>
-            নতুন নাগরিক অ্যাকাউন্ট নেই?{' '}
-            <Link to="/register" style={{ color: '#1a6b3c', fontWeight: '700', textDecoration: 'none' }}>
-              নিবন্ধন করুন
-            </Link>
-          </div>
+        {/* Register Link */}
+        <div style={{
+          marginTop: '14px',
+          paddingTop: '10px',
+          borderTop: '1px solid #f1f5f9',
+          textAlign: 'center',
+          fontSize: '12px',
+          color: '#64748b',
+        }}>
+          নতুন নাগরিক অ্যাকাউন্ট নেই?{' '}
+          <Link to="/register" style={{ color: '#047857', fontWeight: '800', textDecoration: 'none' }}>
+            নিবন্ধন করুন
+          </Link>
         </div>
 
         {/* Security Note */}
-        <p style={{ textAlign: 'center', fontSize: '11px', color: '#94a3b8', marginTop: '20px', lineHeight: 1.6 }}>
-          🔒 এই পোর্টালটি বাংলাদেশ সরকারের অনুমোদিত সংস্থার জন্য সংরক্ষিত।
-          অননুমোদিত প্রবেশ আইনত দণ্ডনীয়।
+        <p style={{ textAlign: 'center', fontSize: '10px', color: '#94a3b8', margin: '8px 0 0', lineHeight: 1.4 }}>
+          🔒 বাংলাদেশ সরকারের ভূমি মন্ত্রণালয় অনুমোদিত সুরক্ষিত প্রবেশদ্বার।
         </p>
       </div>
     </div>

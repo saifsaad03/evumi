@@ -470,6 +470,30 @@ select option:checked {
 .animate-pulse-red    { animation: pulse-red 2s ease-in-out infinite; }
 .animate-spin-slow    { animation: spin-slow 10s linear infinite; }
 
+/* Premium Smooth Login Card Entrance */
+@keyframes loginCardIn {
+  0% {
+    opacity: 0;
+    transform: translateY(40px) scale(0.93);
+    filter: blur(8px);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.01);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+.login-card-animate {
+  animation: loginCardIn 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity, filter;
+}
+
 /* ============================================================
    Progress Steps
    ============================================================ */
