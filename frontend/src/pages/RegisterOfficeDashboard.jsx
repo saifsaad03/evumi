@@ -129,6 +129,9 @@ export default function RegisterOfficeDashboard() {
   // Land Ownership Claim Notifications (Citizen submissions)
   const [claimNotifications, setClaimNotifications] = useState([]);
   const [loadingClaims, setLoadingClaims] = useState(false);
+  const [updatingClaimId, setUpdatingClaimId] = useState(null);
+  const [statusSelections, setStatusSelections] = useState({});
+  const [statusUpdateMessage, setStatusUpdateMessage] = useState(null);
 
   // Check if land is actually allocated to a private citizen (not unassigned / khas)
   const checkIsAllocated = (land) => {
@@ -164,6 +167,28 @@ export default function RegisterOfficeDashboard() {
       console.error('Failed to fetch claim notifications:', err);
     } finally {
       setLoadingClaims(false);
+    }
+  };
+
+  const handleUpdateClaimStatus = async (claimId) => {
+    const targetStatus = statusSelections[claimId] || 'অপেক্ষমান';
+    setUpdatingClaimId(claimId);
+    setStatusUpdateMessage(null);
+    try {
+      const res = await axios.put(`/api/claim/status/${claimId}`, {
+        status: targetStatus
+      });
+      if (res.data.success) {
+        setStatusUpdateMessage({ claimId, text: `আবেদন স্ট্যাটাস সফলভাবে '${targetStatus}' এ পরিবর্তন করা হয়েছে।` });
+        fetchClaimNotifications();
+        setTimeout(() => {
+          setStatusUpdateMessage(null);
+        }, 4000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে।');
+    } finally {
+      setUpdatingClaimId(null);
     }
   };
 
@@ -1138,20 +1163,57 @@ export default function RegisterOfficeDashboard() {
                       </span>
                     </div>
 
-                    <span style={{
-                      padding: '4px 12px',
-                      borderRadius: '999px',
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      background: '#fef3c7',
-                      color: '#92400e',
-                      border: '1px solid #fde68a',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}>
-                      <span>📢</span> অবগতির জন্য বিজ্ঞপ্তি (Read-Only)
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {claim.status === 'অনুমোদিত' ? (
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          fontSize: '11.5px',
+                          fontWeight: '800',
+                          background: '#dcfce7',
+                          color: '#166534',
+                          border: '1px solid #86efac',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <CheckCircle size={13} color="#166534" />
+                          <span>অনুমোদিত (Approved)</span>
+                        </span>
+                      ) : claim.status === 'আবেদন খারিজ করা হলো' ? (
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          fontSize: '11.5px',
+                          fontWeight: '800',
+                          background: '#fee2e2',
+                          color: '#991b1b',
+                          border: '1px solid #f87171',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <AlertTriangle size={13} color="#991b1b" />
+                          <span>আবেদন খারিজ করা হলো (Rejected)</span>
+                        </span>
+                      ) : (
+                        <span style={{
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          fontSize: '11.5px',
+                          fontWeight: '800',
+                          background: '#fef3c7',
+                          color: '#92400e',
+                          border: '1px solid #fde68a',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <Clock size={13} color="#92400e" />
+                          <span>অপেক্ষমান (Pending)</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div style={{
@@ -1213,11 +1275,100 @@ export default function RegisterOfficeDashboard() {
                     padding: '14px 18px',
                     fontSize: '13px',
                     color: '#1e3a8a',
-                    lineHeight: 1.6
+                    lineHeight: 1.6,
+                    marginBottom: '14px'
                   }}>
                     <strong style={{ color: '#1e40af', display: 'block', marginBottom: '4px' }}>নাগরিকের ঘোষণাপত্র (Declaration Text):</strong>
                     &ldquo;{claim.declaration_text}&rdquo;
                   </div>
+
+                  {/* Status update action control for Sub-Registrar */}
+                  <div style={{
+                    padding: '12px 18px',
+                    background: '#f8fafc',
+                    borderRadius: '10px',
+                    border: '1.5px solid #e2e8f0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '800', color: '#1e293b' }}>
+                        আবেদন স্ট্যাটাস নির্ধারণ করুন:
+                      </span>
+                      <select
+                        value={statusSelections[claim._id || claim.claim_id] || claim.status || 'অপেক্ষমান'}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const key = claim._id || claim.claim_id;
+                          setStatusSelections(prev => ({ ...prev, [key]: val }));
+                        }}
+                        style={{
+                          padding: '7px 14px',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          borderRadius: '8px',
+                          border: '1.5px solid #cbd5e1',
+                          background: '#ffffff',
+                          color: (statusSelections[claim._id || claim.claim_id] || claim.status) === 'অনুমোদিত'
+                            ? '#166534'
+                            : (statusSelections[claim._id || claim.claim_id] || claim.status) === 'আবেদন খারিজ করা হলো'
+                            ? '#991b1b'
+                            : '#92400e',
+                          outline: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="অপেক্ষমান">১. অপেক্ষমান (Pending)</option>
+                        <option value="অনুমোদিত">২. অনুমোদিত (Approved)</option>
+                        <option value="আবেদন খারিজ করা হলো">৩. আবেদন খারিজ করা হলো (Rejected)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="button"
+                      disabled={updatingClaimId === (claim._id || claim.claim_id)}
+                      onClick={() => handleUpdateClaimStatus(claim._id || claim.claim_id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '8px 18px',
+                        background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                        color: '#ffffff',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        borderRadius: '8px',
+                        border: 'none',
+                        cursor: updatingClaimId === (claim._id || claim.claim_id) ? 'wait' : 'pointer',
+                        boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)'
+                      }}
+                    >
+                      <Send size={14} className={updatingClaimId === (claim._id || claim.claim_id) ? 'animate-spin' : ''} />
+                      <span>{updatingClaimId === (claim._id || claim.claim_id) ? 'আপডেট হচ্ছে...' : 'স্ট্যাটাস আপডেট পাঠান'}</span>
+                    </button>
+                  </div>
+
+                  {statusUpdateMessage?.claimId === (claim._id || claim.claim_id) && (
+                    <div style={{
+                      marginTop: '10px',
+                      padding: '8px 14px',
+                      background: '#ecfdf5',
+                      border: '1px solid #86efac',
+                      color: '#065f46',
+                      borderRadius: '8px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <CheckCircle size={14} color="#059669" />
+                      <span>{statusUpdateMessage.text}</span>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

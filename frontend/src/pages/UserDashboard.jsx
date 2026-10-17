@@ -1120,17 +1120,55 @@ export default function UserDashboard() {
                         </span>
                       </div>
 
-                      <span style={{
-                        fontSize: '11px',
-                        padding: '3px 10px',
-                        borderRadius: '999px',
-                        background: '#fef3c7',
-                        color: '#92400e',
-                        border: '1px solid #fde68a',
-                        fontWeight: '700'
-                      }}>
-                        📢 সাব-রেজিস্ট্রার বরাবর বিজ্ঞপ্তি প্রেরিত (Read-Only)
-                      </span>
+                      {claim.status === 'অনুমোদিত' ? (
+                        <span style={{
+                          fontSize: '11.5px',
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          background: '#dcfce7',
+                          color: '#166534',
+                          border: '1px solid #86efac',
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <CheckCircle size={13} color="#166534" />
+                          <span>অনুমোদিত (Approved)</span>
+                        </span>
+                      ) : claim.status === 'আবেদন খারিজ করা হলো' ? (
+                        <span style={{
+                          fontSize: '11.5px',
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          background: '#fee2e2',
+                          color: '#991b1b',
+                          border: '1px solid #f87171',
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <AlertTriangle size={13} color="#991b1b" />
+                          <span>আবেদন খারিজ করা হলো (Rejected)</span>
+                        </span>
+                      ) : (
+                        <span style={{
+                          fontSize: '11.5px',
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          background: '#fef3c7',
+                          color: '#92400e',
+                          border: '1px solid #fde68a',
+                          fontWeight: '800',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}>
+                          <Clock size={13} color="#92400e" />
+                          <span>অপেক্ষমান (Pending)</span>
+                        </span>
+                      )}
                     </div>
 
                     <div style={{
@@ -1170,6 +1208,26 @@ export default function UserDashboard() {
                     }}>
                       <strong>ঘোষণাপত্র:</strong> {claim.declaration_text}
                     </div>
+
+                    {claim.reviewed_by && (
+                      <div style={{
+                        fontSize: '11.5px',
+                        color: claim.status === 'অনুমোদিত' ? '#166534' : claim.status === 'আবেদন খারিজ করা হলো' ? '#991b1b' : '#92400e',
+                        background: claim.status === 'অনুমোদিত' ? '#f0fdf4' : claim.status === 'আবেদন খারিজ করা হলো' ? '#fef2f2' : '#fffbeb',
+                        padding: '6px 12px',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '6px'
+                      }}>
+                        <span><strong>সাব-রেজিস্ট্রার পর্যালোচনা:</strong> {claim.reviewed_by} কর্তৃক আপডেটকৃত</span>
+                        {claim.reviewed_at && (
+                          <span>তারিখ: {new Date(claim.reviewed_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

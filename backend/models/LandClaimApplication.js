@@ -28,16 +28,15 @@ const LandClaimApplicationSchema = new mongoose.Schema({
   // Official Declaration Text
   declaration_text: { type: String, required: true },
 
-  // Notification Status (Read-only on registrar end)
+  // Application Status: 1. অপেক্ষমান 2. অনুমোদিত 3. আবেদন খারিজ করা হলো
   status: {
     type: String,
-    enum: ['Pending_Review', 'Notified', 'Completed'],
-    default: 'Pending_Review'
+    enum: ['অপেক্ষমান', 'অনুমোদিত', 'আবেদন খারিজ করা হলো', 'Pending_Review', 'Notified', 'Completed'],
+    default: 'অপেক্ষমান'
   },
-  status_label: {
-    type: String,
-    default: 'বিজ্ঞপ্তি প্রেরিত (অবহিতকরণ)'
-  }
+  reviewed_by: { type: String },
+  reviewed_at: { type: Date },
+  review_remarks: { type: String }
 }, { timestamps: true });
 
 module.exports = mongoose.model('LandClaimApplication', LandClaimApplicationSchema);

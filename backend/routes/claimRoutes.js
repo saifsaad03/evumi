@@ -86,8 +86,7 @@ router.post('/submit', verifyToken, async (req, res) => {
       khatian_no: khatian_no.trim(),
       previous_assignment_status: previous_assignment_status.trim(),
       declaration_text: finalDeclaration,
-      status: 'Pending_Review',
-      status_label: 'বিজ্ঞপ্তি প্রেরিত (অবহিতকরণ)',
+      status: 'অপেক্ষমান',
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -202,6 +201,102 @@ router.get('/all', verifyToken, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'দাবি বিজ্ঞপ্তিসমূহ লোড করতে ব্যর্থ হয়েছে।'
+    });
+  }
+});
+
+/**
+ * PUT /api/claim/status/:id
+ * Sub-Registrar updates the status of a claim application:
+ * 1. অপেক্ষমান
+ * 2. অনুমোদিত
+ * 3. আবেদন খারিজ করা হলো
+ */
+router.put('/status/:id', verifyToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, remarks } = req.body;
+
+    const validStatuses = ['অপেক্ষমান', 'অনুমোদিত', 'আবেদন খারিজ করা হলো'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'অবৈধ স্ট্যাটাস। অনুগ্রহ করে "অপেক্ষমান", "অনুমোদিত" অথবা "আবেদন খারিজ করা হলো" নির্বাচন করুন।'
+      });
+    }
+
+    const reviewed_by = req.user.name || 'সাব-রেজিস্ট্রার';
+    const reviewed_at = new Date();
+
+    let updatedClaim = null;
+
+    // 1. Try updating in MongoDB
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      try {
+        const query = mongoose.Types.ObjectId.isValid(id)
+          ? { _id: id }
+          : { claim_id: id };
+
+        updatedClaim = await LandClaimApplication.findOneAndUpdate(
+          query,
+          {
+            $set: {
+              status,
+              reviewed_by,
+              reviewed_at,
+              review_remarks: remarks || ''
+            }
+          },
+          { new: true }
+        );
+      } catch (dbErr) {
+        console.warn('MongoDB update claim status failed:', dbErr.message);
+      }
+    }
+
+    // 2. Also update in-memory and disk store
+    if (!global._memoryClaims) {
+      global._memoryClaims = loadClaimsFromFile();
+    }
+
+    let foundInMem = false;
+    global._memoryClaims = global._memoryClaims.map(c => {
+      if (c._id?.toString() === id?.toString() || c.claim_id === id) {
+        foundInMem = true;
+        const updated = {
+          ...c,
+          status,
+          reviewed_by,
+          reviewed_at,
+          review_remarks: remarks || ''
+        };
+        if (!updatedClaim) updatedClaim = updated;
+        return updated;
+      }
+      return c;
+    });
+
+    if (foundInMem) {
+      saveClaimsToFile(global._memoryClaims);
+    }
+
+    if (!updatedClaim) {
+      return res.status(404).json({
+        success: false,
+        message: 'দাবি আবেদনটি খুঁজে পাওয়া যায়নি।'
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `আবেদন স্ট্যাটাস সফলভাবে '${status}' করা হয়েছে।`,
+      data: updatedClaim
+    });
+  } catch (err) {
+    console.error('Error updating claim status:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'স্ট্যাটাস আপডেট করতে সমস্যা হয়েছে।'
     });
   }
 });
