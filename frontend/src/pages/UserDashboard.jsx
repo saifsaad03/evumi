@@ -4,17 +4,19 @@ import { useAuth } from '../context/AuthContext';
 import { 
   User, MapPin, FileText, CheckCircle, Clock, 
   AlertTriangle, Search, Shield, Phone, Mail, Award,
-  RefreshCw, Check, ArrowRight, Download, Printer, X, Eye, QrCode
+  RefreshCw, Check, ArrowRight, Download, Printer, X, Eye, QrCode,
+  FileCheck, Send, Info
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import DashboardLayout from '../components/DashboardLayout';
 import P5CitizenVerify from './P5CitizenVerify';
+import { SHIBGANJ_MOUZAS } from '../utils/geoData';
 
 export default function UserDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('lands'); // 'lands' | 'pending' | 'sold' | 'profile' | 'verify'
+  const [activeTab, setActiveTab] = useState('lands'); // 'lands' | 'claim_ownership' | 'pending' | 'sold' | 'profile' | 'verify'
   const [landData, setLandData] = useState({
     active_lands: [],
     sold_lands: [],
@@ -23,6 +25,19 @@ export default function UserDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Land Ownership Claim States
+  const [claimForm, setClaimForm] = useState({
+    mouza: SHIBGANJ_MOUZAS[0]?.mouza || 'গুজিয়া',
+    dag_no: '',
+    khatian_no: '',
+    previous_assignment_status: 'হ্যাঁ'
+  });
+  const [submittingClaim, setSubmittingClaim] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState(null);
+  const [claimError, setClaimError] = useState(null);
+  const [myClaims, setMyClaims] = useState([]);
+  const [loadingMyClaims, setLoadingMyClaims] = useState(false);
 
   // PDF Certificate Generation States
   const [selectedLandForPdf, setSelectedLandForPdf] = useState(null);
@@ -75,6 +90,7 @@ export default function UserDashboard() {
 
   useEffect(() => {
     fetchAssignedLands();
+    fetchMyClaims();
   }, []);
 
   const fetchAssignedLands = async () => {
@@ -92,6 +108,75 @@ export default function UserDashboard() {
     }
   };
 
+  const fetchMyClaims = async () => {
+    setLoadingMyClaims(true);
+    try {
+      const res = await axios.get('/api/claim/my-claims');
+      if (res.data.success) {
+        setMyClaims(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch user claims:', err);
+    } finally {
+      setLoadingMyClaims(false);
+    }
+  };
+
+  const getDeclarationText = () => {
+    const citizenName = user?.name || '[নাম]';
+    const citizenNid = user?.nid || '[NID]';
+    const selectedMouza = claimForm.mouza || '[মৌজা]';
+    const dagInput = claimForm.dag_no.trim() || '[দাগ নম্বর]';
+    const khotiyanInput = claimForm.khatian_no.trim() || '[খতিয়ান নম্বর]';
+
+    return `আমি ${citizenName}, NID: ${citizenNid} দাবি করছি যে, বগুড়া জেলা, শিবগঞ্জ উপজেলার অন্তর্গত মৌজা: ${selectedMouza}, দাগ নম্বর: ${dagInput}, খতিয়ান নম্বর: ${khotiyanInput} এ থাকা জমির অনলাইন মালিকানা দাবি করছি। বর্তমানে আমি জমিটি ডিজিটাল ভাবে নিবন্ধন/বিক্রি করতে চাই। তাই সাব রেজিস্ট্রার মহোদয় এর কাছে আবেদন ভেরিফাই করে জমিটি আমার নামে অনলাইনে বরদ্দ দিন।`;
+  };
+
+  const handleSubmitClaim = async (e) => {
+    e.preventDefault();
+    if (!claimForm.mouza) {
+      setClaimError('অনুগ্রহ করে মৌজা নির্বাচন করুন।');
+      return;
+    }
+    if (!claimForm.dag_no.trim()) {
+      setClaimError('অনুগ্রহ করে দাগ নম্বর লিখুন।');
+      return;
+    }
+    if (!claimForm.khatian_no.trim()) {
+      setClaimError('অনুগ্রহ করে খতিয়ান নম্বর লিখুন।');
+      return;
+    }
+
+    setSubmittingClaim(true);
+    setClaimSuccess(null);
+    setClaimError(null);
+
+    try {
+      const res = await axios.post('/api/claim/submit', {
+        mouza: claimForm.mouza,
+        dag_no: claimForm.dag_no.trim(),
+        khatian_no: claimForm.khatian_no.trim(),
+        previous_assignment_status: claimForm.previous_assignment_status,
+        declaration_text: getDeclarationText()
+      });
+
+      if (res.data.success) {
+        setClaimSuccess(res.data.message || 'আপনার মালিকানা দাবির আবেদনটি সফলভাবে সাব-রেজিস্ট্রার কার্যালয়ে প্রেরিত হয়েছে।');
+        setClaimForm(prev => ({
+          ...prev,
+          dag_no: '',
+          khatian_no: '',
+          previous_assignment_status: 'হ্যাঁ'
+        }));
+        fetchMyClaims();
+      }
+    } catch (err) {
+      setClaimError(err.response?.data?.message || 'আবেদন জমা দিতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।');
+    } finally {
+      setSubmittingClaim(false);
+    }
+  };
+
   const navItems = [
     { 
       id: 'lands', 
@@ -100,6 +185,14 @@ export default function UserDashboard() {
       badge: landData.active_lands.length,
       badgeColor: '#065f46',
       badgeBg: '#dcfce7'
+    },
+    { 
+      id: 'claim_ownership', 
+      label: 'মালিকানা দাবি করুন', 
+      icon: FileCheck,
+      badge: myClaims.length > 0 ? myClaims.length : undefined,
+      badgeColor: '#1d4ed8',
+      badgeBg: '#dbeafe'
     },
     { 
       id: 'pending', 
@@ -131,6 +224,7 @@ export default function UserDashboard() {
 
   const stats = [
     { label: 'অনুমোদিত জমি', value: landData.active_lands.length, color: '#047857' },
+    { label: 'মালিকানা দাবি', value: myClaims.length, color: '#1d4ed8' },
     { label: 'পর্যালোচনাধীন', value: landData.pending_assignments.length, color: '#b45309' },
     { label: 'হস্তান্তরিত জমি', value: landData.sold_lands.length, color: '#dc2626' },
   ];
@@ -646,6 +740,440 @@ export default function UserDashboard() {
             <span>
               নাগরিকের প্রোফাইল তথ্য সিস্টেম নিরাপত্তার স্বার্থে শুধুমাত্র দর্শনযোগ্য (Read-only)। সংশোধনের জন্য সংশ্লিষ্ট উপজেলা ভূমি অফিস অথবা মন্ত্রণালয়ে যোগাযোগ করুন।
             </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB: Claim Land Ownership (মালিকানা দাবি করুন) ───────────────── */}
+      {activeTab === 'claim_ownership' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Header Banner */}
+          <div style={{
+            background: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+            borderRadius: '16px',
+            padding: '24px 28px',
+            color: '#ffffff',
+            boxShadow: '0 10px 25px -5px rgba(37, 99, 235, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px'
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <span style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  padding: '4px 12px',
+                  borderRadius: '999px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  letterSpacing: '0.5px'
+                }}>
+                  নাগরিক স্বত্বাধিকার সুরক্ষা
+                </span>
+                <span style={{ fontSize: '13px', opacity: 0.9 }}>
+                  বগুড়া জেলা | শিবগঞ্জ উপজেলা
+                </span>
+              </div>
+              <h2 style={{ fontSize: '22px', fontWeight: '800', margin: 0, letterSpacing: '-0.3px' }}>
+                মালিকানা দাবি আবেদন ফরম (Claim Ownership)
+              </h2>
+              <p style={{ margin: '6px 0 0 0', fontSize: '13.5px', opacity: 0.9, maxWidth: '720px', lineHeight: 1.5 }}>
+                আপনার জমি যদি অনলাইনে ভুলবশত অন্য কারো নামে অ্যাসাইন বা রেকর্ড হয়ে থাকে, তবে সাব-রেজিস্ট্রার কার্যালয়ে অনলাইন মালিকানা বরাদ্দের জন্য আবেদন করুন।
+              </p>
+            </div>
+          </div>
+
+          {/* Success Banner */}
+          {claimSuccess && (
+            <div style={{
+              background: '#ecfdf5',
+              border: '1.5px solid #a7f3d0',
+              color: '#065f46',
+              padding: '16px 20px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxShadow: '0 4px 12px rgba(6, 95, 70, 0.08)'
+            }}>
+              <CheckCircle size={20} color="#059669" />
+              <span>{claimSuccess}</span>
+            </div>
+          )}
+
+          {/* Error Banner */}
+          {claimError && (
+            <div style={{
+              background: '#fee2e2',
+              border: '1.5px solid #fca5a5',
+              color: '#991b1b',
+              padding: '16px 20px',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              fontWeight: '600',
+              fontSize: '14px',
+              boxShadow: '0 4px 12px rgba(153, 27, 27, 0.08)'
+            }}>
+              <AlertTriangle size={20} color="#dc2626" />
+              <span>{claimError}</span>
+            </div>
+          )}
+
+          {/* Form Card */}
+          <div className="glass-card" style={{
+            padding: '28px',
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '16px',
+            boxShadow: '0 4px 20px rgba(15, 23, 42, 0.04)'
+          }}>
+            <form onSubmit={handleSubmitClaim}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                gap: '20px',
+                marginBottom: '24px'
+              }}>
+                {/* 1. Name: Auto-filled */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ১. আবেদনকারীর নাম (স্বয়ংক্রিয় তথ্য) <span style={{ color: '#059669' }}>🔒</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={user?.name || ''}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      background: '#f8fafc',
+                      color: '#0f172a',
+                      fontWeight: '700',
+                      border: '1.5px solid #e2e8f0',
+                      cursor: 'not-allowed'
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    নাগরিক প্রোফাইল থেকে স্বয়ংক্রিয়ভাবে সংগৃহীত
+                  </span>
+                </div>
+
+                {/* 2. NID: Auto-filled */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ২. জাতীয় পরিচয়পত্র নম্বর (NID) <span style={{ color: '#059669' }}>🔒</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={user?.nid || ''}
+                    className="input-field"
+                    style={{
+                      width: '100%',
+                      background: '#f8fafc',
+                      color: '#047857',
+                      fontWeight: '800',
+                      fontFamily: 'monospace',
+                      border: '1.5px solid #e2e8f0',
+                      cursor: 'not-allowed'
+                    }}
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    সত্যায়িত নাগরিক জাতীয় পরিচয়পত্র
+                  </span>
+                </div>
+
+                {/* 3. Mouza: Dropdown */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৩. মৌজা নির্বাচন (বগুড়া জেলা, শিবগঞ্জ উপজেলা) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="input-field"
+                    value={claimForm.mouza}
+                    onChange={(e) => setClaimForm(prev => ({ ...prev, mouza: e.target.value }))}
+                    style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: '#ffffff' }}
+                    required
+                  >
+                    {SHIBGANJ_MOUZAS.map((m) => (
+                      <option key={m.jl_no + m.mouza} value={m.mouza}>
+                        {m.mouza} (জে.এল নং {m.jl_no})
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    বগুড়া জেলার শিবগঞ্জ উপজেলার অন্তর্ভুক্ত মৌজা তালিকা
+                  </span>
+                </div>
+
+                {/* 4. Dag Number: Manual input */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৪. দাগ নম্বর (Dag Number) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="দাগ নম্বর লিখুন (যেমন: ১০১)"
+                    value={claimForm.dag_no}
+                    onChange={(e) => setClaimForm(prev => ({ ...prev, dag_no: e.target.value }))}
+                    style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
+                    required
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    যে দাগের জমি আপনি দাবি করছেন
+                  </span>
+                </div>
+
+                {/* 5. Khotiyan Number: Manual input */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৫. খতিয়ান নম্বর (Khotiyan Number) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="খতিয়ান নম্বর লিখুন (যেমন: ৫২)"
+                    value={claimForm.khatian_no}
+                    onChange={(e) => setClaimForm(prev => ({ ...prev, khatian_no: e.target.value }))}
+                    style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
+                    required
+                  />
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    সিএস/এসএ/আরএস/বিএস খতিয়ান নম্বর
+                  </span>
+                </div>
+
+                {/* 6. Previous Online Assignment Status: Dropdown */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৬. বর্টমানে এই জমির অনলাইন নিবন্ধন অন্য কারো নামে ভুলভাবেASSIGN হয়ে আছে কি? <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="input-field"
+                    value={claimForm.previous_assignment_status}
+                    onChange={(e) => setClaimForm(prev => ({ ...prev, previous_assignment_status: e.target.value }))}
+                    style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: '#ffffff' }}
+                    required
+                  >
+                    <option value="হ্যাঁ">হ্যাঁ (Yes - অন্য কারো নামে ভুলভাবেASSIGN হয়ে আছে)</option>
+                    <option value="না">না (No - এখনও অনলাইনে কারও নামে ASSIGN হয়নি)</option>
+                  </select>
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    বর্তমান অনলাইন স্ট্যাটাস চিহ্নিত করুন
+                  </span>
+                </div>
+              </div>
+
+              {/* 7. Application Declaration Text Box (Auto-generated context) */}
+              <div style={{
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '12px',
+                padding: '20px 24px',
+                marginBottom: '24px',
+                position: 'relative'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  marginBottom: '10px',
+                  fontSize: '13px',
+                  fontWeight: '800',
+                  color: '#1e40af'
+                }}>
+                  <FileCheck size={18} color="#2563eb" />
+                  <span>আবেদনপত্র ও ঘোষণাপত্র (Application Declaration Text - স্বয়ংক্রিয় প্রস্তুতকৃত)</span>
+                </div>
+                <div style={{
+                  background: '#ffffff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '8px',
+                  padding: '16px 20px',
+                  fontSize: '14px',
+                  color: '#0f172a',
+                  lineHeight: 1.7
+                }}>
+                  &ldquo;{getDeclarationText()}&rdquo;
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', fontSize: '12px', color: '#64748b' }}>
+                  <Info size={14} color="#64748b" />
+                  <span>উপরে প্রদত্ত তথ্যের ভিত্তিতে এই ঘোষণাপত্রটি স্বয়ংক্রিয়ভাবে তৈরি হয়েছে এবং এটি সাব-রেজিস্ট্রার মহোদয়ের নোটিফিকেশনে প্রেরিত হবে।</span>
+                </div>
+              </div>
+
+              {/* 8. Submit Button */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button
+                  type="submit"
+                  disabled={submittingClaim}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '12px 28px',
+                    background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
+                    color: '#ffffff',
+                    fontWeight: '800',
+                    fontSize: '14px',
+                    borderRadius: '10px',
+                    border: 'none',
+                    cursor: submittingClaim ? 'wait' : 'pointer',
+                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.35)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Send size={16} />
+                  <span>{submittingClaim ? 'আবেদন দাখিল হচ্ছে...' : 'মালিকানা দাবি আবেদন দাখিল করুন'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* Section: Citizen's submitted claims list */}
+          <div className="glass-card" style={{
+            padding: '24px 28px',
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
+            borderRadius: '16px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                  আমার দাখিলকৃত মালিকানা দাবির তালিকা ({myClaims.length}টি)
+                </h3>
+                <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+                  সাব-রেজিস্ট্রার কার্যালয়ে প্রেরিত আপনার পূর্ববর্তী দাবিসমূহের ট্র্যাকিং
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={fetchMyClaims}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  background: '#f8fafc',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  cursor: 'pointer'
+                }}
+              >
+                <RefreshCw size={13} className={loadingMyClaims ? 'animate-spin' : ''} />
+                <span>রিফ্রেশ</span>
+              </button>
+            </div>
+
+            {myClaims.length === 0 ? (
+              <div style={{
+                textAlign: 'center',
+                padding: '32px 16px',
+                color: '#64748b',
+                background: '#f8fafc',
+                borderRadius: '12px',
+                border: '1px dashed #cbd5e1'
+              }}>
+                <FileCheck size={36} color="#94a3b8" style={{ margin: '0 auto 8px' }} />
+                <div style={{ fontWeight: '700', fontSize: '14px', color: '#334155' }}>বর্তমানে আপনার কোনো মালিকানা দাবি দাখিল করা নেই</div>
+                <div style={{ fontSize: '12px', marginTop: '4px' }}>প্রয়োজনে উপরের ফরমটি পূরণ করে আবেদন দাখিল করুন।</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {myClaims.map((claim) => (
+                  <div
+                    key={claim._id || claim.claim_id}
+                    style={{
+                      border: '1.5px solid #e2e8f0',
+                      borderRadius: '12px',
+                      padding: '16px 20px',
+                      background: '#ffffff',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '10px'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{
+                          fontFamily: 'monospace',
+                          fontWeight: '800',
+                          fontSize: '13px',
+                          color: '#1d4ed8',
+                          background: '#eff6ff',
+                          padding: '3px 10px',
+                          borderRadius: '6px'
+                        }}>
+                          {claim.claim_id}
+                        </span>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>
+                          দাখিলের তারিখ: {new Date(claim.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        fontWeight: '700'
+                      }}>
+                        📢 সাব-রেজিস্ট্রার বরাবর বিজ্ঞপ্তি প্রেরিত (Read-Only)
+                      </span>
+                    </div>
+
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                      gap: '10px',
+                      fontSize: '13px',
+                      background: '#f8fafc',
+                      padding: '12px 14px',
+                      borderRadius: '8px'
+                    }}>
+                      <div>
+                        <span style={{ color: '#64748b' }}>মৌজা:</span> <strong>{claim.mouza}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b' }}>দাগ নম্বর:</span> <strong style={{ color: '#1d4ed8' }}>{claim.dag_no}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b' }}>খতিয়ান নম্বর:</span> <strong style={{ color: '#1d4ed8' }}>{claim.khatian_no}</strong>
+                      </div>
+                      <div>
+                        <span style={{ color: '#64748b' }}>পূর্বে ভুল ASSIGN:</span>{' '}
+                        <strong style={{ color: claim.previous_assignment_status === 'হ্যাঁ' ? '#dc2626' : '#166534' }}>
+                          {claim.previous_assignment_status}
+                        </strong>
+                      </div>
+                    </div>
+
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#334155',
+                      lineHeight: 1.6,
+                      background: '#fafafa',
+                      padding: '10px 14px',
+                      borderRadius: '6px',
+                      borderLeft: '3px solid #2563eb'
+                    }}>
+                      <strong>ঘোষণাপত্র:</strong> {claim.declaration_text}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Building2, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw } from 'lucide-react';
+import { Building2, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
 import {
@@ -14,7 +14,7 @@ import {
 
 export default function RegisterOfficeDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('assign'); // 'assign' | 'deed_registry' | 'requests'
+  const [activeTab, setActiveTab] = useState('assign'); // 'assign' | 'deed_registry' | 'requests' | 'claims'
 
   // Cascade Filter State (Defaulted to Rajshahi > Bogura > Shibganj > গুজিয়া)
   const [filter, setFilter] = useState({
@@ -126,6 +126,10 @@ export default function RegisterOfficeDashboard() {
   // Sent Requests List
   const [sentRequests, setSentRequests] = useState([]);
 
+  // Land Ownership Claim Notifications (Citizen submissions)
+  const [claimNotifications, setClaimNotifications] = useState([]);
+  const [loadingClaims, setLoadingClaims] = useState(false);
+
   // Check if land is actually allocated to a private citizen (not unassigned / khas)
   const checkIsAllocated = (land) => {
     if (!land) return false;
@@ -144,9 +148,24 @@ export default function RegisterOfficeDashboard() {
 
   useEffect(() => {
     fetchSentRequests();
+    fetchClaimNotifications();
     handleSearchLand();
     handleSearchUser();
   }, []);
+
+  const fetchClaimNotifications = async () => {
+    setLoadingClaims(true);
+    try {
+      const res = await axios.get('/api/claim/all');
+      if (res.data.success) {
+        setClaimNotifications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch claim notifications:', err);
+    } finally {
+      setLoadingClaims(false);
+    }
+  };
 
   const fetchSentRequests = async () => {
     try {
@@ -300,6 +319,14 @@ export default function RegisterOfficeDashboard() {
       badge: sentRequests.length,
       badgeColor: '#1d4ed8',
       badgeBg: '#dbeafe'
+    },
+    {
+      id: 'claims',
+      label: 'মালিকানা দাবি বিজ্ঞপ্তি',
+      icon: Bell,
+      badge: claimNotifications.length > 0 ? claimNotifications.length : undefined,
+      badgeColor: '#b45309',
+      badgeBg: '#fef3c7'
     }
   ];
 
@@ -307,6 +334,7 @@ export default function RegisterOfficeDashboard() {
     { label: 'মোট প্রেরিত', value: sentRequests.length, color: '#1d4ed8' },
     { label: 'অনুমোদিত', value: sentRequests.filter(r => r.status === 'Approved').length, color: '#047857' },
     { label: 'অপেক্ষমান', value: sentRequests.filter(r => r.status === 'Pending').length, color: '#b45309' },
+    { label: 'দাবি বিজ্ঞপ্তি', value: claimNotifications.length, color: '#d97706' },
   ];
 
   return (
@@ -1006,6 +1034,192 @@ export default function RegisterOfficeDashboard() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: Land Ownership Claims Notifications (Read-Only) ── */}
+      {activeTab === 'claims' && (
+        <div>
+          {/* Header instructions bar */}
+          <div style={{
+            background: '#fef3c7',
+            border: '1.5px solid #fde68a',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            marginBottom: '24px',
+            fontSize: '13px',
+            color: '#92400e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '12px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Bell size={24} color="#d97706" style={{ flexShrink: 0 }} />
+              <div>
+                <strong style={{ fontSize: '14px', color: '#78350f', display: 'block' }}>
+                  নাগরিকদের জমি মালিকানা দাবি বিজ্ঞপ্তি তালিকা (Read-Only Notification):
+                </strong>
+                <span>
+                  কোনো জমি অনলাইনে ভুলবশত অন্য কারো নামে রেকর্ড হয়ে থাকলে নাগরিকরা এই দাবি দাখিল করেন। এটি সাব-রেজিস্ট্রারের জ্ঞাতার্থে ও অবগতির জন্য শুধুমাত্র দর্শনযোগ্য (Read-only, সিস্টেমে সরাসরি কোনো ডাটা পরিবর্তন ছাড়াই রেকর্ড সংরক্ষিত থাকে)।
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={fetchClaimNotifications}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                fontSize: '12px',
+                fontWeight: '700',
+                background: '#ffffff',
+                border: '1px solid #d97706',
+                color: '#92400e',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={13} className={loadingClaims ? 'animate-spin' : ''} />
+              <span>রিফ্রেশ</span>
+            </button>
+          </div>
+
+          {loadingClaims ? (
+            <div className="glass-card" style={{ padding: '60px', textAlign: 'center', color: '#475569' }}>
+              <RefreshCw size={32} className="animate-spin" style={{ margin: '0 auto 12px', color: '#d97706' }} />
+              <div style={{ fontSize: '15px', fontWeight: '700' }}>বিজ্ঞপ্তিসমূহ লোড হচ্ছে...</div>
+            </div>
+          ) : claimNotifications.length === 0 ? (
+            <div className="glass-card" style={{ padding: '50px 24px', textAlign: 'center', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+              <div style={{ fontSize: '42px', marginBottom: '12px' }}>📭</div>
+              <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '6px' }}>
+                বর্তমানে কোনো নতুন মালিকানা দাবি বিজ্ঞপ্তি নেই
+              </h3>
+              <p style={{ color: '#64748b', fontSize: '13px' }}>
+                নাগরিক ড্যাশবোর্ড থেকে মালিকানা দাবি দাখিল করা হলে তা স্বয়ংক্রিয়ভাবে এখানে প্রদর্শিত হবে।
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {claimNotifications.map((claim) => (
+                <div
+                  key={claim._id || claim.claim_id}
+                  className="glass-card"
+                  style={{
+                    padding: '22px 26px',
+                    background: '#ffffff',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '14px',
+                    boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{
+                        fontFamily: 'monospace',
+                        fontWeight: '800',
+                        fontSize: '13px',
+                        color: '#1d4ed8',
+                        background: '#eff6ff',
+                        padding: '4px 12px',
+                        borderRadius: '6px',
+                        border: '1px solid #bfdbfe'
+                      }}>
+                        {claim.claim_id}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        দাখিলের সময়: {new Date(claim.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+
+                    <span style={{
+                      padding: '4px 12px',
+                      borderRadius: '999px',
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      background: '#fef3c7',
+                      color: '#92400e',
+                      border: '1px solid #fde68a',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px'
+                    }}>
+                      <span>📢</span> অবগতির জন্য বিজ্ঞপ্তি (Read-Only)
+                    </span>
+                  </div>
+
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: '12px',
+                    fontSize: '13px',
+                    background: '#f8fafc',
+                    padding: '16px',
+                    borderRadius: '10px',
+                    marginBottom: '14px',
+                    border: '1px solid #e2e8f0'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>দাবিকারী নাগরিক</div>
+                      <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px', marginTop: '2px' }}>{claim.applicant_name}</div>
+                      <div style={{ fontSize: '11.5px', color: '#475569', fontFamily: 'monospace' }}>NID: {claim.applicant_nid}</div>
+                      {claim.applicant_phone && <div style={{ fontSize: '11px', color: '#64748b' }}>মোবাইল: {claim.applicant_phone}</div>}
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>তফসিল ও অবস্থান</div>
+                      <div style={{ color: '#0f172a', fontWeight: '700', marginTop: '2px' }}>মৌজা: {claim.mouza}</div>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>উপজেলা: {claim.upazila || 'শিবগঞ্জ'} | জেলা: {claim.district || 'বগুড়া'}</div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>দাগ ও খতিয়ান নম্বর</div>
+                      <div style={{ marginTop: '2px' }}>
+                        দাগ নং: <strong style={{ color: '#1d4ed8', fontSize: '14px' }}>{claim.dag_no}</strong>
+                      </div>
+                      <div>
+                        খতিয়ান নং: <strong style={{ color: '#1d4ed8' }}>{claim.khatian_no}</strong>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>ভুল অ্যাসাইন স্ট্যাটাস</div>
+                      <div style={{
+                        marginTop: '4px',
+                        display: 'inline-block',
+                        padding: '3px 10px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        background: claim.previous_assignment_status === 'হ্যাঁ' ? '#fee2e2' : '#f0fdf4',
+                        color: claim.previous_assignment_status === 'হ্যাঁ' ? '#991b1b' : '#166534',
+                        border: `1px solid ${claim.previous_assignment_status === 'হ্যাঁ' ? '#fca5a5' : '#86efac'}`
+                      }}>
+                        {claim.previous_assignment_status === 'হ্যাঁ' ? '⚠️ অন্য কারো নামে ভুল অ্যাসাইন রয়েছে' : 'ℹ️ অনলাইনে এখনও অ্যাসাইন হয়নি'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    background: '#eff6ff',
+                    border: '1.5px solid #bfdbfe',
+                    borderRadius: '10px',
+                    padding: '14px 18px',
+                    fontSize: '13px',
+                    color: '#1e3a8a',
+                    lineHeight: 1.6
+                  }}>
+                    <strong style={{ color: '#1e40af', display: 'block', marginBottom: '4px' }}>নাগরিকের ঘোষণাপত্র (Declaration Text):</strong>
+                    &ldquo;{claim.declaration_text}&rdquo;
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
