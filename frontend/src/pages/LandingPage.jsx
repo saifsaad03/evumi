@@ -144,7 +144,7 @@ export default function LandingPage() {
           setLandingMouzas(res.data.mouzas);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleQuickVerify = async (e) => {
@@ -675,8 +675,8 @@ export default function LandingPage() {
                   marginBottom: '12px',
                   transition: 'transform 0.2s ease',
                 }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
+                  onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
                 >
                   <div style={{
                     fontSize: '22px', width: '42px', height: '42px',
@@ -959,14 +959,14 @@ export default function LandingPage() {
               color: '#475569'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: '700', color: '#0f172a' }}>ভিডিও সূচিপত্র:</span>
+                <span style={{ fontWeight: '700', color: '#0f172a' }}> </span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>১. খতিয়ান অনুসন্ধান</span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>২. নাগরিক ড্যাশবোর্ড</span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>৩. মালিকানা দাবি ফরম</span>
               </div>
 
               <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-                সহায়তায়: ভূমি মন্ত্রণালয় ও এটুআই (a2i)
+
               </div>
             </div>
           </div>

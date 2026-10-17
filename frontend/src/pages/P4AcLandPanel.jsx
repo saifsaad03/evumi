@@ -20,7 +20,7 @@ export default function P4AcLandPanel() {
     try {
       const res = await axios.get('/api/pending-mutations');
       setApplications(res.data.data || []);
-    } catch {}
+    } catch { }
     finally { setLoading(false); }
   };
 

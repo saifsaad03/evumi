@@ -538,7 +538,7 @@ export default function RegisterOfficeDashboard() {
                         border: `1px solid ${isLandAllocated ? '#f87171' : '#86efac'}`,
                         fontWeight: '700'
                       }}>
-                        {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য সরকারি খাস জমি'}
+                        {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য অনিবন্ধিত জমি '}
                       </span>
                     </div>
 
@@ -1315,8 +1315,8 @@ export default function RegisterOfficeDashboard() {
                           color: (statusSelections[claim._id || claim.claim_id] || claim.status) === 'অনুমোদিত'
                             ? '#166534'
                             : (statusSelections[claim._id || claim.claim_id] || claim.status) === 'আবেদন খারিজ করা হলো'
-                            ? '#991b1b'
-                            : '#92400e',
+                              ? '#991b1b'
+                              : '#92400e',
                           outline: 'none',
                           cursor: 'pointer'
                         }}
