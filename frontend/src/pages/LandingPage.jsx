@@ -974,6 +974,224 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════
+          DEMO CREDENTIALS FOR HACKATHON EVALUATION
+      ══════════════════════════════════════════ */}
+      <section style={{
+        padding: '50px 20px',
+        background: '#f8fafc',
+        borderTop: '1px solid #e2e8f0',
+        borderBottom: '1px solid #e2e8f0'
+      }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
+            borderRadius: '18px',
+            border: '2px solid #a7f3d0',
+            boxShadow: '0 10px 25px -5px rgba(5, 150, 105, 0.08), 0 8px 10px -6px rgba(5, 150, 105, 0.05)',
+            padding: '32px 28px',
+          }}>
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '6px 14px',
+                background: '#dcfce7',
+                border: '1px solid #86efac',
+                borderRadius: '999px',
+                fontSize: '13px',
+                fontWeight: '700',
+                color: '#166534',
+                marginBottom: '12px'
+              }}>
+                <Award size={16} /> Land Tech Innovation Hackathon
+              </div>
+              <h3 style={{
+                fontSize: 'clamp(20px, 2.5vw, 24px)',
+                fontWeight: '800',
+                color: '#0f172a',
+                marginBottom: '8px'
+              }}>
+                Role Based Login (For the Honourable Judges and mentor of Land Tech innovation hackathon)
+              </h3>
+              <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '640px', margin: '0 auto' }}>
+                সিস্টেমের বিভিন্ন মডিউল ও কার্যপ্রণালী সরাসরি যাচাই করার জন্য নির্ধারিত ডেমো অ্যাকাউন্টের বিবরণ নিচে দেওয়া হলো:
+              </p>
+            </div>
+
+            {/* 3 Role Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: '18px',
+            }}>
+              {/* Register Office */}
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                padding: '20px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '20px' }}>🏛️</span>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Register Office</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>সাব-রেজিস্ট্রি অফিসার ড্যাশবোর্ড</div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>registry@evhumi.gov.bd</span>
+                    </div>
+                    <div>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/login', { state: { email: 'registry@evhumi.gov.bd' } })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#047857',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '8px'
+                  }}
+                >
+                  <LogIn size={14} /> লগইন করুন
+                </button>
+              </div>
+
+              {/* AC Land Office */}
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                padding: '20px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '20px' }}>⚖️</span>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>AC Land Office</div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>সহকারী কমিশনার (ভূমি) প্যানেল</div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>acland@evhumi.gov.bd</span>
+                    </div>
+                    <div>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/login', { state: { email: 'acland@evhumi.gov.bd' } })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#047857',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '8px'
+                  }}
+                >
+                  <LogIn size={14} /> লগইন করুন
+                </button>
+              </div>
+
+              {/* Citizen User */}
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                padding: '20px',
+                border: '1px solid #cbd5e1',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+              }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '20px' }}>👤</span>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Citizen User</div>
+                      <div style={{ fontSize: '11px', color: '#d97706', fontWeight: '600' }}>
+                        (not for OTP verification)
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
+                    <div style={{ marginBottom: '4px' }}>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>citizen@example.com</span>
+                    </div>
+                    <div>
+                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
+                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/login', { state: { email: 'citizen@example.com' } })}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: '#047857',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    marginTop: '8px'
+                  }}
+                >
+                  <LogIn size={14} /> লগইন করুন
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
           FOOTER — OFFICIAL GOVERNMENT LIGHT THEME
       ══════════════════════════════════════════ */}
       <footer style={{
@@ -1025,6 +1243,19 @@ export default function LandingPage() {
           }}>
             <div>© ২০২৬ গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · সর্বস্বত্ব সংরক্ষিত।</div>
             <div>সমন্বিত ডিজিটাল ভূমি প্রশাসন আর্কিটেকচার (P3, P4, P5 ও এনক্রিপ্টেড ওটিপি ইঞ্জিন)</div>
+          </div>
+
+          <div style={{
+            textAlign: 'center',
+            paddingTop: '18px',
+            marginTop: '18px',
+            borderTop: '1px dashed #e2e8f0',
+            fontSize: '13px',
+            fontWeight: '700',
+            color: '#065f46',
+            letterSpacing: '0.01em'
+          }}>
+            This Website is Developed By MD SAAD &amp; MD CHAND
           </div>
         </div>
       </footer>
