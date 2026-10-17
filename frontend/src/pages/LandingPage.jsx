@@ -5,8 +5,19 @@ import {
   Shield, Search, ArrowRight, CheckCircle, Lock, Zap,
   LogIn, UserPlus, Database, MapPin, FileText, Star,
   ChevronRight, Globe, Award, TrendingUp, Sparkles, Check, PhoneCall,
-  ShieldCheck, ShieldAlert, AlertTriangle
+  ShieldCheck, ShieldAlert, AlertTriangle, PlayCircle
 } from 'lucide-react';
+
+// ওয়েবসাইট ব্যবহার নির্দেশিকা ভিডিও লিংক (পরবর্তীতে ইউটিউব লিংক পরিবর্তন করতে চাইলে এখানে আপডেট করুন)
+const GUIDELINE_VIDEO_URL = "https://www.youtube.com/watch?v=xi0FP37j9eU";
+
+// YouTube URL কে স্বয়ংক্রিয়ভাবে embed URL-এ রূপান্তর করার ফাংশন
+const getYouTubeEmbedUrl = (url) => {
+  if (!url) return '';
+  if (url.includes('embed/')) return url;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : url;
+};
 
 /* ─── Data ─────────────────────────────────────────────── */
 const STATS = [
@@ -843,6 +854,121 @@ export default function LandingPage() {
             >
               <LogIn size={18} /> কর্মকর্তা পোর্টাল
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          GUIDELINE VIDEO TUTORIAL SECTION
+      ══════════════════════════════════════════ */}
+      <section style={{
+        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+        borderTop: '1px solid #e2e8f0',
+        padding: '72px 20px',
+        position: 'relative'
+      }}>
+        <div style={{ maxWidth: '1080px', margin: '0 auto' }}>
+          {/* Section Heading */}
+          <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 16px',
+              borderRadius: '999px',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              color: '#065f46',
+              fontSize: '13px',
+              fontWeight: '700',
+              marginBottom: '14px'
+            }}>
+              <PlayCircle size={16} color="#059669" />
+              <span>প্ল্যাটফর্ম ব্যবহার নির্দেশিকা</span>
+            </div>
+
+            <h2 style={{
+              fontSize: 'clamp(24px, 3.8vw, 36px)',
+              fontWeight: '900',
+              color: '#0f172a',
+              marginBottom: '12px',
+              lineHeight: 1.3
+            }}>
+              ই-ভূমি প্ল্যাটফর্ম ব্যবহারের সহজ নির্দেশিকা
+            </h2>
+
+            <p style={{
+              fontSize: '15px',
+              color: '#475569',
+              maxWidth: '680px',
+              margin: '0 auto',
+              lineHeight: 1.6
+            }}>
+              ডিজিটাল ভূমিসেবা গ্রহণ, জমির খতিয়ান অনুসন্ধান, মালিকানা দাবি ও অনলাইন প্রক্রিয়াসমূহ সহজে বুঝতে নিচের ভিডিও নির্দেশিকাটি দেখুন।
+            </p>
+          </div>
+
+          {/* Video Container (16:9 Aspect Ratio) */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '20px',
+            padding: '16px',
+            border: '1.5px solid #cbd5e1',
+            boxShadow: '0 20px 40px -15px rgba(15, 23, 42, 0.1)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'relative',
+              paddingBottom: '56.25%', // 16:9 aspect ratio
+              height: 0,
+              overflow: 'hidden',
+              borderRadius: '14px',
+              background: '#0f172a'
+            }}>
+              <iframe
+                src={getYouTubeEmbedUrl(GUIDELINE_VIDEO_URL)}
+                title="ই-ভূমি ব্যবহার নির্দেশিকা ভিডিও"
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  border: 'none',
+                  borderRadius: '14px'
+                }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            </div>
+
+            {/* Video Quick Guide Chips */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+              marginTop: '16px',
+              padding: '12px 16px',
+              background: '#f8fafc',
+              borderRadius: '10px',
+              border: '1px solid #e2e8f0',
+              fontSize: '12.5px',
+              color: '#475569'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: '700', color: '#0f172a' }}>ভিডিও সূচিপত্র:</span>
+                <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>১. খতিয়ান অনুসন্ধান</span>
+                <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>২. নাগরিক ড্যাশবোর্ড</span>
+                <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>৩. মালিকানা দাবি ফরম</span>
+              </div>
+
+              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                সহায়তায়: ভূমি মন্ত্রণালয় ও এটুআই (a2i)
+              </div>
+            </div>
           </div>
         </div>
       </section>
