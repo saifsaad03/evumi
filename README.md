@@ -1,6 +1,7 @@
 | Name | Role | Student ID |
+| :--- | :--- | :--- |
 | Md Saad Hossain | Team Lead | 241-15-541 |
-| Chand Mandol | Contributor | 241-15-157 |
+| Chand Mandol | Team Member | 241-15-157 |
 
 **You can findd it on landing page also .....just click and login from there... you are requested yo watch the video on landing page**
 | Role | Email | Password |
