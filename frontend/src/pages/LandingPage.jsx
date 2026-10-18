@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 // ওয়েবসাইট ব্যবহার নির্দেশিকা ভিডিও লিংক (পরবর্তীতে ইউটিউব লিংক পরিবর্তন করতে চাইলে এখানে আপডেট করুন)
-const GUIDELINE_VIDEO_URL = "https://www.youtube.com/watch?v=xi0FP37j9eU";
+const GUIDELINE_VIDEO_URL = "https://youtu.be/wHDfV-j33jw";
 
 // YouTube URL কে স্বয়ংক্রিয়ভাবে embed URL-এ রূপান্তর করার ফাংশন
 const getYouTubeEmbedUrl = (url) => {
