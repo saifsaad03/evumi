@@ -24,3 +24,5 @@ dist-ssr/
 .DS_Store
 backend/data/users.json
 backend/data/otps.json
+
+backend/data/

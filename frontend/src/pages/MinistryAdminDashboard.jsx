@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Users, Layers, AlertTriangle, Plus, Edit, Trash2, CheckCircle, XCircle, Search, RefreshCw, Database, Key, Check, MapPin, X } from 'lucide-react';
+import { Shield, Users, Layers, AlertTriangle, Activity, Plus, Edit, Trash2, CheckCircle, XCircle, Search, RefreshCw, Database, Key, Check, MapPin, X } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
+import SystemLogsAdminSection from '../components/SystemLogsAdminSection';
+import DynamicLocationManager from '../components/DynamicLocationManager';
 import {
   BANGLADESH_DIVISIONS,
   getDistrictsForDivision,
@@ -332,6 +334,11 @@ export default function MinistryAdminDashboard() {
       badgeBg: '#f5f3ff'
     },
     {
+      id: 'locations',
+      label: 'ডায়নামিক লোকেশন ও জমি তৈরি (Step 1-6)',
+      icon: MapPin,
+    },
+    {
       id: 'lands',
       label: 'ভূমি ডাটা ও আইনি স্ট্যাটাস',
       icon: Layers,
@@ -343,6 +350,11 @@ export default function MinistryAdminDashboard() {
       id: 'controls',
       label: 'সিস্টেম কন্ট্রোল ও ডেটাবেস রিসেট',
       icon: Database,
+    },
+    {
+      id: 'logs',
+      label: 'সিস্টেম অডিট লগ (System Logs)',
+      icon: Activity,
     }
   ];
 
@@ -1058,6 +1070,20 @@ export default function MinistryAdminDashboard() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: System Logs & Complete Audit Trail (Super Admin Only) */}
+      {activeTab === 'logs' && (
+        <div>
+          <SystemLogsAdminSection />
+        </div>
+      )}
+
+      {/* TAB 6: Dynamic Location & Land Record Creation (Step 1-6) */}
+      {activeTab === 'locations' && (
+        <div>
+          <DynamicLocationManager />
         </div>
       )}
     </DashboardLayout>

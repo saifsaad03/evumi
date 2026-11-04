@@ -3,6 +3,7 @@ const router = express.Router();
 const LandRecord = require('../models/LandRecord');
 const User = require('../models/User');
 const LandAssignRequest = require('../models/LandAssignRequest');
+const { logActivity } = require('../utils/auditLogger');
 const OtpVerification = require('../models/OtpVerification');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const {
@@ -72,40 +73,67 @@ router.get('/search-land', verifyToken, async (req, res) => {
     const engKhatian = cleanKhatian ? toEnglishDigits(cleanKhatian) : '';
     const bngKhatian = cleanKhatian ? toBengaliDigits(cleanKhatian) : '';
 
-    // 1. Search if this plot already exists in MongoDB by Mouza + Dag
-    let record = await LandRecord.findOne({
-      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
-      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
-    });
+    // 1. Search if this plot already exists in MongoDB
+    // First priority: Exact match by Mouza + Dag + Khatian (if khatian provided)
+    let record = null;
+    if (cleanKhatian) {
+      record = await LandRecord.findOne({
+        mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+        $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }],
+        $and: [
+          { $or: [{ khatian_no: cleanKhatian }, { khatian_no: engKhatian }, { khatian_no: bngKhatian }] }
+        ]
+      });
+    }
+
+    // Second priority: Match by Mouza + Dag
+    if (!record) {
+      record = await LandRecord.findOne({
+        mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+        $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+      });
+    }
 
     if (record) {
       let changed = false;
 
-      // If user specified a Khatian number and it differs from the stored record,
-      // update it so that UI changes to Khatian Number immediately persist in Database!
-      if (cleanKhatian && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
-        record.khatian_no = cleanKhatian;
-        record.last_updated = new Date();
-        changed = true;
-      }
+      const isCitizenOwned = record.owner_nid &&
+        record.owner_nid !== '1000000000000' &&
+        record.owner_nid !== 'GOVT-KHAS-01' &&
+        record.owner_nid !== 'অনলাইনে রেকর্ড নেই' &&
+        !record.owner_name?.includes('সরকার') &&
+        !record.owner_name?.includes('অনলাইনে অনিবন্ধিত');
 
-      // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
-      if (record.owner_nid === '1000000000000' || record.owner_name?.includes('গণপ্রজাতন্ত্রী বাংলাদেশ সরকার')) {
-        record.owner_name = 'অনলাইনে অনিবন্ধিত';
-        record.owner_nid = 'অনলাইনে রেকর্ড নেই';
-        changed = true;
-      }
+      // If user searched for a specific Khatian, but the found record belongs to a citizen under a DIFFERENT khatian,
+      // DO NOT overwrite citizen's record! Treat as unallocated plot for the new khatian.
+      if (cleanKhatian && isCitizenOwned && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
+        record = null; // Will trigger step 2 below to initialize an unallocated record for cleanKhatian
+      } else {
+        // If unassigned or government khas, sync khatian number if specified
+        if (cleanKhatian && !isCitizenOwned && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
+          record.khatian_no = cleanKhatian;
+          record.last_updated = new Date();
+          changed = true;
+        }
 
-      if (record.total_area_decimal === 20 && (record.owner_name === 'অনলাইনে অনিবন্ধিত' || !record.owner_nid || record.owner_nid === 'অনলাইনে রেকর্ড নেই')) {
-        const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
-        const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
-        record.total_area_decimal = variedArea;
-        record.available_area_decimal = variedArea;
-        changed = true;
-      }
+        // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
+        if (record.owner_nid === '1000000000000' || record.owner_name?.includes('গণপ্রজাতন্ত্রী বাংলাদেশ সরকার')) {
+          record.owner_name = 'অনলাইনে অনিবন্ধিত';
+          record.owner_nid = 'অনলাইনে রেকর্ড নেই';
+          changed = true;
+        }
 
-      if (changed) {
-        await record.save();
+        if (record.total_area_decimal === 20 && (record.owner_name === 'অনলাইনে অনিবন্ধিত' || !record.owner_nid || record.owner_nid === 'অনলাইনে রেকর্ড নেই')) {
+          const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
+          const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
+          record.total_area_decimal = variedArea;
+          record.available_area_decimal = variedArea;
+          changed = true;
+        }
+
+        if (changed) {
+          await record.save();
+        }
       }
     }
 
@@ -173,6 +201,15 @@ router.put('/update-khatian', verifyToken, async (req, res) => {
     land.khatian_no = cleanKhatian;
     land.last_updated = new Date();
     await land.save();
+
+    logActivity({
+      req,
+      action_type: 'KHATIAN_UPDATED',
+      module: 'Land_Management',
+      description: `${req.user?.role || 'কর্মকর্তা'} কর্তৃক খতিয়ান নম্বর হালনাগাদ করা হয়েছে: ${cleanKhatian}`,
+      target_resource: `মৌজা: ${land.mouza}, দাগ: ${land.dag_no}, খতিয়ান: ${cleanKhatian}`,
+      details: { old_khatian: land.khatian_no, new_khatian: cleanKhatian }
+    });
 
     return res.status(200).json({
       success: true,
@@ -407,6 +444,15 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     });
 
     await newRequest.save();
+
+    logActivity({
+      req,
+      action_type: 'GOVT_LAND_ASSIGNED',
+      module: 'Land_Assignment',
+      description: `সাব-রেজিস্ট্রি অফিসার কর্তৃক নাগরিক ${targetUser.name}-এর অনুকূলে জমি বরাদ্দ প্রস্তাব তৈরি (${cleanArea} শতক)`,
+      target_resource: `নাগরিক: ${targetUser.name} (NID: ${cleanUserNid}), মৌজা: ${cleanMouza}, দাগ: ${cleanDag}, খতিয়ান: ${cleanKhatian}`,
+      details: { area: cleanArea, khatian: cleanKhatian }
+    });
 
     // Mark land as Pending_AC_Land_Review
     land.status = 'Pending_AC_Land_Review';

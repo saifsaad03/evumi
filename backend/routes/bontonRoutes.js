@@ -6,6 +6,7 @@ const User = require('../models/User');
 const LandRecord = require('../models/LandRecord');
 const DeathCertificate = require('../models/DeathCertificate');
 const BontonnamaApplication = require('../models/BontonnamaApplication');
+const { logActivity } = require('../utils/auditLogger');
 const { sendOtpEmail } = require('../utils/emailService');
 const { createDeedOtp, findLatestDeedOtp, findUserByNid } = require('../utils/dbStore');
 

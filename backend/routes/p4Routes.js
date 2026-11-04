@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const LandRecord = require('../models/LandRecord');
 const User = require('../models/User');
+const { logActivity } = require('../utils/auditLogger');
 
 const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
 const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
@@ -19,6 +20,23 @@ router.get('/mouzas', async (req, res) => {
     const defaultMouzas = ['গুজিয়া', 'ধানমন্ডি', 'মিরপুর', 'শিবগঞ্জ', 'চকসারকার', 'মহাস্থান', 'পাইকপাড়া', 'তেজগাঁও', 'উত্তরা'];
     const merged = Array.from(new Set([...validMouzas, ...defaultMouzas]))
       .sort((a, b) => a.localeCompare(b, 'bn'));
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
 
     return res.status(200).json({ success: true, mouzas: merged });
   } catch (err) {
@@ -48,6 +66,23 @@ router.get('/verify-buyer/:nid', async (req, res) => {
         message: '⚠️ এই NID দিয়ে নিবন্ধিত কোনো ক্রেতার অ্যাকাউন্ট ডাটাবেজে পাওয়া যায়নি। ক্রেতাকে প্রথমে ই-ভূমি পোর্টালে নাগরিক নিবন্ধন সম্পন্ন করতে বলুন।'
       });
     }
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
 
     return res.status(200).json({
       success: true,
@@ -302,6 +337,61 @@ router.post('/grant-deed', async (req, res) => {
     });
     await pendingDeed.save();
 
+    logActivity({
+      req,
+      actor: { name: 'সাব-রেজিস্ট্রার (শিবগঞ্জ)', role: 'Register Office' },
+      action_type: 'DEED_GRANTED',
+      module: 'Deed_Registry',
+      description: `সাব-রেজিস্ট্রার কর্তৃক দলিল মঞ্জুর ও বায়োমেট্রিক/OTP যাচাই সম্পন্ন: দলিল নং ${deed_no}, জমির পরিমাণ ${actualSoldArea} শতক`,
+      target_resource: `মৌজা: ${record.mouza}, দাগ: ${record.dag_no}, খতিয়ান: ${record.khatian_no || '১'}`,
+      details: {
+        deed_no,
+        deed_year,
+        seller: record.owner_name,
+        seller_nid: record.owner_nid,
+        buyer: pendingDeed.buyer_name,
+        buyer_nid: pendingDeed.buyer_nid,
+        sold_area: actualSoldArea,
+        remaining_area: record.available_area_decimal
+      }
+    });
+
+    logActivity({
+      req,
+      actor: { name: 'সাব-রেজিস্ট্রার (শিবগঞ্জ)', role: 'Register Office' },
+      action_type: 'DEED_GRANTED',
+      module: 'Deed_Registry',
+      description: `সাব-রেজিস্ট্রার কর্তৃক দলিল মঞ্জুর ও বায়োমেট্রিক/OTP যাচাই সম্পন্ন: দলিল নং ${deed_no}, জমির পরিমাণ ${actualSoldArea} শতক`,
+      target_resource: `মৌজা: ${record.mouza}, দাগ: ${record.dag_no}, খতিয়ান: ${record.khatian_no || '১'}`,
+      details: {
+        deed_no,
+        deed_year,
+        seller: record.owner_name,
+        seller_nid: record.owner_nid,
+        buyer: pendingDeed.buyer_name,
+        buyer_nid: pendingDeed.buyer_nid,
+        sold_area: actualSoldArea,
+        remaining_area: record.available_area_decimal
+      }
+    });
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
+
     return res.status(200).json({
       success: true,
       message: isJoint
@@ -344,6 +434,23 @@ router.post('/grant-deed', async (req, res) => {
 router.get('/pending-mutations', async (req, res) => {
   try {
     const records = await LandRecord.find({ status: 'Pending_Mutation' }).sort({ last_updated: -1 });
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
+
     return res.status(200).json({ success: true, data: records });
   } catch (err) {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
@@ -370,6 +477,23 @@ router.post('/issue-namjari', async (req, res) => {
     // Payment link for buyer (uses bound FRONTEND_URL service binding or local dev fallback)
     const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').trim();
     const paymentLink = new URL(`payment/${record._id}`, frontendBase.endsWith('/') ? frontendBase : `${frontendBase}/`).toString();
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
 
     return res.status(200).json({
       success: true,
@@ -482,6 +606,23 @@ router.post('/approve-mutation', async (req, res) => {
         await oldRecord.save();
       }
     }
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
 
     return res.status(200).json({
       success: true,
@@ -603,6 +744,23 @@ router.post('/complete-payment', async (req, res) => {
       }
     }
 
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
+
     return res.status(200).json({
       success: true,
       message: '🎉 পেমেন্ট সম্পন্ন! মালিকানা হস্তান্তর সফলভাবে সম্পন্ন হয়েছে। নতুন নামজারি খতিয়ান তৈরি হয়েছে।',
@@ -685,6 +843,23 @@ router.get('/land-records', async (req, res) => {
     } else {
       records = await LandRecord.find({}).sort({ updatedAt: -1 }).limit(20);
     }
+
+    logActivity({
+      req,
+      actor: { name: officer_name || 'সহকারী কমিশনার (ভূমি)', role: 'AC Land Office' },
+      action_type: 'MUTATION_APPROVED',
+      module: 'Mutation',
+      description: `সহকারী কমিশনার (ভূমি) কর্তৃক নামজারি অনুমোদন ও নতুন খতিয়ান সৃষ্টি: সাবেক খতিয়ান ${oldRecord.khatian_no} ➔ নতুন খতিয়ান ${newKhatianNo} (${soldArea} শতক)`,
+      target_resource: `মৌজা: ${oldRecord.mouza}, দাগ: ${oldRecord.dag_no}, নতুন খতিয়ান: ${newKhatianNo}`,
+      details: {
+        deed_no: oldRecord.deed_no,
+        former_owner: oldRecord.owner_name,
+        new_owner: newRecord.owner_name,
+        new_khatian: newKhatianNo,
+        area: soldArea,
+        officer_name
+      }
+    });
 
     return res.status(200).json({ success: true, data: records });
   } catch (err) {

@@ -133,3 +133,78 @@ export const getJlNoForMouza = (mouzaName) => {
   const match = SHIBGANJ_MOUZAS.find(m => m.mouza === mouzaName);
   return match ? match.jl_no : '1';
 };
+
+
+import axios from 'axios';
+
+export const fetchDynamicDivisions = async () => {
+  try {
+    const res = await axios.get('/api/locations/divisions');
+    if (res.data.success && res.data.data.length > 0) {
+      return res.data.data.map(d => d.name);
+    }
+  } catch (err) {
+    console.warn('Dynamic divisions fallback:', err.message);
+  }
+  return BANGLADESH_DIVISIONS;
+};
+
+export const fetchDynamicDistricts = async (divisionName) => {
+  try {
+    const res = await axios.get('/api/locations/districts?division_name=' + encodeURIComponent(divisionName || ''));
+    if (res.data.success && res.data.data.length > 0) {
+      return res.data.data.map(d => d.name);
+    }
+  } catch (err) {
+    console.warn('Dynamic districts fallback:', err.message);
+  }
+  return getDistrictsForDivision(divisionName);
+};
+
+export const fetchDynamicUpazilas = async (districtName) => {
+  try {
+    const res = await axios.get('/api/locations/upazilas?district_name=' + encodeURIComponent(districtName || ''));
+    if (res.data.success && res.data.data.length > 0) {
+      return res.data.data.map(u => u.name);
+    }
+  } catch (err) {
+    console.warn('Dynamic upazilas fallback:', err.message);
+  }
+  return getUpazilasForDistrict(districtName);
+};
+
+export const fetchDynamicMouzas = async (upazilaName) => {
+  try {
+    const res = await axios.get('/api/locations/mouzas?upazila_name=' + encodeURIComponent(upazilaName || ''));
+    if (res.data.success && res.data.data.length > 0) {
+      return res.data.data.map(m => ({ mouza: m.name, jl_no: m.jl_no }));
+    }
+  } catch (err) {
+    console.warn('Dynamic mouzas fallback:', err.message);
+  }
+  return getMouzasForUpazila(upazilaName);
+};
+
+export const fetchDynamicDags = async (mouzaName) => {
+  try {
+    const res = await axios.get('/api/locations/dags?mouza_name=' + encodeURIComponent(mouzaName || ''));
+    if (res.data.success) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn('Dynamic dags fallback:', err.message);
+  }
+  return [];
+};
+
+export const fetchDynamicKhatians = async (dagNo) => {
+  try {
+    const res = await axios.get('/api/locations/khatians?dag_no=' + encodeURIComponent(dagNo || ''));
+    if (res.data.success) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn('Dynamic khatians fallback:', err.message);
+  }
+  return [];
+};

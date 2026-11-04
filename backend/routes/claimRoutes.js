@@ -5,6 +5,7 @@ const path = require('path');
 const mongoose = require('mongoose');
 const LandClaimApplication = require('../models/LandClaimApplication');
 const { verifyToken } = require('../middleware/auth');
+const { logActivity } = require('../utils/auditLogger');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CLAIMS_FILE = path.join(DATA_DIR, 'claims.json');

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { verifyToken, JWT_SECRET } = require('../middleware/auth');
+const { logActivity } = require('../utils/auditLogger');
 
 // Helper to generate token
 const generateToken = (user) => {
@@ -91,6 +92,16 @@ router.post('/register', async (req, res) => {
     const userObj = newUser.toObject ? newUser.toObject() : { ...newUser };
     delete userObj.password;
 
+    logActivity({
+      req,
+      actor: { id: newUser._id, name: newUser.name, email: newUser.email, role: 'User', nid: newUser.nid },
+      action_type: 'USER_REGISTERED',
+      module: 'Auth',
+      description: `নতুন নাগরিক অ্যাকাউন্ট নিবন্ধন সম্পন্ন: ${newUser.name} (NID: ${newUser.nid})`,
+      target_resource: `NID: ${newUser.nid}, উপজেলা: ${newUser.upazila}, জেলা: ${newUser.district}`,
+      details: { phone: newUser.phone, email: newUser.email, division: newUser.division }
+    });
+
     return res.status(201).json({
       success: true,
       message: '🎉 অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে!',
@@ -137,6 +148,15 @@ router.post('/login', async (req, res) => {
         }
       };
 
+      logActivity({
+        req,
+        actor: adminUser,
+        action_type: 'ADMIN_LOGIN',
+        module: 'Auth',
+        description: `মন্ত্রণালয় প্রধান এডমিন পোর্টাল লগইন সম্পন্ন করেছেন (${adminUser.email})`,
+        target_resource: 'ভূমি মন্ত্রণালয় কেন্দ্রীয় প্রশাসন'
+      });
+
       return res.status(200).json({
         success: true,
         message: `স্বাগতম, ${adminUser.name}! লগইন সফল হয়েছে।`,
@@ -162,8 +182,17 @@ router.post('/login', async (req, res) => {
     }
 
     const token = generateToken(user);
-    const userObj = user.toObject();
+    const userObj = user.toObject ? user.toObject() : { ...user };
     delete userObj.password;
+
+    logActivity({
+      req,
+      actor: user,
+      action_type: 'USER_LOGIN',
+      module: 'Auth',
+      description: `${user.role} ব্যবহারকারী লগইন করেছেন: ${user.name} (${user.email})`,
+      target_resource: `${user.role} পোর্টাল`
+    });
 
     return res.status(200).json({
       success: true,

@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
 const LandRecord = require('../models/LandRecord');
 const LandAssignRequest = require('../models/LandAssignRequest');
 const { verifyToken } = require('../middleware/auth');
+const { logActivity } = require('../utils/auditLogger');
 
-// GET /api/user/profile - Read only profile
+// GET /api/user/profile - Read user profile
 router.get('/profile', verifyToken, async (req, res) => {
   try {
     return res.status(200).json({
@@ -13,6 +15,72 @@ router.get('/profile', verifyToken, async (req, res) => {
     });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'প্রোফাইল লোড করা সম্ভব হয়নি।' });
+  }
+});
+
+// PUT /api/user/profile - User updates their own profile/account info
+router.put('/profile', verifyToken, async (req, res) => {
+  try {
+    const { phone, email, password } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'ব্যবহারকারী খুঁজে পাওয়া যায়নি।' });
+    }
+
+    const changedFields = [];
+    const prevDetails = { phone: user.phone, email: user.email };
+
+    if (phone && phone !== user.phone) {
+      changedFields.push(`মোবাইল নম্বর (${user.phone} ➔ ${phone})`);
+      user.phone = phone;
+    }
+
+    if (email && email !== user.email) {
+      const existing = await User.findOne({ email });
+      if (existing && existing._id.toString() !== user._id.toString()) {
+        return res.status(400).json({ success: false, message: 'এই ইমেইলটি অন্য একাউন্টে ব্যবহৃত হচ্ছে।' });
+      }
+      changedFields.push(`ইমেইল ঠিকানা (${user.email} ➔ ${email})`);
+      user.email = email;
+    }
+
+    if (password && password.trim()) {
+      user.password = password; // pre-save hook will hash
+      changedFields.push('অ্যাকাউন্টের পাসওয়ার্ড পরিবর্তন');
+    }
+
+    if (changedFields.length === 0) {
+      return res.status(200).json({ success: true, message: 'কোনো পরিবর্তন করা হয়নি।' });
+    }
+
+    await user.save();
+
+    // Log User profile activity
+    logActivity({
+      req,
+      action_type: 'USER_PROFILE_UPDATE',
+      module: 'Profile',
+      description: `নাগরিক ${user.name} তার প্রোফাইল পরিবর্তন করেছেন: ${changedFields.join(', ')}`,
+      target_resource: `User: ${user.name} (NID: ${user.nid})`,
+      details: {
+        changedFields,
+        previous: prevDetails,
+        updated: { phone: user.phone, email: user.email }
+      }
+    });
+
+    const userObj = user.toObject();
+    delete userObj.password;
+
+    return res.status(200).json({
+      success: true,
+      message: '✅ প্রোফাইল সফলভাবে আপডেট করা হয়েছে!',
+      user: userObj
+    });
+  } catch (err) {
+    console.error('Profile update error:', err);
+    return res.status(500).json({ success: false, message: 'প্রোফাইল আপডেট ব্যর্থ হয়েছে।' });
   }
 });
 

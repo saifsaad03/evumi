@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const LandRecord = require('../models/LandRecord');
 const LegalStatus = require('../models/LegalStatus');
+const { logActivity } = require('../utils/auditLogger');
 const User = require('../models/User');
 const LandAssignRequest = require('../models/LandAssignRequest');
 const { SHIBGANJ_MOUZAS } = require('../utils/geoData');
