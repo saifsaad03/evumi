@@ -59,7 +59,14 @@ router.get('/districts', async (req, res) => {
     if (division_id) {
       query.division_id = division_id;
     } else if (division_name) {
-      const div = await Division.findOne({ name: division_name.trim() });
+      const cleanName = division_name.trim();
+      const div = await Division.findOne({
+        $or: [
+          { name: cleanName },
+          { bn_name: cleanName },
+          { name: new RegExp(`^${cleanName}$`, 'i') }
+        ]
+      });
       if (div) query.division_id = div._id;
     }
 
@@ -79,7 +86,13 @@ router.get('/upazilas', async (req, res) => {
     if (district_id) {
       query.district_id = district_id;
     } else if (district_name) {
-      const dist = await District.findOne({ name: district_name.trim() });
+      const cleanDist = district_name.trim();
+      const dist = await District.findOne({
+        $or: [
+          { name: cleanDist },
+          { name: new RegExp(`^${cleanDist}$`, 'i') }
+        ]
+      });
       if (dist) query.district_id = dist._id;
     }
 
@@ -99,7 +112,13 @@ router.get('/mouzas', async (req, res) => {
     if (upazila_id) {
       query.upazila_id = upazila_id;
     } else if (upazila_name) {
-      const upz = await Upazila.findOne({ name: upazila_name.trim() });
+      const cleanUpz = upazila_name.trim();
+      const upz = await Upazila.findOne({
+        $or: [
+          { name: cleanUpz },
+          { name: new RegExp(`^${cleanUpz}$`, 'i') }
+        ]
+      });
       if (upz) query.upazila_id = upz._id;
     }
 

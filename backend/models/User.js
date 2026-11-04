@@ -9,6 +9,7 @@ const UserSchema = new mongoose.Schema({
   division: { type: String, required: true, trim: true },
   district: { type: String, required: true, trim: true },
   upazila: { type: String, required: true, trim: true },
+  mouza: { type: String, default: '', trim: true },
   phone: { type: String, required: true, trim: true },
   email: { type: String, required: true, unique: true, lowercase: true, trim: true },
   password: { type: String, required: true },

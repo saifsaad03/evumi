@@ -42,6 +42,7 @@ router.post('/register', async (req, res) => {
       division,
       district,
       upazila,
+      mouza,
       phone,
       email,
       password
@@ -51,7 +52,7 @@ router.post('/register', async (req, res) => {
     if (!name || !father_name || !mother_name || !nid || !division || !district || !upazila || !phone || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'সকল তথ্য প্রদান আবশ্যক: নাম, পিতার নাম, মাতার নাম, এনআইডি, বিভাগ, জেলা, উপজেলা, ফোন, ইমেইল এবং পাসওয়ার্ড।'
+        message: 'সকল তথ্য প্রদান আবশ্যক: নাম, পিতার নাম, মাতার নাম, এনআইডি, বিভাগ, জেলা, উপজেলা, মৌজা, ফোন, ইমেইল এবং পাসওয়ার্ড।'
       });
     }
 
@@ -82,6 +83,7 @@ router.post('/register', async (req, res) => {
       division,
       district,
       upazila,
+      mouza: (mouza || '').trim(),
       phone,
       email,
       password

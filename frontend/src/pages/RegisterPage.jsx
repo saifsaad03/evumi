@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -14,82 +14,192 @@ import {
   MapPin,
   Send
 } from 'lucide-react';
-import {
-  BANGLADESH_DIVISIONS,
-  getDistrictsForDivision,
-  getUpazilasForDistrict
-} from '../utils/geoData';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state || {};
 
-  // Administrative cascaded defaults: রাজশাহী > বগুড়া > শিবগঞ্জ
-  const initialDivision = prefill.division || 'রাজশাহী';
-  const initialDistricts = getDistrictsForDivision(initialDivision);
-  const initialDistrict = prefill.district || 'বগুড়া';
-  const initialUpazilas = getUpazilasForDistrict(initialDistrict);
-  const initialUpazila = prefill.upazila || 'শিবগঞ্জ';
-
   const [formData, setFormData] = useState({
     name: prefill.name || '',
     father_name: prefill.father_name || '',
     mother_name: prefill.mother_name || '',
     nid: prefill.nid || '',
-    division: initialDivision,
-    district: initialDistrict,
-    upazila: initialUpazila,
+    division: prefill.division || '',
+    district: prefill.district || '',
+    upazila: prefill.upazila || '',
+    mouza: prefill.mouza || '',
     phone: prefill.phone || '',
     email: prefill.email || '',
     password: prefill.password || ''
   });
 
-  const [districtsList, setDistrictsList] = useState(initialDistricts);
-  const [upazilasList, setUpazilasList] = useState(initialUpazilas);
+  // Dynamic location lists loaded from Admin Panel database
+  const [divisionsList, setDivisionsList] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [upazilasList, setUpazilasList] = useState([]);
+  const [mouzasList, setMouzasList] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cascade handler for Division
-  const handleDivisionChange = (e) => {
-    const selectedDivision = e.target.value;
-    const districts = getDistrictsForDivision(selectedDivision);
-    const defaultDistrict = districts[0] || '';
-    const upazilas = getUpazilasForDistrict(defaultDistrict);
-    const defaultUpazila = upazilas[0] || '';
+  // ─────────────────────────────────────────────────────────────
+  // Dynamic Locations Fetching from Database (Admin Panel Configured)
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    loadDivisions();
+  }, []);
 
-    setDistrictsList(districts);
-    setUpazilasList(upazilas);
+  const loadDivisions = async () => {
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get('/api/locations/divisions');
+      if (res.data.success && res.data.data.length > 0) {
+        const divs = res.data.data;
+        setDivisionsList(divs);
 
-    setFormData(prev => ({
-      ...prev,
-      division: selectedDivision,
-      district: defaultDistrict,
-      upazila: defaultUpazila
-    }));
+        const initialDiv = divs.find(d => d.name === prefill.division) || divs[0];
+        setFormData(p => ({ ...p, division: initialDiv.name }));
+        await loadDistricts(initialDiv._id, initialDiv.name);
+      } else {
+        setDivisionsList([]);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch dynamic divisions:', err);
+      setDivisionsList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
-  // Cascade handler for District
-  const handleDistrictChange = (e) => {
-    const selectedDistrict = e.target.value;
-    const upazilas = getUpazilasForDistrict(selectedDistrict);
-    const defaultUpazila = upazilas[0] || '';
+  const loadDistricts = async (divId, divName) => {
+    try {
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      if (res.data.success && res.data.data.length > 0) {
+        const dists = res.data.data;
+        setDistrictsList(dists);
 
-    setUpazilasList(upazilas);
+        const initialDist = dists.find(d => d.name === prefill.district) || dists[0];
+        setFormData(p => ({ ...p, district: initialDist.name }));
+        await loadUpazilas(initialDist._id, initialDist.name);
+      } else {
+        setDistrictsList([]);
+        setUpazilasList([]);
+        setMouzasList([]);
+        setFormData(p => ({ ...p, district: '', upazila: '', mouza: '' }));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch districts:', err);
+      setDistrictsList([]);
+      setUpazilasList([]);
+      setMouzasList([]);
+      setFormData(p => ({ ...p, district: '', upazila: '', mouza: '' }));
+    }
+  };
 
+  const loadUpazilas = async (distId, distName) => {
+    try {
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      if (res.data.success && res.data.data.length > 0) {
+        const upzs = res.data.data;
+        setUpazilasList(upzs);
+
+        const initialUpz = upzs.find(u => u.name === prefill.upazila) || upzs[0];
+        setFormData(p => ({ ...p, upazila: initialUpz.name }));
+        await loadMouzas(initialUpz._id, initialUpz.name);
+      } else {
+        setUpazilasList([]);
+        setMouzasList([]);
+        setFormData(p => ({ ...p, upazila: '', mouza: '' }));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch upazilas:', err);
+      setUpazilasList([]);
+      setMouzasList([]);
+      setFormData(p => ({ ...p, upazila: '', mouza: '' }));
+    }
+  };
+
+  const loadMouzas = async (upzId, upzName) => {
+    try {
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      if (res.data.success && res.data.data.length > 0) {
+        const mzs = res.data.data;
+        setMouzasList(mzs);
+
+        const initialMz = mzs.find(m => m.name === prefill.mouza) || mzs[0];
+        setFormData(p => ({ ...p, mouza: initialMz.name }));
+      } else {
+        setMouzasList([]);
+        setFormData(p => ({ ...p, mouza: '' }));
+      }
+    } catch (err) {
+      console.warn('Failed to fetch mouzas:', err);
+      setMouzasList([]);
+      setFormData(p => ({ ...p, mouza: '' }));
+    }
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // Cascading Selection Handlers
+  // ─────────────────────────────────────────────────────────────
+  const handleDivisionChange = (e) => {
+    const selectedDivName = e.target.value;
+    const divObj = divisionsList.find(d => d.name === selectedDivName);
     setFormData(prev => ({
       ...prev,
-      district: selectedDistrict,
-      upazila: defaultUpazila
+      division: selectedDivName,
+      district: '',
+      upazila: '',
+      mouza: ''
     }));
+    if (divObj) {
+      loadDistricts(divObj._id, divObj.name);
+    } else {
+      setDistrictsList([]);
+      setUpazilasList([]);
+      setMouzasList([]);
+    }
+  };
+
+  const handleDistrictChange = (e) => {
+    const selectedDistName = e.target.value;
+    const distObj = districtsList.find(d => d.name === selectedDistName);
+    setFormData(prev => ({
+      ...prev,
+      district: selectedDistName,
+      upazila: '',
+      mouza: ''
+    }));
+    if (distObj) {
+      loadUpazilas(distObj._id, distObj.name);
+    } else {
+      setUpazilasList([]);
+      setMouzasList([]);
+    }
   };
 
   const handleUpazilaChange = (e) => {
-    const selectedUpazila = e.target.value;
+    const selectedUpzName = e.target.value;
+    const upzObj = upazilasList.find(u => u.name === selectedUpzName);
     setFormData(prev => ({
       ...prev,
-      upazila: selectedUpazila
+      upazila: selectedUpzName,
+      mouza: ''
+    }));
+    if (upzObj) {
+      loadMouzas(upzObj._id, upzObj.name);
+    } else {
+      setMouzasList([]);
+    }
+  };
+
+  const handleMouzaChange = (e) => {
+    const selectedMouzaName = e.target.value;
+    setFormData(prev => ({
+      ...prev,
+      mouza: selectedMouzaName
     }));
   };
 
@@ -108,6 +218,10 @@ export default function RegisterPage() {
     // Validations
     if (!formData.name.trim() || !formData.father_name.trim() || !formData.mother_name.trim()) {
       setError('অনুগ্রহ করে নাম, পিতার নাম এবং মাতার নাম সঠিকভাবে পূরণ করুন।');
+      return;
+    }
+    if (!formData.division || !formData.district || !formData.upazila || !formData.mouza) {
+      setError('অনুগ্রহ করে স্থায়ী এলাকার বিভাগ, জেলা, উপজেলা এবং মৌজা নির্বাচন করুন।');
       return;
     }
     if (formData.nid.trim().length < 10) {
@@ -387,95 +501,146 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Row 3: Administrative Cascading Selectors (Compact bar) */}
+            {/* Row 3: Administrative Cascading Selectors (Dynamically Loaded from Admin Panel) */}
             <div style={{
               background: '#f8fafc',
-              border: '1px solid #e2e8f0',
+              border: '1.5px solid #cbd5e1',
               borderRadius: '8px',
-              padding: '7px 10px'
+              padding: '8px 12px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: '700', color: '#16a34a', marginBottom: '4px' }}>
-                <MapPin size={12} /> স্থায়ী প্রশাসনিক এলাকা নির্বাচন
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: '800', color: '#0f766e' }}>
+                  <MapPin size={13} color="#0d9488" /> স্থায়ী প্রশাসনিক এলাকা (এডমিন প্যানেলে যুক্ত এলাকা অনুযায়ী ডায়নামিক)
+                </div>
+                {loadingLocations && (
+                  <span style={{ fontSize: '10px', color: '#0d9488', fontWeight: '700' }}>
+                    ডাটা লোড হচ্ছে...
+                  </span>
+                )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
-                {/* Division */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+                {/* 1. Division */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#64748b', marginBottom: '2px', fontWeight: '600' }}>
+                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
                     বিভাগ (Division) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
                     name="division"
                     value={formData.division}
                     onChange={handleDivisionChange}
+                    required
                     style={{
                       width: '100%',
-                      height: '30px',
+                      height: '31px',
                       padding: '0 6px',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
                       background: '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      fontWeight: '600'
                     }}
                   >
-                    {BANGLADESH_DIVISIONS.map(div => (
-                      <option key={div} value={div}>{div}</option>
+                    <option value="">-- বিভাগ বেছে নিন --</option>
+                    {divisionsList.map(div => (
+                      <option key={div._id || div.name} value={div.name}>{div.name}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* District */}
+                {/* 2. District */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#64748b', marginBottom: '2px', fontWeight: '600' }}>
+                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
                     জেলা (District) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
                     name="district"
                     value={formData.district}
                     onChange={handleDistrictChange}
+                    required
+                    disabled={districtsList.length === 0}
                     style={{
                       width: '100%',
-                      height: '30px',
+                      height: '31px',
                       padding: '0 6px',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
-                      background: '#ffffff',
+                      background: districtsList.length === 0 ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: 'pointer'
+                      cursor: districtsList.length === 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: '600'
                     }}
                   >
+                    <option value="">{districtsList.length === 0 ? '-- জেলা নেই --' : '-- জেলা বেছে নিন --'}</option>
                     {districtsList.map(dist => (
-                      <option key={dist} value={dist}>{dist}</option>
+                      <option key={dist._id || dist.name} value={dist.name}>{dist.name}</option>
                     ))}
                   </select>
                 </div>
 
-                {/* Upazila */}
+                {/* 3. Upazila */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#64748b', marginBottom: '2px', fontWeight: '600' }}>
+                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
                     উপজেলা (Upazila) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
                     name="upazila"
                     value={formData.upazila}
                     onChange={handleUpazilaChange}
+                    required
+                    disabled={upazilasList.length === 0}
                     style={{
                       width: '100%',
-                      height: '30px',
+                      height: '31px',
                       padding: '0 6px',
-                      fontSize: '11.5px',
+                      fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
-                      background: '#ffffff',
+                      background: upazilasList.length === 0 ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: 'pointer'
+                      cursor: upazilasList.length === 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: '600'
                     }}
                   >
+                    <option value="">{upazilasList.length === 0 ? '-- উপজেলা নেই --' : '-- উপজেলা বেছে নিন --'}</option>
                     {upazilasList.map(upz => (
-                      <option key={upz} value={upz}>{upz}</option>
+                      <option key={upz._id || upz.name} value={upz.name}>{upz.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 4. Mouza */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
+                    মৌজা (Mouza) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    name="mouza"
+                    value={formData.mouza}
+                    onChange={handleMouzaChange}
+                    required
+                    disabled={mouzasList.length === 0}
+                    style={{
+                      width: '100%',
+                      height: '31px',
+                      padding: '0 6px',
+                      fontSize: '11px',
+                      borderRadius: '5px',
+                      color: '#0f172a',
+                      background: mouzasList.length === 0 ? '#f1f5f9' : '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      cursor: mouzasList.length === 0 ? 'not-allowed' : 'pointer',
+                      fontWeight: '600'
+                    }}
+                  >
+                    <option value="">{mouzasList.length === 0 ? '-- মৌজা নেই --' : '-- মৌজা বেছে নিন --'}</option>
+                    {mouzasList.map(mz => (
+                      <option key={mz._id || mz.name} value={mz.name}>
+                        {mz.name} {mz.jl_no ? `(জে.এল: ${mz.jl_no})` : ''}
+                      </option>
                     ))}
                   </select>
                 </div>

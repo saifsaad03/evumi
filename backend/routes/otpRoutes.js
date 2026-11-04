@@ -131,6 +131,7 @@ router.post('/verify-and-register', async (req, res) => {
       division,
       district,
       upazila,
+      mouza,
       phone,
       email,
       password,
@@ -255,6 +256,7 @@ router.post('/verify-and-register', async (req, res) => {
       division,
       district,
       upazila,
+      mouza: (mouza || '').trim(),
       phone: phone.trim(),
       email: cleanEmail,
       password
