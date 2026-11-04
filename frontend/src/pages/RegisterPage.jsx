@@ -294,45 +294,45 @@ export default function RegisterPage() {
     <div className="bd-pattern-bg" style={{
       minHeight: 'calc(100vh - 64px)',
       background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 100%)',
-      padding: '12px 16px',
+      padding: '16px 24px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative'
     }}>
-      <div style={{ maxWidth: '860px', width: '100%', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
+      <div style={{ maxWidth: '1040px', width: '100%', position: 'relative', zIndex: 1 }} className="animate-fade-in-up">
 
-        {/* Compact Top Header */}
-        <div style={{ textAlign: 'center', marginBottom: '10px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+        {/* Top Header */}
+        <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
             <img 
               src="/images/logo.png" 
               alt="e-ভূমি লোগো" 
               style={{
-                width: '32px',
-                height: '32px',
+                width: '36px',
+                height: '36px',
                 objectFit: 'contain'
               }} 
             />
-            <h1 style={{ fontSize: '19px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+            <h1 style={{ fontSize: '21px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
               নতুন নাগরিক অ্যাকাউন্ট তৈরি করুন
             </h1>
             <span style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
-              padding: '2px 9px',
+              gap: '5px',
+              padding: '3px 10px',
               borderRadius: '999px',
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
               color: '#15803d',
-              fontSize: '11px',
+              fontSize: '11.5px',
               fontWeight: '700'
             }}>
-              <ShieldCheck size={12} /> সুরক্ষিত নিবন্ধন
+              <ShieldCheck size={14} /> সুরক্ষিত নিবন্ধন
             </span>
           </div>
-          <p style={{ color: '#64748b', fontSize: '11.5px', margin: 0 }}>
+          <p style={{ color: '#64748b', fontSize: '12.5px', margin: 0 }}>
             তথ্য পূরণ করে সাবমিট করুন · পরবর্তী ধাপে ইমেইলে প্রেরিত ৬ ডিজিটের ওটিপি যাচাই করে অ্যাকাউন্ট সক্রিয় হবে
           </p>
         </div>
@@ -340,38 +340,38 @@ export default function RegisterPage() {
         {/* Form Card */}
         <div style={{
           background: '#ffffff',
-          borderRadius: '14px',
+          borderRadius: '16px',
           border: '1.5px solid #cbd5e1',
-          padding: '16px 22px',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
+          padding: '18px 26px',
+          boxShadow: '0 8px 30px rgba(0,0,0,0.06)'
         }}>
 
           {/* Error Banner */}
           {error && (
             <div style={{
-              padding: '6px 12px',
+              padding: '8px 14px',
               background: '#fee2e2',
               border: '1px solid #fca5a5',
-              borderRadius: '7px',
+              borderRadius: '8px',
               color: '#b91c1c',
-              fontSize: '11.5px',
+              fontSize: '12px',
               marginBottom: '10px',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
               fontWeight: '600'
             }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
             {/* Row 1: Personal Information (3 Columns) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   নাগরিকের পূর্ণ নাম (Name) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -383,10 +383,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -395,7 +395,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   পিতার নাম (Father's Name) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -407,10 +407,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -419,7 +419,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   মাতার নাম (Mother's Name) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -431,10 +431,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -444,9 +444,9 @@ export default function RegisterPage() {
             </div>
 
             {/* Row 2: Identity & Contact (3 Columns) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   জাতীয় পরিচয়পত্র (NID) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -458,10 +458,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -470,7 +470,7 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   মোবাইল নম্বর (Phone) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -482,10 +482,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -494,8 +494,8 @@ export default function RegisterPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
-                  ইমেইল ঠিকানা (Email) <span style={{ color: '#dc2626' }}>*</span> <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '10px' }}>[ওটিপি যাবে]</span>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
+                  ইমেইল ঠিকানা (Email) <span style={{ color: '#dc2626' }}>*</span> <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '11px' }}>[ওটিপি যাবে]</span>
                 </label>
                 <input
                   type="email"
@@ -506,10 +506,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '33px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '36px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #3b82f6'
@@ -522,24 +522,24 @@ export default function RegisterPage() {
             <div style={{
               background: '#f8fafc',
               border: '1.5px solid #cbd5e1',
-              borderRadius: '8px',
-              padding: '8px 12px'
+              borderRadius: '10px',
+              padding: '9px 14px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', fontWeight: '800', color: '#0f766e' }}>
-                  <MapPin size={13} color="#0d9488" /> স্থায়ী প্রশাসনিক এলাকা (এডমিন প্যানেলে যুক্ত এলাকা অনুযায়ী ডায়নামিক)
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#0f766e' }}>
+                  <MapPin size={14} color="#0d9488" /> স্থায়ী প্রশাসনিক এলাকা (এডমিন প্যানেলে যুক্ত এলাকা অনুযায়ী ডায়নামিক)
                 </div>
                 {loadingLocations && (
-                  <span style={{ fontSize: '10px', color: '#0d9488', fontWeight: '700' }}>
+                  <span style={{ fontSize: '11px', color: '#0d9488', fontWeight: '700' }}>
                     ডাটা লোড হচ্ছে...
                   </span>
                 )}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {/* 1. Division */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
                     বিভাগ (Division) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
@@ -549,10 +549,10 @@ export default function RegisterPage() {
                     required
                     style={{
                       width: '100%',
-                      height: '31px',
-                      padding: '0 6px',
-                      fontSize: '11px',
-                      borderRadius: '5px',
+                      height: '35px',
+                      padding: '0 8px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
                       color: '#0f172a',
                       background: '#ffffff',
                       border: '1.5px solid #cbd5e1',
@@ -569,7 +569,7 @@ export default function RegisterPage() {
 
                 {/* 2. District */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
                     জেলা (District) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
@@ -580,10 +580,10 @@ export default function RegisterPage() {
                     disabled={!formData.division || districtsList.length === 0}
                     style={{
                       width: '100%',
-                      height: '31px',
-                      padding: '0 6px',
-                      fontSize: '11px',
-                      borderRadius: '5px',
+                      height: '35px',
+                      padding: '0 8px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
                       color: '#0f172a',
                       background: (!formData.division || districtsList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
@@ -602,7 +602,7 @@ export default function RegisterPage() {
 
                 {/* 3. Upazila */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
                     উপজেলা (Upazila) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
@@ -613,10 +613,10 @@ export default function RegisterPage() {
                     disabled={!formData.district || upazilasList.length === 0}
                     style={{
                       width: '100%',
-                      height: '31px',
-                      padding: '0 6px',
-                      fontSize: '11px',
-                      borderRadius: '5px',
+                      height: '35px',
+                      padding: '0 8px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
                       color: '#0f172a',
                       background: (!formData.district || upazilasList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
@@ -635,7 +635,7 @@ export default function RegisterPage() {
 
                 {/* 4. Mouza */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '10.5px', color: '#334155', marginBottom: '2px', fontWeight: '700' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
                     মৌজা (Mouza) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
@@ -646,10 +646,10 @@ export default function RegisterPage() {
                     disabled={!formData.upazila || mouzasList.length === 0}
                     style={{
                       width: '100%',
-                      height: '31px',
-                      padding: '0 6px',
-                      fontSize: '11px',
-                      borderRadius: '5px',
+                      height: '35px',
+                      padding: '0 8px',
+                      fontSize: '12px',
+                      borderRadius: '6px',
                       color: '#0f172a',
                       background: (!formData.upazila || mouzasList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
@@ -671,9 +671,9 @@ export default function RegisterPage() {
             </div>
 
             {/* Row 4: Password & Submit Button (2 Columns) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', alignItems: 'flex-end' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: '14px', alignItems: 'flex-end' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11.5px', color: '#334155', marginBottom: '3px', fontWeight: '700' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   পাসওয়ার্ড (Password) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
@@ -685,10 +685,10 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   style={{
                     width: '100%',
-                    height: '34px',
-                    padding: '0 9px',
-                    fontSize: '12px',
-                    borderRadius: '6px',
+                    height: '38px',
+                    padding: '0 11px',
+                    fontSize: '13px',
+                    borderRadius: '7px',
                     color: '#0f172a',
                     background: '#ffffff',
                     border: '1.5px solid #cbd5e1'
@@ -703,25 +703,25 @@ export default function RegisterPage() {
                   className="btn-primary"
                   style={{
                     width: '100%',
-                    height: '34px',
+                    height: '38px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '6px',
-                    fontSize: '13.5px',
-                    fontWeight: '700',
-                    borderRadius: '6px',
+                    gap: '8px',
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    borderRadius: '7px',
                     cursor: loading ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {loading ? (
                     <>
-                      <span className="spinner" style={{ width: '15px', height: '15px' }}></span>
+                      <span className="spinner" style={{ width: '16px', height: '16px' }}></span>
                       ওটিপি পাঠানো হচ্ছে...
                     </>
                   ) : (
                     <>
-                      <Send size={15} />
+                      <Send size={16} />
                       নিবন্ধন ও ওটিপি যাচাই করুন
                     </>
                   )}
@@ -733,15 +733,15 @@ export default function RegisterPage() {
             <div style={{
               background: '#ecfdf5',
               border: '1px solid #a7f3d0',
-              borderRadius: '6px',
-              padding: '5px 10px',
-              fontSize: '11px',
+              borderRadius: '7px',
+              padding: '6px 12px',
+              fontSize: '11.5px',
               color: '#15803d',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px'
+              gap: '7px'
             }}>
-              <CheckCircle size={13} style={{ flexShrink: 0 }} />
+              <CheckCircle size={14} style={{ flexShrink: 0 }} />
               <span>নিবন্ধন বাটনে ক্লিক করলে আপনার ইমেইলে ওটিপি কোড যাবে এবং স্বয়ংক্রিয়ভাবে ওটিপি যাচাই পেজ ওপেন হবে।</span>
             </div>
 
@@ -749,11 +749,11 @@ export default function RegisterPage() {
 
           {/* Already have an account */}
           <div style={{
-            marginTop: '8px',
-            paddingTop: '6px',
+            marginTop: '10px',
+            paddingTop: '8px',
             borderTop: '1px solid #f1f5f9',
             textAlign: 'center',
-            fontSize: '11.5px',
+            fontSize: '12.5px',
             color: '#64748b'
           }}>
             ইতিমধ্যে অ্যাকাউন্ট আছে?{' '}
