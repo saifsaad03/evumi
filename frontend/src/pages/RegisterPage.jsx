@@ -59,9 +59,14 @@ export default function RegisterPage() {
         const divs = res.data.data;
         setDivisionsList(divs);
 
-        const initialDiv = divs.find(d => d.name === prefill.division) || divs[0];
-        setFormData(p => ({ ...p, division: initialDiv.name }));
-        await loadDistricts(initialDiv._id, initialDiv.name);
+        // ONLY prefill if prefill.division was explicitly passed via navigation state!
+        if (prefill.division) {
+          const matchedDiv = divs.find(d => d.name === prefill.division);
+          if (matchedDiv) {
+            setFormData(p => ({ ...p, division: matchedDiv.name }));
+            await loadDistricts(matchedDiv._id);
+          }
+        }
       } else {
         setDivisionsList([]);
       }
@@ -73,80 +78,85 @@ export default function RegisterPage() {
     }
   };
 
-  const loadDistricts = async (divId, divName) => {
+  const loadDistricts = async (divId) => {
     try {
       const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
       if (res.data.success && res.data.data.length > 0) {
         const dists = res.data.data;
         setDistrictsList(dists);
 
-        const initialDist = dists.find(d => d.name === prefill.district) || dists[0];
-        setFormData(p => ({ ...p, district: initialDist.name }));
-        await loadUpazilas(initialDist._id, initialDist.name);
+        // ONLY prefill if prefill.district was explicitly passed!
+        if (prefill.district) {
+          const matchedDist = dists.find(d => d.name === prefill.district);
+          if (matchedDist) {
+            setFormData(p => ({ ...p, district: matchedDist.name }));
+            await loadUpazilas(matchedDist._id);
+          }
+        }
       } else {
         setDistrictsList([]);
-        setUpazilasList([]);
-        setMouzasList([]);
-        setFormData(p => ({ ...p, district: '', upazila: '', mouza: '' }));
       }
     } catch (err) {
       console.warn('Failed to fetch districts:', err);
       setDistrictsList([]);
-      setUpazilasList([]);
-      setMouzasList([]);
-      setFormData(p => ({ ...p, district: '', upazila: '', mouza: '' }));
     }
   };
 
-  const loadUpazilas = async (distId, distName) => {
+  const loadUpazilas = async (distId) => {
     try {
       const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
       if (res.data.success && res.data.data.length > 0) {
         const upzs = res.data.data;
         setUpazilasList(upzs);
 
-        const initialUpz = upzs.find(u => u.name === prefill.upazila) || upzs[0];
-        setFormData(p => ({ ...p, upazila: initialUpz.name }));
-        await loadMouzas(initialUpz._id, initialUpz.name);
+        // ONLY prefill if prefill.upazila was explicitly passed!
+        if (prefill.upazila) {
+          const matchedUpz = upzs.find(u => u.name === prefill.upazila);
+          if (matchedUpz) {
+            setFormData(p => ({ ...p, upazila: matchedUpz.name }));
+            await loadMouzas(matchedUpz._id);
+          }
+        }
       } else {
         setUpazilasList([]);
-        setMouzasList([]);
-        setFormData(p => ({ ...p, upazila: '', mouza: '' }));
       }
     } catch (err) {
       console.warn('Failed to fetch upazilas:', err);
       setUpazilasList([]);
-      setMouzasList([]);
-      setFormData(p => ({ ...p, upazila: '', mouza: '' }));
     }
   };
 
-  const loadMouzas = async (upzId, upzName) => {
+  const loadMouzas = async (upzId) => {
     try {
       const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
       if (res.data.success && res.data.data.length > 0) {
         const mzs = res.data.data;
         setMouzasList(mzs);
 
-        const initialMz = mzs.find(m => m.name === prefill.mouza) || mzs[0];
-        setFormData(p => ({ ...p, mouza: initialMz.name }));
+        // ONLY prefill if prefill.mouza was explicitly passed!
+        if (prefill.mouza) {
+          const matchedMz = mzs.find(m => m.name === prefill.mouza);
+          if (matchedMz) {
+            setFormData(p => ({ ...p, mouza: matchedMz.name }));
+          }
+        }
       } else {
         setMouzasList([]);
-        setFormData(p => ({ ...p, mouza: '' }));
       }
     } catch (err) {
       console.warn('Failed to fetch mouzas:', err);
       setMouzasList([]);
-      setFormData(p => ({ ...p, mouza: '' }));
     }
   };
 
   // ─────────────────────────────────────────────────────────────
-  // Cascading Selection Handlers
+  // Cascading Selection Handlers (No Auto-Selection of Children)
   // ─────────────────────────────────────────────────────────────
   const handleDivisionChange = (e) => {
     const selectedDivName = e.target.value;
     const divObj = divisionsList.find(d => d.name === selectedDivName);
+    
+    // Reset all child levels so nothing is auto-selected!
     setFormData(prev => ({
       ...prev,
       division: selectedDivName,
@@ -154,42 +164,49 @@ export default function RegisterPage() {
       upazila: '',
       mouza: ''
     }));
+    setUpazilasList([]);
+    setMouzasList([]);
+
     if (divObj) {
-      loadDistricts(divObj._id, divObj.name);
+      loadDistricts(divObj._id);
     } else {
       setDistrictsList([]);
-      setUpazilasList([]);
-      setMouzasList([]);
     }
   };
 
   const handleDistrictChange = (e) => {
     const selectedDistName = e.target.value;
     const distObj = districtsList.find(d => d.name === selectedDistName);
+    
+    // Reset upazila and mouza so they are not auto-selected!
     setFormData(prev => ({
       ...prev,
       district: selectedDistName,
       upazila: '',
       mouza: ''
     }));
+    setMouzasList([]);
+
     if (distObj) {
-      loadUpazilas(distObj._id, distObj.name);
+      loadUpazilas(distObj._id);
     } else {
       setUpazilasList([]);
-      setMouzasList([]);
     }
   };
 
   const handleUpazilaChange = (e) => {
     const selectedUpzName = e.target.value;
     const upzObj = upazilasList.find(u => u.name === selectedUpzName);
+    
+    // Reset mouza so it is not auto-selected!
     setFormData(prev => ({
       ...prev,
       upazila: selectedUpzName,
       mouza: ''
     }));
+
     if (upzObj) {
-      loadMouzas(upzObj._id, upzObj.name);
+      loadMouzas(upzObj._id);
     } else {
       setMouzasList([]);
     }
@@ -560,7 +577,7 @@ export default function RegisterPage() {
                     value={formData.district}
                     onChange={handleDistrictChange}
                     required
-                    disabled={districtsList.length === 0}
+                    disabled={!formData.division || districtsList.length === 0}
                     style={{
                       width: '100%',
                       height: '31px',
@@ -568,13 +585,15 @@ export default function RegisterPage() {
                       fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
-                      background: districtsList.length === 0 ? '#f1f5f9' : '#ffffff',
+                      background: (!formData.division || districtsList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: districtsList.length === 0 ? 'not-allowed' : 'pointer',
+                      cursor: (!formData.division || districtsList.length === 0) ? 'not-allowed' : 'pointer',
                       fontWeight: '600'
                     }}
                   >
-                    <option value="">{districtsList.length === 0 ? '-- জেলা নেই --' : '-- জেলা বেছে নিন --'}</option>
+                    <option value="">
+                      {!formData.division ? '-- প্রথমে বিভাগ নির্বাচন করুন --' : (districtsList.length === 0 ? '-- কোনো জেলা নেই --' : '-- জেলা বেছে নিন --')}
+                    </option>
                     {districtsList.map(dist => (
                       <option key={dist._id || dist.name} value={dist.name}>{dist.name}</option>
                     ))}
@@ -591,7 +610,7 @@ export default function RegisterPage() {
                     value={formData.upazila}
                     onChange={handleUpazilaChange}
                     required
-                    disabled={upazilasList.length === 0}
+                    disabled={!formData.district || upazilasList.length === 0}
                     style={{
                       width: '100%',
                       height: '31px',
@@ -599,13 +618,15 @@ export default function RegisterPage() {
                       fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
-                      background: upazilasList.length === 0 ? '#f1f5f9' : '#ffffff',
+                      background: (!formData.district || upazilasList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: upazilasList.length === 0 ? 'not-allowed' : 'pointer',
+                      cursor: (!formData.district || upazilasList.length === 0) ? 'not-allowed' : 'pointer',
                       fontWeight: '600'
                     }}
                   >
-                    <option value="">{upazilasList.length === 0 ? '-- উপজেলা নেই --' : '-- উপজেলা বেছে নিন --'}</option>
+                    <option value="">
+                      {!formData.district ? '-- প্রথমে জেলা নির্বাচন করুন --' : (upazilasList.length === 0 ? '-- কোনো উপজেলা নেই --' : '-- উপজেলা বেছে নিন --')}
+                    </option>
                     {upazilasList.map(upz => (
                       <option key={upz._id || upz.name} value={upz.name}>{upz.name}</option>
                     ))}
@@ -622,7 +643,7 @@ export default function RegisterPage() {
                     value={formData.mouza}
                     onChange={handleMouzaChange}
                     required
-                    disabled={mouzasList.length === 0}
+                    disabled={!formData.upazila || mouzasList.length === 0}
                     style={{
                       width: '100%',
                       height: '31px',
@@ -630,13 +651,15 @@ export default function RegisterPage() {
                       fontSize: '11px',
                       borderRadius: '5px',
                       color: '#0f172a',
-                      background: mouzasList.length === 0 ? '#f1f5f9' : '#ffffff',
+                      background: (!formData.upazila || mouzasList.length === 0) ? '#f1f5f9' : '#ffffff',
                       border: '1.5px solid #cbd5e1',
-                      cursor: mouzasList.length === 0 ? 'not-allowed' : 'pointer',
+                      cursor: (!formData.upazila || mouzasList.length === 0) ? 'not-allowed' : 'pointer',
                       fontWeight: '600'
                     }}
                   >
-                    <option value="">{mouzasList.length === 0 ? '-- মৌজা নেই --' : '-- মৌজা বেছে নিন --'}</option>
+                    <option value="">
+                      {!formData.upazila ? '-- প্রথমে উপজেলা নির্বাচন করুন --' : (mouzasList.length === 0 ? '-- কোনো মৌজা নেই --' : '-- মৌজা বেছে নিন --')}
+                    </option>
                     {mouzasList.map(mz => (
                       <option key={mz._id || mz.name} value={mz.name}>
                         {mz.name} {mz.jl_no ? `(জে.এল: ${mz.jl_no})` : ''}
