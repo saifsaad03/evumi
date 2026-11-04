@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Building2, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell } from 'lucide-react';
+import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
+import BontonNamaRegistrySection from '../components/BontonNamaRegistrySection';
 import {
   BANGLADESH_DIVISIONS,
   getDistrictsForDivision,
@@ -100,6 +101,10 @@ export default function RegisterOfficeDashboard() {
   // Selected land & found user
   const [selectedLand, setSelectedLand] = useState(null);
   const [searchingLand, setSearchingLand] = useState(false);
+  const [editingKhatian, setEditingKhatian] = useState(false);
+  const [customKhatianInput, setCustomKhatianInput] = useState('');
+  const [savingKhatian, setSavingKhatian] = useState(false);
+  const [khatianSaveMsg, setKhatianSaveMsg] = useState(null);
 
   const [userQuery, setUserQuery] = useState('');
   const [foundUser, setFoundUser] = useState(null);
@@ -209,12 +214,21 @@ export default function RegisterOfficeDashboard() {
     try {
       const res = await axios.get('/api/assign/search-land', {
         params: {
+          division: filter.division,
+          district: filter.district,
+          upazila: filter.upazila,
           mouza: filter.mouza,
-          dag_no: filter.dag_no
+          dag_no: filter.dag_no,
+          khatian_no: filter.khatian_no
         }
       });
       if (res.data.success && res.data.data.length > 0) {
-        setSelectedLand(res.data.data[0]);
+        const land = res.data.data[0];
+        setSelectedLand(land);
+        setCustomKhatianInput(land.khatian_no || filter.khatian_no || '');
+        if (land.khatian_no && land.khatian_no !== filter.khatian_no) {
+          setFilter(prev => ({ ...prev, khatian_no: land.khatian_no }));
+        }
       } else {
         setSelectedLand(null);
       }
@@ -222,6 +236,34 @@ export default function RegisterOfficeDashboard() {
       console.error('Land search error:', err);
     } finally {
       setSearchingLand(false);
+    }
+  };
+
+  const handleSaveKhatianToDb = async () => {
+    if (!selectedLand?._id) return;
+    const cleanKhatian = (customKhatianInput || '').trim();
+    if (!cleanKhatian) {
+      alert('অনুগ্রহ করে বৈধ খতিয়ান নম্বর লিখুন।');
+      return;
+    }
+    setSavingKhatian(true);
+    setKhatianSaveMsg(null);
+    try {
+      const res = await axios.put('/api/assign/update-khatian', {
+        land_record_id: selectedLand._id,
+        khatian_no: cleanKhatian
+      });
+      if (res.data.success) {
+        setSelectedLand(prev => ({ ...prev, khatian_no: cleanKhatian }));
+        setFilter(prev => ({ ...prev, khatian_no: cleanKhatian }));
+        setEditingKhatian(false);
+        setKhatianSaveMsg(`✅ খতিয়ান নম্বর সফলভাবে ডাটাবেজে আপডেট হয়েছে: ${cleanKhatian}`);
+        setTimeout(() => setKhatianSaveMsg(null), 4000);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'খতিয়ান নম্বর আপডেট করতে সমস্যা হয়েছে।');
+    } finally {
+      setSavingKhatian(false);
     }
   };
 
@@ -309,7 +351,8 @@ export default function RegisterOfficeDashboard() {
         page_no: pageNo,
         deed_no: deedNo,
         remarks: remarks,
-        otp: citizenOtp.trim()
+        otp: citizenOtp.trim(),
+        khatian_no: selectedLand.khatian_no || filter.khatian_no
       });
 
       if (res.data.success) {
@@ -336,6 +379,11 @@ export default function RegisterOfficeDashboard() {
       id: 'deed_registry',
       label: 'দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং',
       icon: FileText,
+    },
+    {
+      id: 'bonton_nama',
+      label: 'মৃত মালিকের ওয়ারিশ বণ্টননামা ও মৃত্যু সনদ',
+      icon: Users,
     },
     {
       id: 'requests',
@@ -544,8 +592,80 @@ export default function RegisterOfficeDashboard() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '13px' }}>
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>খতিয়ান:</span>
-                        <strong style={{ color: '#0f172a' }}>{selectedLand.khatian_no || '১'}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
+                          <span style={{ color: '#475569', fontSize: '11px', fontWeight: '600' }}>খতিয়ান নং:</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingKhatian(!editingKhatian);
+                              if (!editingKhatian) {
+                                setCustomKhatianInput(selectedLand.khatian_no || filter.khatian_no || '');
+                              }
+                            }}
+                            style={{
+                              fontSize: '11px',
+                              color: '#2563eb',
+                              background: '#eff6ff',
+                              border: '1px solid #bfdbfe',
+                              borderRadius: '4px',
+                              padding: '2px 6px',
+                              cursor: 'pointer',
+                              fontWeight: '600'
+                            }}
+                          >
+                            {editingKhatian ? 'বাতিল' : '✏️ পরিবর্তন'}
+                          </button>
+                        </div>
+                        {editingKhatian ? (
+                          <div style={{ marginTop: '4px' }}>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <input
+                                type="text"
+                                value={customKhatianInput}
+                                onChange={(e) => setCustomKhatianInput(e.target.value)}
+                                placeholder="খতিয়ান নং"
+                                style={{
+                                  flex: 1,
+                                  padding: '4px 6px',
+                                  fontSize: '12px',
+                                  border: '1px solid #94a3b8',
+                                  borderRadius: '4px',
+                                  color: '#0f172a',
+                                  background: '#ffffff'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={handleSaveKhatianToDb}
+                                disabled={savingKhatian}
+                                style={{
+                                  padding: '4px 8px',
+                                  fontSize: '11px',
+                                  fontWeight: '700',
+                                  background: '#16a34a',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {savingKhatian ? '...' : 'সংরক্ষণ'}
+                              </button>
+                            </div>
+                            <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px', display: 'block' }}>
+                              সংরক্ষণ বাটনে চাপলে সরাসরি ডাটাবেজে আপডেট হবে
+                            </span>
+                          </div>
+                        ) : (
+                          <strong style={{ color: '#0f172a', fontSize: '13px' }}>
+                            {selectedLand.khatian_no || filter.khatian_no || 'অনির্ধারিত'}
+                          </strong>
+                        )}
+                        {khatianSaveMsg && (
+                          <div style={{ fontSize: '10px', color: '#16a34a', marginTop: '4px', fontWeight: '700' }}>
+                            {khatianSaveMsg}
+                          </div>
+                        )}
                       </div>
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                         <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>জে.এল নং:</span>
@@ -982,6 +1102,13 @@ export default function RegisterOfficeDashboard() {
       {activeTab === 'deed_registry' && (
         <div>
           <P4RegistryPanel />
+        </div>
+      )}
+
+      {/* TAB 3: Bonton Nama & Death Certificate Section */}
+      {activeTab === 'bonton_nama' && (
+        <div>
+          <BontonNamaRegistrySection />
         </div>
       )}
 

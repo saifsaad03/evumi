@@ -17,9 +17,18 @@ const LandRecordSchema = new mongoose.Schema({
   available_area_decimal: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['Active', 'Pending_Mutation', 'Sold', 'Pending_AC_Land_Review'],
+    enum: ['Active', 'Pending_Mutation', 'Sold', 'Pending_AC_Land_Review', 'Deceased_Locked', 'Transferred_To_Heirs'],
     default: 'Active'
   },
+  // Deceased owner and Bonton Nama fields
+  is_deceased_locked: { type: Boolean, default: false },
+  deceased_owner_nid: { type: String },
+  bonton_status: {
+    type: String,
+    enum: ['None', 'Locked', 'Pending_AC_Land', 'Distributed'],
+    default: 'None'
+  },
+  inheritance_source: { type: String },
   // Sub-Registry deed & volume book fields
   volume_book: { type: String },
   page_no: { type: String },
@@ -33,8 +42,31 @@ const LandRecordSchema = new mongoose.Schema({
   buyer_phone: { type: String },
   buyer_email: { type: String },
   sold_area: { type: Number },
+  is_joint_ownership: { type: Boolean, default: false },
+  parent_record_id: { type: mongoose.Schema.Types.ObjectId, ref: 'LandRecord' },
+  buyers: [
+    {
+      name: { type: String },
+      nid: { type: String },
+      phone: { type: String },
+      email: { type: String },
+      share_decimal: { type: Number },
+      share_percent: { type: Number }
+    }
+  ],
+  co_owners: [
+    {
+      name: { type: String },
+      nid: { type: String },
+      phone: { type: String },
+      email: { type: String },
+      share_decimal: { type: Number },
+      share_percent: { type: Number }
+    }
+  ],
   payment_status: { type: String, enum: ['Pending', 'Paid', null], default: null },
   namjari_issued: { type: Boolean, default: false },
+  remarks: { type: String },
   // P3 audit log embedded
   fraud_alerts: [
     {

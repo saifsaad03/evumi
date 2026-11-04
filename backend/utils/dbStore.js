@@ -178,7 +178,7 @@ const createCitizenUser = async (userData) => {
 };
 
 // -------------------------------------------------------------
-// OTP OPERATIONS
+// OTP OPERATIONS - CITIZEN REGISTRATION
 // -------------------------------------------------------------
 
 const createRegistrationOtp = async (cleanEmail, otp, cleanNid, name, expiresAt) => {
@@ -289,6 +289,10 @@ const deleteRegistrationOtps = async (cleanEmail) => {
     }
   }
 };
+
+// -------------------------------------------------------------
+// OTP OPERATIONS - LAND ASSIGNMENT (GOV LAND -> CITIZEN)
+// -------------------------------------------------------------
 
 const createAssignOtp = async (cleanEmail, otp, citizenNid, citizenName, extraData = {}, expiresAt) => {
   const emailLower = (cleanEmail || '').trim().toLowerCase();
@@ -411,6 +415,132 @@ const deleteAssignOtps = async (cleanEmail, citizenNid) => {
   }
 };
 
+// -------------------------------------------------------------
+// OTP OPERATIONS - DEED REGISTRATION (SUB-REGISTRY MANDATORY OTP)
+// -------------------------------------------------------------
+
+const createDeedOtp = async (cleanEmail, otp, extraData = {}, expiresAt) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const recordId = (extraData.record_id || '').toString().trim();
+  const deedNo = (extraData.deed_no || '').toString().trim();
+
+  const otpRecord = {
+    _id: 'otp_deed_' + Date.now(),
+    email: emailLower,
+    otp: otp.toString().trim(),
+    purpose: 'DEED_REGISTRATION',
+    metadata: {
+      ...extraData,
+      record_id: recordId,
+      deed_no: deedNo
+    },
+    attempts: 0,
+    verified: false,
+    createdAt: new Date(),
+    expiresAt: new Date(expiresAt)
+  };
+
+  // 1. In-memory
+  global._memoryOtps = global._memoryOtps.filter(
+    o => !(o.purpose === 'DEED_REGISTRATION' && (o.email === emailLower || (recordId && o.metadata?.record_id === recordId)))
+  );
+  global._memoryOtps.push(otpRecord);
+
+  // 2. Persistent disk
+  saveJsonFile(OTPS_FILE, global._memoryOtps);
+
+  // 3. MongoDB Atlas
+  const ready = await ensureDbConnected();
+  if (ready) {
+    try {
+      const orConds = [{ email: emailLower }];
+      if (recordId) orConds.push({ 'metadata.record_id': recordId });
+
+      await OtpVerification.deleteMany({
+        purpose: 'DEED_REGISTRATION',
+        $or: orConds
+      });
+
+      await OtpVerification.create({
+        email: emailLower,
+        otp: otpRecord.otp,
+        purpose: 'DEED_REGISTRATION',
+        metadata: otpRecord.metadata,
+        expiresAt: otpRecord.expiresAt
+      });
+      console.log('✅ Deed Registration OTP persisted to Atlas:', emailLower);
+    } catch (err) {
+      console.warn('⚠️ Could not save Deed OTP to Atlas:', err.message);
+    }
+  }
+
+  return otpRecord;
+};
+
+const findLatestDeedOtp = async (cleanEmail, recordId) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const recIdStr = (recordId || '').toString().trim();
+
+  return safeDbCall(
+    async () => {
+      const orConditions = [];
+      if (emailLower) orConditions.push({ email: emailLower });
+      if (recIdStr) orConditions.push({ 'metadata.record_id': recIdStr });
+
+      const query = {
+        purpose: 'DEED_REGISTRATION',
+        ...(orConditions.length > 0 ? { $or: orConditions } : {})
+      };
+
+      const doc = await OtpVerification.findOne(query).sort({ createdAt: -1 });
+      return doc;
+    },
+    () => {
+      const otps = global._memoryOtps.length > 0 ? global._memoryOtps : loadJsonFile(OTPS_FILE);
+      const matching = otps
+        .filter(o => {
+          if (o.purpose !== 'DEED_REGISTRATION') return false;
+          if (emailLower && o.email && o.email.toLowerCase() === emailLower) return true;
+          if (recIdStr && o.metadata && o.metadata.record_id === recIdStr) return true;
+          return false;
+        })
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      return matching[0] || null;
+    }
+  );
+};
+
+const deleteDeedOtps = async (cleanEmail, recordId) => {
+  const emailLower = (cleanEmail || '').trim().toLowerCase();
+  const recIdStr = (recordId || '').toString().trim();
+
+  global._memoryOtps = global._memoryOtps.filter(o => {
+    if (o.purpose !== 'DEED_REGISTRATION') return true;
+    if (emailLower && o.email && o.email.toLowerCase() === emailLower) return false;
+    if (recIdStr && o.metadata && o.metadata.record_id === recIdStr) return false;
+    return true;
+  });
+  saveJsonFile(OTPS_FILE, global._memoryOtps);
+
+  const ready = await ensureDbConnected();
+  if (ready) {
+    try {
+      const orConditions = [];
+      if (emailLower) orConditions.push({ email: emailLower });
+      if (recIdStr) orConditions.push({ 'metadata.record_id': recIdStr });
+
+      if (orConditions.length > 0) {
+        await OtpVerification.deleteMany({
+          purpose: 'DEED_REGISTRATION',
+          $or: orConditions
+        });
+      }
+    } catch (err) {
+      console.warn('⚠️ Could not delete Deed OTPs from DB:', err.message);
+    }
+  }
+};
+
 module.exports = {
   isDbReady,
   ensureDbConnected,
@@ -423,5 +553,8 @@ module.exports = {
   deleteRegistrationOtps,
   createAssignOtp,
   findLatestAssignOtp,
-  deleteAssignOtps
+  deleteAssignOtps,
+  createDeedOtp,
+  findLatestDeedOtp,
+  deleteDeedOtps
 };

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import P4AcLandPanel from './P4AcLandPanel';
+import BontonNamaAcLandSection from '../components/BontonNamaAcLandSection';
 
 export default function AcLandDashboard() {
   const { user } = useAuth();
@@ -81,6 +82,11 @@ export default function AcLandDashboard() {
       icon: FileText,
     },
     {
+      id: 'bontonnama_abedon',
+      label: 'BONTONNAMA ABEDON (বণ্টননামা আবেদন)',
+      icon: Users,
+    },
+    {
       id: 'assign_requests',
       label: 'সরকারি জমি বরাদ্দ ইনবক্স',
       icon: Layers,
@@ -112,6 +118,13 @@ export default function AcLandDashboard() {
       {activeTab === 'mutations' && (
         <div>
           <P4AcLandPanel />
+        </div>
+      )}
+
+      {/* ── TAB 2: BONTONNAMA ABEDON ───────────────────────────── */}
+      {activeTab === 'bontonnama_abedon' && (
+        <div>
+          <BontonNamaAcLandSection />
         </div>
       )}
 

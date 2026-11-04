@@ -13,6 +13,9 @@ const {
   deleteAssignOtps
 } = require('../utils/dbStore');
 
+const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
 // GET /api/assign/filter-options
 // Provides distinct cascade dropdown options
 router.get('/filter-options', verifyToken, async (req, res) => {
@@ -53,35 +56,46 @@ router.get('/filter-options', verifyToken, async (req, res) => {
 });
 
 // GET /api/assign/search-land
-// Register Office searches land by cascade parameters.
-// LOGIC: Any Dag and any criteria dynamically exists as available government khas land.
-// BUT once a land is assigned or in-process, it is locked and CANNOT be assigned to anyone else!
+// Standard Land Identification Parameters: Mouza Number + Dag Number + Khatian Number
+// When UI updates Khatian Number, it is persisted to the database and displayed correctly.
 router.get('/search-land', verifyToken, async (req, res) => {
   try {
     const { division, district, upazila, mouza, jl_no, khatian_no, dag_no } = req.query;
 
     const cleanDag = (dag_no || '101').toString().trim();
     const cleanMouza = (mouza || 'গুজিয়া').toString().trim();
-    const cleanKhatian = (khatian_no || '১').toString().trim();
+    const cleanKhatian = (khatian_no || '').toString().trim();
     const cleanJl = (jl_no || '1').toString().trim();
 
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
+    const engKhatian = cleanKhatian ? toEnglishDigits(cleanKhatian) : '';
+    const bngKhatian = cleanKhatian ? toBengaliDigits(cleanKhatian) : '';
 
-    // 1. Search if this plot already exists in MongoDB
+    // 1. Search if this plot already exists in MongoDB by Mouza + Dag
     let record = await LandRecord.findOne({
       mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
       $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
     });
 
-    // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
     if (record) {
       let changed = false;
+
+      // If user specified a Khatian number and it differs from the stored record,
+      // update it so that UI changes to Khatian Number immediately persist in Database!
+      if (cleanKhatian && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
+        record.khatian_no = cleanKhatian;
+        record.last_updated = new Date();
+        changed = true;
+      }
+
+      // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
       if (record.owner_nid === '1000000000000' || record.owner_name?.includes('গণপ্রজাতন্ত্রী বাংলাদেশ সরকার')) {
         record.owner_name = 'অনলাইনে অনিবন্ধিত';
         record.owner_nid = 'অনলাইনে রেকর্ড নেই';
         changed = true;
       }
+
       if (record.total_area_decimal === 20 && (record.owner_name === 'অনলাইনে অনিবন্ধিত' || !record.owner_nid || record.owner_nid === 'অনলাইনে রেকর্ড নেই')) {
         const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
         const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
@@ -89,6 +103,7 @@ router.get('/search-land', verifyToken, async (req, res) => {
         record.available_area_decimal = variedArea;
         changed = true;
       }
+
       if (changed) {
         await record.save();
       }
@@ -96,9 +111,11 @@ router.get('/search-land', verifyToken, async (req, res) => {
 
     // 2. If it does NOT exist yet, dynamically initialize it as unassigned real-life plot!
     if (!record) {
-      // Calculate a varied, realistic area between 8.5 and 45.0 decimals based on dag number
       const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
       const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
+
+      // Uses cleanKhatian if provided, without forcing default '১' when specified
+      const initialKhatian = cleanKhatian || '১';
 
       record = new LandRecord({
         record_id: `rec_${Date.now()}_${engDag}`,
@@ -107,7 +124,7 @@ router.get('/search-land', verifyToken, async (req, res) => {
         upazila: upazila || 'শিবগঞ্জ',
         mouza: cleanMouza,
         jl_no: cleanJl,
-        khatian_no: cleanKhatian || '১',
+        khatian_no: initialKhatian,
         dag_no: cleanDag,
         owner_nid: 'অনলাইনে রেকর্ড নেই',
         owner_name: 'অনলাইনে অনিবন্ধিত',
@@ -134,8 +151,39 @@ router.get('/search-land', verifyToken, async (req, res) => {
   }
 });
 
-const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
-const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+// PUT /api/assign/update-khatian
+// Directly updates Khatian Number for a Land Record in MongoDB from UI
+router.put('/update-khatian', verifyToken, async (req, res) => {
+  try {
+    const { land_record_id, khatian_no } = req.body;
+
+    if (!land_record_id || !khatian_no) {
+      return res.status(400).json({
+        success: false,
+        message: 'জমির আইডি এবং নতুন খতিয়ান নম্বর প্রদান আবশ্যক।'
+      });
+    }
+
+    const cleanKhatian = khatian_no.toString().trim();
+    const land = await LandRecord.findById(land_record_id);
+    if (!land) {
+      return res.status(404).json({ success: false, message: 'জমির রেকর্ড পাওয়া যায়নি।' });
+    }
+
+    land.khatian_no = cleanKhatian;
+    land.last_updated = new Date();
+    await land.save();
+
+    return res.status(200).json({
+      success: true,
+      message: `✅ খতিয়ান নম্বর সফলভাবে ডাটাবেজে আপডেট হয়েছে: ${cleanKhatian}`,
+      data: land
+    });
+  } catch (err) {
+    console.error('Update khatian error:', err);
+    return res.status(500).json({ success: false, message: 'খতিয়ান নম্বর আপডেট ব্যর্থ হয়েছে।' });
+  }
+});
 
 // GET /api/assign/search-user
 // Register Office finds citizen by NID, phone, or email
@@ -177,7 +225,8 @@ router.get('/search-user', verifyToken, async (req, res) => {
 
 // POST /api/assign/create-request
 // Register Office assigns land to user -> sends to AC Land with status Pending_AC_Land_Review
-// REQUIRES Citizen Email OTP verification
+// Standard parameter: Mouza + Dag + Khatian Number.
+// REQUIRES Citizen Email OTP verification.
 router.post('/create-request', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
   try {
     const {
@@ -186,6 +235,7 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       volume_book,
       page_no,
       deed_no,
+      khatian_no,
       remarks,
       otp
     } = req.body;
@@ -218,17 +268,29 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    // Check LegalStatus for Court Case / Stay Order
+    // If an updated khatian_no was supplied in request, ensure land record reflects it
+    if (khatian_no && khatian_no.toString().trim() !== land.khatian_no) {
+      land.khatian_no = khatian_no.toString().trim();
+      await land.save();
+    }
+
+    // Check LegalStatus for Court Case / Stay Order (using Mouza + Dag + Khatian)
     const LegalStatus = require('../models/LegalStatus');
     const cleanDag = (land.dag_no || '').toString().trim();
+    const cleanMouza = (land.mouza || '').toString().trim();
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
 
     const legalNotice = await LegalStatus.findOne({
-      $or: [
-        { dag_no: cleanDag },
-        { dag_no: engDag },
-        { dag_no: bngDag }
+      $and: [
+        {
+          $or: [
+            { dag_no: cleanDag },
+            { dag_no: engDag },
+            { dag_no: bngDag }
+          ]
+        },
+        cleanMouza ? { mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') } } : {}
       ]
     });
 
@@ -419,6 +481,7 @@ router.post('/review-request/:id', verifyToken, requireRole('AC Land Office', 'S
         land.volume_book = request.volume_book;
         land.page_no = request.page_no;
         land.deed_no = request.deed_no;
+        land.khatian_no = request.khatian_no || land.khatian_no;
         land.last_updated = new Date();
         await land.save();
       }

@@ -351,8 +351,12 @@ export default function UserDashboard() {
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', marginBottom: '14px' }}>
-                    দাগ নং: <span style={{ color: '#047857' }}>{land.dag_no}</span> | খতিয়ান নং: <span style={{ color: '#047857' }}>{land.khatian_no}</span>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span>মৌজা: <span style={{ color: '#047857' }}>{land.mouza}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>দাগ নং: <span style={{ color: '#047857' }}>{land.dag_no}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>খতিয়ান নং: <span style={{ color: '#047857' }}>{land.khatian_no}</span></span>
                   </h3>
 
                   <div style={{
@@ -390,6 +394,41 @@ export default function UserDashboard() {
                       <span style={{ color: '#64748b', fontWeight: '500' }}>অবশিষ্ট ব্যবহার্য:</span>{' '}
                       <strong style={{ color: '#047857', fontSize: '13px' }}>{land.available_area_decimal} শতক</strong>
                     </div>
+                    {land.inheritance_source && (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        padding: '8px 12px',
+                        background: '#ecfdf5',
+                        borderRadius: '8px',
+                        border: '1px solid #86efac',
+                        fontSize: '12px',
+                        color: '#065f46',
+                        fontWeight: '700'
+                      }}>
+                        📜 স্বত্ব বা অর্জনের সূত্র: {land.inheritance_source}
+                      </div>
+                    )}
+                    {land.is_joint_ownership && land.co_owners && land.co_owners.length > 1 && (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        padding: '8px 12px',
+                        background: '#eff6ff',
+                        borderRadius: '8px',
+                        border: '1px solid #bfdbfe',
+                        fontSize: '12px'
+                      }}>
+                        <div style={{ fontWeight: '800', color: '#1d4ed8', marginBottom: '4px' }}>
+                          👥 যৌথ মালিকানাভুক্ত জমি:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {land.co_owners.map((co, cidx) => (
+                            <span key={cidx} style={{ background: '#ffffff', padding: '3px 8px', borderRadius: '4px', border: '1px solid #dbeafe', fontSize: '11px', color: '#1e293b' }}>
+                              {co.name}: <strong style={{ color: '#047857' }}>{co.share_decimal || ''} শতক</strong> ({co.share_percent || ''}%)
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Registry details */}
@@ -534,8 +573,12 @@ export default function UserDashboard() {
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '10px' }}>
-                    দাগ নং: {req.dag_no} | খতিয়ান নং: {req.khatian_no}
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span>মৌজা: <span style={{ color: '#b45309' }}>{req.mouza}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>দাগ নং: <span style={{ color: '#b45309' }}>{req.dag_no}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>খতিয়ান নং: <span style={{ color: '#b45309' }}>{req.khatian_no}</span></span>
                   </h3>
 
                   <div style={{
@@ -616,8 +659,12 @@ export default function UserDashboard() {
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
-                    দাগ নং: {land.dag_no} | খতিয়ান নং: {land.khatian_no}
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                    <span>মৌজা: <span style={{ color: '#991b1b' }}>{land.mouza}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>দাগ নং: <span style={{ color: '#991b1b' }}>{land.dag_no}</span></span>
+                    <span style={{ color: '#94a3b8' }}>|</span>
+                    <span>খতিয়ান নং: <span style={{ color: '#991b1b' }}>{land.khatian_no}</span></span>
                   </h3>
 
                   <div style={{

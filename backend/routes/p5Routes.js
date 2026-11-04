@@ -3,8 +3,12 @@ const router = express.Router();
 const LandRecord = require('../models/LandRecord');
 const LegalStatus = require('../models/LegalStatus');
 
+const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
 // GET /api/verify-land?mouza=X&dag=Y&khatian=Z
 // P5: Public read-only land verification with traffic light system
+// Standard Parameter: Mouza + Dag Number + Khatian Number
 router.get('/verify-land', async (req, res) => {
   try {
     const { mouza, dag_no, khatian_no, jl_no, division, district, upazila } = req.query;
@@ -13,14 +17,31 @@ router.get('/verify-land', async (req, res) => {
       return res.status(400).json({ success: false, message: 'দাগ নম্বর বা খতিয়ান নম্বর প্রদান করুন।' });
     }
 
-    // Build query
+    // Build query with Bengali and English digit compatibility
+    const cleanDag = (dag_no || '').toString().trim();
+    const cleanKhatian = (khatian_no || '').toString().trim();
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+    const engKhatian = toEnglishDigits(cleanKhatian);
+    const bngKhatian = toBengaliDigits(cleanKhatian);
+
     const query = {};
     if (division) query.division = division;
     if (district) query.district = district;
     if (upazila) query.upazila = upazila;
-    if (mouza) query.mouza = { $regex: mouza, $options: 'i' };
-    if (dag_no) query.dag_no = dag_no;
-    if (khatian_no) query.khatian_no = khatian_no;
+    if (mouza) query.mouza = { $regex: new RegExp(`^${mouza.trim()}$`, 'i') };
+    if (cleanDag) {
+      query.$or = [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }];
+    }
+    if (cleanKhatian) {
+      const khatianConditions = [{ khatian_no: cleanKhatian }, { khatian_no: engKhatian }, { khatian_no: bngKhatian }];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: khatianConditions }];
+        delete query.$or;
+      } else {
+        query.$or = khatianConditions;
+      }
+    }
     if (jl_no) query.jl_no = jl_no;
 
     // Find the most recent record
@@ -35,8 +56,15 @@ router.get('/verify-land', async (req, res) => {
       });
     }
 
-    // Check legal status
-    const legalStatus = await LegalStatus.findOne({ dag_no: record.dag_no });
+    // Check legal status with Mouza + Dag
+    const rDag = (record.dag_no || '').toString().trim();
+    const rMouza = (record.mouza || '').toString().trim();
+    const legalStatus = await LegalStatus.findOne({
+      $and: [
+        { $or: [{ dag_no: rDag }, { dag_no: toEnglishDigits(rDag) }, { dag_no: toBengaliDigits(rDag) }] },
+        rMouza ? { mouza: { $regex: new RegExp(`^${rMouza}$`, 'i') } } : {}
+      ]
+    });
 
     // Mask NID: show first 7 digits then ****
     const maskedNid = record.owner_nid
@@ -190,6 +218,8 @@ router.get('/verify-by-qr/:qr_code_id', async (req, res) => {
         status: record.status,
         deed_hash: record.deed_hash,
         qr_code_id: record.qr_code_id || rawCode,
+        is_joint_ownership: record.is_joint_ownership || false,
+        co_owners: record.co_owners || record.buyers || [],
         last_updated: record.last_updated || record.updatedAt
       }
     });

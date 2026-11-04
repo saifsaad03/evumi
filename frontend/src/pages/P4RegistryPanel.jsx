@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Building2, Search, CheckCircle, FileText, Download, Hash, 
+  Building2, Search, CheckCircle, FileText, Download, Hash, Fingerprint, Smartphone, 
   ShieldAlert, AlertTriangle, ShieldCheck, ArrowRight, UserCheck, 
-  Check, Sparkles, Send, Lock, Clock, Info, UserX, Loader2
+  Check, Sparkles, Send, Lock, Clock, Info, UserX, Loader2, Users, Plus, Trash2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import jsPDF from 'jspdf';
@@ -14,6 +14,7 @@ export default function P4RegistryPanel() {
     seller_nid: '', 
     dag_no: '', 
     mouza: '', 
+    khatian_no: '', 
     requested_area: '' 
   });
   const [searchLoading, setSearchLoading] = useState(false);
@@ -43,6 +44,119 @@ export default function P4RegistryPanel() {
   const [grantLoading, setGrantLoading] = useState(false);
   const [grantResult, setGrantResult] = useState(null);
   const pdfRef = useRef(null);
+
+  // Mandatory Deed Registration OTP states
+  const [deedOtp, setDeedOtp] = useState('');
+  const [otpTarget, setOtpTarget] = useState('seller'); // 'seller' | 'buyer'
+  const [sendingDeedOtp, setSendingDeedOtp] = useState(false);
+  const [deedOtpSentMsg, setDeedOtpSentMsg] = useState(null);
+  const [deedOtpError, setDeedOtpError] = useState(null);
+
+  // Biometric Fingerprint states (Display Only / Future Preparation)
+  const [fpScanning, setFpScanning] = useState(false);
+  const [fpVerified, setFpVerified] = useState(false);
+  const [fpMessage, setFpMessage] = useState(null);
+
+  const handleSimulateFingerprint = () => {
+    setFpScanning(true);
+    setFpMessage('বায়োমেট্রিক স্ক্যানার সক্রিয় হচ্ছে... আঙুলের ছাপ দিন');
+    setTimeout(() => {
+      setFpScanning(false);
+      setFpVerified(true);
+      setFpMessage('✅ বায়োমেট্রিক ফিঙ্গারপ্রিন্ট টেস্ট ভেরিফিকেশন সফল (UI Display Match: 99.4%)');
+    }, 1600);
+  };
+
+  const handleSendDeedOtp = async () => {
+    if (!landRecord || !deedForm.buyer_nid) {
+      alert('অনুগ্রহ করে প্রথমে জমি ও ক্রেতার তথ্য নিশ্চিত করুন!');
+      return;
+    }
+    setSendingDeedOtp(true);
+    setDeedOtpSentMsg(null);
+    setDeedOtpError(null);
+    try {
+      const res = await axios.post('/api/otp/send-deed-registration-otp', {
+        record_id: landRecord._id,
+        seller_nid: landRecord.owner_nid,
+        seller_email: landRecord.owner_email,
+        seller_name: landRecord.owner_name,
+        buyer_nid: deedForm.buyer_nid,
+        buyer_email: deedForm.buyer_email,
+        buyer_name: deedForm.buyer_name,
+        deed_no: deedForm.deed_no,
+        mouza: landRecord.mouza,
+        dag_no: landRecord.dag_no,
+        khatian_no: landRecord.khatian_no,
+        target_recipient: otpTarget
+      });
+      if (res.data.success) {
+        setDeedOtpSentMsg(res.data.message || `ওটিপি সফলভাবে পাঠানো হয়েছে: ${res.data.recipient_email}`);
+      }
+    } catch (err) {
+      setDeedOtpError(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
+    } finally {
+      setSendingDeedOtp(false);
+    }
+  };
+
+  // Joint Deed co-buyers state
+  const [coBuyers, setCoBuyers] = useState([]);
+
+  const addCoBuyer = () => {
+    setCoBuyers(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        nid: '',
+        name: '',
+        phone: '',
+        email: '',
+        share_decimal: '',
+        verified: false,
+        verifying: false,
+        verifyMsg: null,
+        verifyError: null
+      }
+    ]);
+  };
+
+  const removeCoBuyer = (index) => {
+    setCoBuyers(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateCoBuyer = (index, field, value) => {
+    setCoBuyers(prev => prev.map((cb, i) => i === index ? { ...cb, [field]: value } : cb));
+  };
+
+  const handleVerifyCoBuyer = async (index) => {
+    const target = coBuyers[index];
+    if (!target || !target.nid?.trim()) {
+      updateCoBuyer(index, 'verifyError', 'এনআইডি নম্বর লিখুন।');
+      return;
+    }
+    updateCoBuyer(index, 'verifying', true);
+    updateCoBuyer(index, 'verifyError', null);
+    updateCoBuyer(index, 'verifyMsg', null);
+    try {
+      const res = await axios.get(`/api/verify-buyer/${encodeURIComponent(target.nid.trim())}`);
+      if (res.data.success && res.data.buyer) {
+        setCoBuyers(prev => prev.map((cb, i) => i === index ? {
+          ...cb,
+          name: res.data.buyer.name,
+          phone: res.data.buyer.phone || cb.phone,
+          email: res.data.buyer.email || cb.email,
+          verified: true,
+          verifying: false,
+          verifyMsg: `✅ যাচাই সম্পন্ন: ${res.data.buyer.name}`
+        } : cb));
+      }
+    } catch (err) {
+      updateCoBuyer(index, 'verified', false);
+      updateCoBuyer(index, 'verifying', false);
+      updateCoBuyer(index, 'verifyError', err.response?.data?.message || 'এনআইডি ডাটাবেজে পাওয়া যায়নি।');
+    }
+  };
 
   useEffect(() => {
     fetchMouzas();
@@ -96,8 +210,8 @@ export default function P4RegistryPanel() {
   // Requires ALL THREE: Seller NID + Mouza + Dag Number
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
-      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, দাগ নম্বর এবং মৌজা — এই ৩টি তথ্যই প্রদান করুন।');
+    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim() || !searchForm.khatian_no?.trim()) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, মৌজা, দাগ নম্বর এবং খতিয়ান নম্বর — এই ৪টি তথ্যই প্রদান করুন (স্ট্যান্ডার্ড: মৌজা + দাগ + খতিয়ান)।');
       return;
     }
     setSearchLoading(true);
@@ -115,6 +229,7 @@ export default function P4RegistryPanel() {
         seller_nid: searchForm.seller_nid?.trim(),
         dag_no: searchForm.dag_no?.trim(),
         mouza: searchForm.mouza?.trim(),
+        khatian_no: searchForm.khatian_no?.trim(),
         requested_area: searchForm.requested_area || '1'
       });
 
@@ -158,22 +273,71 @@ export default function P4RegistryPanel() {
       return;
     }
 
+    if (!deedOtp || deedOtp.trim().length !== 6) {
+      alert('🔒 সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ৬ ডিজিটের ওটিপি (OTP) ভেরিফিকেশন বাধ্যতামূলক। অনুগ্রহ করে ওটিপি প্রদান করুন!');
+      return;
+    }
+
+    let buyersPayload = [];
+    let calculatedSoldArea = parseFloat(deedForm.sold_area || 0);
+
+    if (coBuyers.length > 0) {
+      for (let i = 0; i < coBuyers.length; i++) {
+        const cb = coBuyers[i];
+        if (!cb.verified) {
+          alert(`যৌথ ক্রেতা ${i + 2}-এর NID যাচাই সম্পন্ন করতে হবে!`);
+          return;
+        }
+        if (!cb.share_decimal || parseFloat(cb.share_decimal) <= 0) {
+          alert(`যৌথ ক্রেতা ${i + 2}-এর জমির পরিমাণ (শতক) সঠিকভাবে প্রদান করুন!`);
+          return;
+        }
+      }
+
+      const primaryShare = parseFloat(deedForm.primary_share || deedForm.sold_area || 0);
+      if (primaryShare <= 0) {
+        alert('মূল ক্রেতার জমির পরিমাণ (শতক) প্রদান করুন!');
+        return;
+      }
+
+      buyersPayload = [
+        {
+          nid: deedForm.buyer_nid,
+          name: deedForm.buyer_name,
+          phone: deedForm.buyer_phone,
+          email: deedForm.buyer_email,
+          share_decimal: primaryShare
+        },
+        ...coBuyers.map(cb => ({
+          nid: cb.nid,
+          name: cb.name,
+          phone: cb.phone,
+          email: cb.email,
+          share_decimal: parseFloat(cb.share_decimal)
+        }))
+      ];
+
+      calculatedSoldArea = buyersPayload.reduce((sum, b) => sum + b.share_decimal, 0);
+    }
+
     setGrantLoading(true);
     try {
+      const finalSoldArea = calculatedSoldArea || deedForm.sold_area || searchForm.requested_area || landRecord.available_area_decimal;
       const res = await axios.post('/api/grant-deed', {
         record_id: landRecord._id,
         ...deedForm,
-        sold_area: deedForm.sold_area || searchForm.requested_area || landRecord.available_area_decimal
+        sold_area: finalSoldArea,
+        buyers: buyersPayload.length > 0 ? buyersPayload : undefined,
+        otp: deedOtp.trim()
       });
 
       setGrantResult(res.data);
       if (res.data.record) {
         setLandRecord(prev => ({
           ...prev,
-          status: 'Pending_Mutation',
-          deed_no: res.data.record.deed_no,
-          deed_hash: res.data.deed_hash,
-          qr_code_id: res.data.qr_code_id
+          available_area_decimal: Math.max(0, (prev.available_area_decimal || prev.total_area_decimal) - (res.data.record.sold_area || finalSoldArea)),
+          status: 'Active',
+          last_deed_no: res.data.record.deed_no
         }));
       }
     } catch (err) {
@@ -359,22 +523,7 @@ export default function P4RegistryPanel() {
                 />
               </div>
 
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="input-field"
-                  placeholder="১০১"
-                  value={searchForm.dag_no}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
-                />
-              </div>
-
-              <div>
+              <div style={{ gridColumn: 'span 2' }}>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
                   মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
                 </label>
@@ -390,6 +539,40 @@ export default function P4RegistryPanel() {
                     <option key={idx} value={m}>{m}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                  দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  placeholder="যেমন: ১০১"
+                  value={searchForm.dag_no}
+                  onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                  খতিয়ান নম্বর (Khatian No) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  placeholder="যেমন: ২৫০"
+                  value={searchForm.khatian_no}
+                  onChange={(e) => setSearchForm(prev => ({ ...prev, khatian_no: e.target.value }))}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: 'span 2', background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11px', color: '#1e40af', fontWeight: '600' }}>
+                📌 জমি অনুসন্ধান ও শনাক্তকরণের স্ট্যান্ডার্ড: <strong>মৌজা + দাগ নম্বর + খতিয়ান নম্বর</strong>
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
@@ -662,6 +845,333 @@ export default function P4RegistryPanel() {
                     style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
                   />
                 </div>
+              </div>
+
+              {/* Joint Deed Co-Buyers Section */}
+              <div style={{ marginTop: '16px', padding: '14px', background: '#f8fafc', border: '1.5px dashed #cbd5e1', borderRadius: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: coBuyers.length > 0 ? '12px' : '0' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Users size={16} color="#2563eb" /> যৌথ ক্রেতা / অংশীদার ব্যবস্থাপনা
+                    </div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>
+                      একই দলিলে একাধিক ক্রেতা থাকলে নিচের বাটনে ক্লিক করে যুক্ত করুন
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={addCoBuyer}
+                    style={{
+                      padding: '6px 12px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      background: '#eff6ff',
+                      color: '#1d4ed8',
+                      border: '1.5px solid #bfdbfe',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Plus size={14} /> যৌথ ক্রেতা যোগ করুন
+                  </button>
+                </div>
+
+                {coBuyers.length > 0 && (
+                  <div>
+                    <div style={{ marginBottom: '10px', padding: '8px 12px', background: '#f0fdf4', borderRadius: '8px', fontSize: '12px', color: '#166534', border: '1px solid #bbf7d0' }}>
+                      💡 <strong>যৌথ দলিল সক্রিয়:</strong> মূল ক্রেতা সহ মোট {coBuyers.length + 1} জন ক্রেতা। প্রত্যেকের নামের পাশে তাদের নির্দিষ্ট হিস্যা/শতক উল্লেখ করুন।
+                    </div>
+                    <div style={{ marginBottom: '12px', padding: '10px 12px', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
+                        ১. মূল ক্রেতা ({deedForm.buyer_name || 'যাচাইকৃত'})-এর অংশ:
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="শতক"
+                          value={deedForm.primary_share || ''}
+                          onChange={(e) => setDeedForm(prev => ({ ...prev, primary_share: e.target.value }))}
+                          style={{ width: '100px', padding: '6px 10px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                        />
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>শতক</span>
+                      </div>
+                    </div>
+
+                    {coBuyers.map((cb, idx) => (
+                      <div key={cb.id} style={{ marginBottom: '12px', padding: '12px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '10px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: '800', color: '#1d4ed8' }}>
+                            👤 যৌথ ক্রেতা {idx + 2}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => removeCoBuyer(idx)}
+                            style={{ padding: '3px 8px', fontSize: '11px', color: '#dc2626', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px' }}
+                          >
+                            <Trash2 size={12} /> মুছুন
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>NID নম্বর *</label>
+                            <div style={{ display: 'flex', gap: '4px' }}>
+                              <input
+                                type="text"
+                                placeholder="১০/১৩/১৭ ডিজিট NID"
+                                value={cb.nid}
+                                onChange={(e) => updateCoBuyer(idx, 'nid', e.target.value)}
+                                style={{ flex: 1, padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleVerifyCoBuyer(idx)}
+                                disabled={cb.verifying}
+                                style={{ padding: '6px 10px', fontSize: '11px', fontWeight: '700', background: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                              >
+                                {cb.verifying ? '...' : 'যাচাই'}
+                              </button>
+                            </div>
+                            {cb.verifyMsg && <div style={{ fontSize: '10px', color: '#16a34a', marginTop: '2px', fontWeight: '600' }}>{cb.verifyMsg}</div>}
+                            {cb.verifyError && <div style={{ fontSize: '10px', color: '#dc2626', marginTop: '2px', fontWeight: '600' }}>{cb.verifyError}</div>}
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>নাম *</label>
+                            <input
+                              type="text"
+                              placeholder="যাচাইয়ের পর আসবে"
+                              value={cb.name}
+                              onChange={(e) => updateCoBuyer(idx, 'name', e.target.value)}
+                              style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px', background: cb.verified ? '#f0fdf4' : '#ffffff' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>ফোন</label>
+                            <input
+                              type="text"
+                              placeholder="০১৭১১xxxxxx"
+                              value={cb.phone}
+                              onChange={(e) => updateCoBuyer(idx, 'phone', e.target.value)}
+                              style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                            />
+                          </div>
+
+                          <div>
+                            <label style={{ fontSize: '11px', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '2px' }}>হিস্যা / অংশ (শতক) *</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              placeholder="যেমন: ১৫"
+                              value={cb.share_decimal}
+                              onChange={(e) => updateCoBuyer(idx, 'share_decimal', e.target.value)}
+                              style={{ width: '100%', padding: '6px 8px', fontSize: '12px', border: '1px solid #cbd5e1', borderRadius: '6px' }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* MANDATORY OTP VERIFICATION FOR DEED REGISTRATION */}
+              <div style={{
+                marginTop: '20px',
+                padding: '16px',
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderLeft: '5px solid #2563eb',
+                borderRadius: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Lock size={18} color="#2563eb" />
+                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
+                      দলিল নিবন্ধন ওটিপি (OTP) ভেরিফিকেশন <span style={{ color: '#dc2626' }}>*বাধ্যতামূলক</span>
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '999px', background: '#dbeafe', color: '#1e40af', fontWeight: '700', border: '1px solid #bfdbfe' }}>
+                    🔒 Security Gate
+                  </span>
+                </div>
+                <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 12px 0' }}>
+                  সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি ভেরিফিকেশন বাধ্যতামূলক। ওটিপি গ্রহণকারী নির্বাচন করুন এবং কোড পাঠান।
+                </p>
+
+                {/* Recipient Selection */}
+                <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', fontSize: '12px', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', color: '#0f172a' }}>
+                    <input
+                      type="radio"
+                      name="otpTarget"
+                      value="seller"
+                      checked={otpTarget === 'seller'}
+                      onChange={() => setOtpTarget('seller')}
+                    />
+                    মালিক/বিক্রেতার ইমেইলে পাঠান ({landRecord.owner_name})
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', color: '#0f172a' }}>
+                    <input
+                      type="radio"
+                      name="otpTarget"
+                      value="buyer"
+                      checked={otpTarget === 'buyer'}
+                      onChange={() => setOtpTarget('buyer')}
+                    />
+                    ক্রেতার ইমেইলে পাঠান ({deedForm.buyer_name || 'ক্রেতা'})
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                  <div style={{ flex: 1 }}>
+                    <input
+                      type="text"
+                      maxLength="6"
+                      placeholder="৬ ডিজিটের ওটিপি কোড লিখুন *"
+                      value={deedOtp}
+                      onChange={(e) => setDeedOtp(e.target.value.replace(/\D/g, ''))}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        fontSize: '14px',
+                        fontWeight: '700',
+                        letterSpacing: '2px',
+                        border: '1.5px solid #94a3b8',
+                        borderRadius: '8px',
+                        background: '#ffffff',
+                        color: '#0f172a'
+                      }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSendDeedOtp}
+                    disabled={sendingDeedOtp}
+                    style={{
+                      padding: '10px 16px',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: sendingDeedOtp ? 'not-allowed' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <Send size={14} />
+                    {sendingDeedOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান (Send OTP)'}
+                  </button>
+                </div>
+
+                {deedOtpSentMsg && (
+                  <div style={{ fontSize: '11px', color: '#16a34a', marginTop: '6px', fontWeight: '700' }}>
+                    ✅ {deedOtpSentMsg}
+                  </div>
+                )}
+                {deedOtpError && (
+                  <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '6px', fontWeight: '700' }}>
+                    ⚠️ {deedOtpError}
+                  </div>
+                )}
+              </div>
+
+              {/* FINGERPRINT VERIFICATION OPTION (DISPLAY ONLY / FUTURE READINESS) */}
+              <div style={{
+                marginTop: '16px',
+                padding: '16px',
+                background: '#f0fdf4',
+                border: '1.5px solid #86efac',
+                borderLeft: '5px solid #059669',
+                borderRadius: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Fingerprint size={20} color="#059669" />
+                    <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '800', color: '#065f46' }}>
+                      বায়োমেট্রিক ফিঙ্গারপ্রিন্ট ভেরিফিকেশন (প্রস্তুতিমূলক অপশন)
+                    </h4>
+                  </div>
+                  <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '999px', background: '#dcfce7', color: '#166534', fontWeight: '700', border: '1px solid #86efac' }}>
+                    Display Only (ভবিষ্যত বাস্তবায়ন প্রস্তুতি)
+                  </span>
+                </div>
+
+                <p style={{ fontSize: '12px', color: '#047857', margin: '0 0 10px 0', lineHeight: '1.5' }}>
+                  ভবিষ্যতে সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের সময় জাতীয় পরিচয়পত্র ডেটাবেজের সাথে সরাসরি বায়োমেট্রিক ফিঙ্গারপ্রিন্ট ম্যাচিং চালুর প্রস্তুতিমূলক ইন্টারফেস।
+                </p>
+
+                <div style={{
+                  background: '#ffffff',
+                  border: '1px dashed #059669',
+                  borderRadius: '10px',
+                  padding: '12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '8px',
+                      background: fpVerified ? '#dcfce7' : fpScanning ? '#fef3c7' : '#f1f5f9',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid #cbd5e1'
+                    }}>
+                      <Fingerprint size={24} color={fpVerified ? '#16a34a' : fpScanning ? '#d97706' : '#64748b'} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '12px', fontWeight: '700', color: '#0f172a' }}>
+                        {fpVerified ? 'বায়োমেট্রিক স্ক্যান সম্পন্ন (UI Display)' : fpScanning ? 'স্ক্যানিং চলছে...' : 'ডিভাইস সেন্সর: স্ট্যান্ডবাই (UI Mode)'}
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b' }}>
+                        অপটিক্যাল/ক্যাপাসিটিভ ফিঙ্গারপ্রিন্ট সেন্সর প্রস্তুত
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSimulateFingerprint}
+                    disabled={fpScanning}
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '12px',
+                      fontWeight: '700',
+                      background: fpVerified ? '#16a34a' : '#059669',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Fingerprint size={14} />
+                    {fpScanning ? 'স্ক্যান হচ্ছে...' : fpVerified ? 'পুনরায় টেস্ট করুন' : 'ফিঙ্গারপ্রিন্ট টেস্ট (UI Simulation)'}
+                  </button>
+                </div>
+
+                {fpMessage && (
+                  <div style={{ fontSize: '11px', color: fpVerified ? '#166534' : '#b45309', marginTop: '6px', fontWeight: '700' }}>
+                    {fpMessage}
+                  </div>
+                )}
               </div>
 
               {/* STEP 3 BUTTON: Grant Deed */}

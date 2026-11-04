@@ -216,11 +216,12 @@ router.post('/seed', async (req, res) => {
 
     const insertedLands = await LandRecord.insertMany(landRecords);
 
-    // 3. Seed Legal Statuses (Khas & Court case in Shibganj, Bogura)
+    // 3. Seed Legal Statuses (Standard Parameter: Mouza + Dag + Khatian)
     const legalStatuses = [
       {
         dag_no: '610',
         mouza: 'হরিপুর',
+        khatian_no: '115',
         jl_no: '6',
         is_khas: true,
         has_court_case: false,
@@ -230,6 +231,7 @@ router.post('/seed', async (req, res) => {
       {
         dag_no: '1105',
         mouza: 'জানগ্রাম',
+        khatian_no: '230',
         jl_no: '11',
         is_khas: false,
         has_court_case: true,

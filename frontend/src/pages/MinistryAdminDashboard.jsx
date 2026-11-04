@@ -83,6 +83,7 @@ export default function MinistryAdminDashboard() {
   const [newLegal, setNewLegal] = useState({
     dag_no: '',
     mouza: '',
+    khatian_no: '',
     jl_no: '54',
     is_khas: false,
     khas_reason: '',
@@ -551,21 +552,45 @@ export default function MinistryAdminDashboard() {
                       </select>
                     </td>
                     <td style={{ padding: '12px' }}>
-                      <button
-                        onClick={() => handleStatusToggle(u._id, u.status)}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          fontSize: '11px',
-                          fontWeight: '800',
-                          border: u.status === 'Active' ? '1px solid #86efac' : '1px solid #fca5a5',
-                          background: u.status === 'Active' ? '#dcfce7' : '#fee2e2',
-                          color: u.status === 'Active' ? '#047857' : '#991b1b',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        {u.status === 'Active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
-                      </button>
+                      {u.is_deceased || u.status === 'Deceased' ? (
+                        <div>
+                          <span
+                            style={{
+                              padding: '4px 10px',
+                              borderRadius: '999px',
+                              fontSize: '11px',
+                              fontWeight: '800',
+                              border: '1px solid #f87171',
+                              background: '#fee2e2',
+                              color: '#991b1b',
+                              display: 'inline-block'
+                            }}
+                          >
+                            ⚰️ মৃত (Deceased)
+                          </span>
+                          {u.death_certificate_no && (
+                            <div style={{ fontSize: '10px', color: '#64748b', marginTop: '3px' }}>
+                              সনদ: {u.death_certificate_no}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleStatusToggle(u._id, u.status)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            border: u.status === 'Active' ? '1px solid #86efac' : '1px solid #fca5a5',
+                            background: u.status === 'Active' ? '#dcfce7' : '#fee2e2',
+                            color: u.status === 'Active' ? '#047857' : '#991b1b',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {u.status === 'Active' ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                        </button>
+                      )}
                     </td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
@@ -843,7 +868,7 @@ export default function MinistryAdminDashboard() {
                 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <strong style={{ color: '#991b1b', fontSize: '14px' }}>
-                      দাগ নং {leg.dag_no} ({leg.mouza})
+                      মৌজা: {leg.mouza} | দাগ নং: {leg.dag_no} | খতিয়ান নং: {leg.khatian_no || "১"}
                     </strong>
                     <button onClick={() => handleDeleteLegal(leg._id)} className="btn-danger" style={{ padding: '3px 8px', fontSize: '11px' }}>
                       মুছুন
@@ -928,14 +953,29 @@ export default function MinistryAdminDashboard() {
                   আইনি নোটিশ যুক্তকরণ
                 </h3>
                 <form onSubmit={handleCreateLegal} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <div>
-                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>দাগ নং *</label>
-                      <input type="text" required className="input-field" value={newLegal.dag_no} onChange={(e) => setNewLegal(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
-                    </div>
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#1e40af',
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    padding: '8px 12px',
+                    borderRadius: '6px',
+                    fontWeight: '700'
+                  }}>
+                    📌 মামলা ও জমি শনাক্তকরণের বাধ্যতামূলক স্ট্যান্ডার্ড: মৌজা + দাগ নম্বর + খতিয়ান নম্বর
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: '10px' }}>
                     <div>
                       <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>মৌজা *</label>
-                      <input type="text" required className="input-field" value={newLegal.mouza} onChange={(e) => setNewLegal(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                      <input type="text" required placeholder="মৌজা লিখুন" className="input-field" value={newLegal.mouza} onChange={(e) => setNewLegal(p => ({ ...p, mouza: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>দাগ নং *</label>
+                      <input type="text" required placeholder="দাগ নং লিখুন" className="input-field" value={newLegal.dag_no} onChange={(e) => setNewLegal(p => ({ ...p, dag_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>খতিয়ান নং *</label>
+                      <input type="text" required placeholder="খতিয়ান নং লিখুন" className="input-field" value={newLegal.khatian_no} onChange={(e) => setNewLegal(p => ({ ...p, khatian_no: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
                   <div>

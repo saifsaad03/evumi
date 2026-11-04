@@ -10,6 +10,7 @@ export default function P5CitizenVerify() {
     seller_nid: '',
     dag_no: '',
     mouza: '',
+    khatian_no: '',
     requested_area: ''
   });
 
@@ -45,8 +46,8 @@ export default function P5CitizenVerify() {
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim()) {
-      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, দাগ নম্বর এবং মৌজা — এই ৩টি তথ্যই প্রদান করুন (৩টি ফিল্ডই আবশ্যক)।');
+    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim() || !searchForm.khatian_no?.trim()) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, মৌজা, দাগ নম্বর এবং খতিয়ান নম্বর — এই ৪টি তথ্যই প্রদান করুন (স্ট্যান্ডার্ড: মৌজা + দাগ + খতিয়ান)।');
       return;
     }
 
@@ -61,6 +62,7 @@ export default function P5CitizenVerify() {
         seller_nid: searchForm.seller_nid?.trim(),
         dag_no: searchForm.dag_no?.trim(),
         mouza: searchForm.mouza?.trim(),
+        khatian_no: searchForm.khatian_no?.trim(),
         requested_area: searchForm.requested_area || '1'
       });
 
@@ -85,6 +87,7 @@ export default function P5CitizenVerify() {
       seller_nid: '',
       dag_no: '',
       mouza: '',
+      khatian_no: '',
       requested_area: ''
     });
     setLandRecord(null);
@@ -178,6 +181,34 @@ export default function P5CitizenVerify() {
               </span>
             </div>
 
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
+                মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <select
+                required
+                className="input-field"
+                value={searchForm.mouza}
+                onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
+                style={{
+                  width: '100%',
+                  fontSize: '13px',
+                  color: '#0f172a',
+                  background: '#ffffff',
+                  height: '42px',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '0 10px',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="">{mouzaLoading ? 'মৌজা লোড হচ্ছে...' : '-- মৌজা নির্বাচন করুন --'}</option>
+                {mouzasList.map((m, idx) => (
+                  <option key={idx} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
@@ -196,31 +227,22 @@ export default function P5CitizenVerify() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                  মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
+                  খতিয়ান নম্বর (Khatian No) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <select
+                <input
+                  type="text"
                   required
                   className="input-field"
-                  value={searchForm.mouza}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
-                  style={{
-                    width: '100%',
-                    fontSize: '13px',
-                    color: '#0f172a',
-                    background: '#ffffff',
-                    height: '42px',
-                    border: '1.5px solid #cbd5e1',
-                    borderRadius: '8px',
-                    padding: '0 10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="">{mouzaLoading ? 'মৌজা লোড হচ্ছে...' : '-- মৌজা নির্বাচন করুন --'}</option>
-                  {mouzasList.map((m, idx) => (
-                    <option key={idx} value={m}>{m}</option>
-                  ))}
-                </select>
+                  placeholder="যেমন: ২৫০"
+                  value={searchForm.khatian_no}
+                  onChange={(e) => setSearchForm(prev => ({ ...prev, khatian_no: e.target.value }))}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
+                />
               </div>
+            </div>
+
+            <div style={{ marginTop: '10px', background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11px', color: '#1e40af', fontWeight: '600' }}>
+              📌 জমি অনুসন্ধান ও যাচাইকরণের স্ট্যান্ডার্ড: <strong>মৌজা + দাগ নম্বর + খতিয়ান নম্বর</strong>
             </div>
 
             <div>

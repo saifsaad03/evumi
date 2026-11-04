@@ -45,6 +45,7 @@ app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/assign', require('./routes/assignRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/claim', require('./routes/claimRoutes'));
+app.use('/api/bonton', require('./routes/bontonRoutes'));
 
 // Land Management Modules (P3, P4, P5, Seed)
 app.use('/api', require('./routes/p3Routes'));

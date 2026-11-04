@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const LegalStatusSchema = new mongoose.Schema({
   dag_no: { type: String, required: true },
-  mouza: { type: String },
+  mouza: { type: String, required: true },
+  khatian_no: { type: String, required: true },
   jl_no: { type: String },
   is_khas: { type: Boolean, default: false },
   has_court_case: { type: Boolean, default: false },

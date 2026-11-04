@@ -184,7 +184,7 @@ export default function P4AcLandPanel() {
                     </div>
                     <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 8px', borderRadius: '6px', background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a' }}>পেন্ডিং</span>
                   </div>
-                  <div style={{ fontSize: '12px', color: '#475569' }}>ক্রেতা: <strong style={{ color: '#0f172a' }}>{app.buyer_name}</strong> ({app.total_area_decimal || app.sold_area} শতাংশ)</div>
+                  <div style={{ fontSize: '12px', color: '#475569' }}>ক্রেতা: <strong style={{ color: '#0f172a' }}>{app.buyer_name}</strong> ({app.sold_area || app.total_area_decimal} শতাংশ)</div>
                   <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
                     {app.namjari_issued && <span style={{ fontSize: '11px', fontWeight: '600', padding: '3px 8px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', color: '#065f46' }}>নামজারি ইস্যু ✓</span>}
                     {app.payment_status === 'Pending' && <span style={{ fontSize: '11px', fontWeight: '600', padding: '3px 8px', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '6px', color: '#92400e' }}>পেমেন্ট বাকি</span>}
@@ -217,7 +217,7 @@ export default function P4AcLandPanel() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '16px' }}>
                     {[
                       ['মৌজা', selected.mouza], ['দাগ নং', selected.dag_no],
-                      ['খতিয়ান', selected.khatian_no], ['জমির পরিমাণ', `${selected.total_area_decimal || selected.sold_area} শতাংশ`],
+                      ['খতিয়ান', selected.khatian_no], ['বিক্রিত জমি', `${selected.sold_area || selected.total_area_decimal} শতাংশ`], ['দাগের মোট জমি', `${selected.total_area_decimal} শতাংশ`],
                       ['বিক্রেতা', selected.owner_name], ['বিক্রেতার NID', selected.owner_nid],
                       ['ক্রেতা', selected.buyer_name], ['ক্রেতার NID', selected.buyer_nid],
                       ['ক্রেতার ফোন', selected.buyer_phone || 'N/A'], ['ক্রেতার ইমেইল', selected.buyer_email || 'N/A'],
@@ -229,6 +229,23 @@ export default function P4AcLandPanel() {
                       </div>
                     ))}
                   </div>
+
+{/* Joint Buyers List if applicable */}
+                  {selected.buyers && selected.buyers.length > 1 && (
+                    <div style={{ marginBottom: '16px', padding: '12px 14px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: '800', color: '#166534', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        👥 যৌথ ক্রেতাগণের তালিকা ({selected.buyers.length} জন):
+                      </div>
+                      <div style={{ display: 'grid', gap: '6px' }}>
+                        {selected.buyers.map((b, idx) => (
+                          <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', padding: '6px 10px', background: '#ffffff', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                            <span><strong>{idx + 1}. {b.name}</strong> (NID: {b.nid})</span>
+                            <span style={{ color: '#047857', fontWeight: '800' }}>{b.share_decimal} শতক ({b.share_percent}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Hash verification */}
                   {selected.deed_hash && (
@@ -361,6 +378,35 @@ export default function P4AcLandPanel() {
                       </div>
                     ))}
                   </div>
+
+{/* Joint Owners Table in Khatian */}
+                  {khatianData.co_owners && khatianData.co_owners.length > 1 && (
+                    <div style={{ marginBottom: '20px', padding: '12px', background: '#f8fafc', border: '1.5px solid #cbd5e1', borderRadius: '10px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
+                        👥 যৌথ খতিয়ানভুক্ত মালিকগণের বিবরণ ও হিস্যা:
+                      </div>
+                      <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
+                        <thead>
+                          <tr style={{ background: '#f1f5f9' }}>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #cbd5e1' }}>মালিকের নাম</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'left', border: '1px solid #cbd5e1' }}>NID নম্বর</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #cbd5e1' }}>জমির পরিমাণ</th>
+                            <th style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #cbd5e1' }}>হিস্যা / অংশ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {khatianData.co_owners.map((c, i) => (
+                            <tr key={i}>
+                              <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{c.name}</td>
+                              <td style={{ padding: '6px 10px', border: '1px solid #e2e8f0' }}>{c.nid}</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #e2e8f0', fontWeight: '700', color: '#047857' }}>{c.share_decimal} শতক</td>
+                              <td style={{ padding: '6px 10px', textAlign: 'right', border: '1px solid #e2e8f0' }}>{c.share_percent}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '20px', padding: '16px', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '12px', flexWrap: 'wrap' }}>
                     <QRCodeSVG

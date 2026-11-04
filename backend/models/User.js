@@ -19,9 +19,15 @@ const UserSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Active', 'Blocked', 'Pending'],
+    enum: ['Active', 'Blocked', 'Pending', 'Deceased'],
     default: 'Active'
   },
+  // Deceased landowner tracking
+  is_deceased: { type: Boolean, default: false },
+  death_certificate_no: { type: String, default: null, trim: true },
+  death_date: { type: Date, default: null },
+  death_verified_at: { type: Date, default: null },
+  death_verified_by: { type: String, default: null },
   office_details: {
     office_name: { type: String },
     designation: { type: String },

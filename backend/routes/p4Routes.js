@@ -70,6 +70,7 @@ router.get('/verify-buyer/:nid', async (req, res) => {
 
 // POST /api/grant-deed
 // P4 End 1: Registry Officer grants deed, generates SHA-256 hash, locks property
+// MANDATORY: OTP Verification required for all deed registrations
 router.post('/grant-deed', async (req, res) => {
   try {
     const {
@@ -81,50 +82,138 @@ router.post('/grant-deed', async (req, res) => {
       buyer_name,
       buyer_phone,
       buyer_email,
-      sold_area
+      buyers,
+      sold_area,
+      otp // Mandatory OTP
     } = req.body;
 
     const record = await LandRecord.findById(record_id);
     if (!record) return res.status(404).json({ success: false, message: 'রেকর্ড পাওয়া যায়নি।' });
+    if (record.is_deceased_locked || record.status === 'Deceased_Locked' || record.status === 'Transferred_To_Heirs') {
+      return res.status(400).json({
+        success: false,
+        message: 'জমির মূল মালিক মৃত্যুবরণ করেছেন। মৃত্যু সনদ অনুমোদিত হওয়ায় ওয়ারিশদের মধ্যে বণ্টননামা (Bonton Nama) সম্পন্ন না হওয়া পর্যন্ত এই জমির দলিল সম্পাদন করা যাবে না।'
+      });
+    }
+
     if (record.status !== 'Active') {
       return res.status(400).json({ success: false, message: `জমিটি ইতিমধ্যে ${record.status} অবস্থায় আছে। দলিল করা সম্ভব নয়।` });
     }
 
-    // Verify Buyer NID in User database
-    const cleanBuyerNid = (buyer_nid || '').toString().trim();
-    if (!cleanBuyerNid) {
-      return res.status(400).json({ success: false, message: 'ক্রেতার NID প্রদান আবশ্যক।' });
-    }
-
-    const engBuyerNid = toEnglishDigits(cleanBuyerNid);
-    const bngBuyerNid = toBengaliDigits(cleanBuyerNid);
-
-    const buyerUser = await User.findOne({
-      $or: [{ nid: cleanBuyerNid }, { nid: engBuyerNid }, { nid: bngBuyerNid }]
-    });
-
-    if (!buyerUser) {
+    // ─────────────────────────────────────────────────────────────
+    // MANDATORY OTP VERIFICATION
+    // ─────────────────────────────────────────────────────────────
+    const cleanOtp = (otp || '').toString().trim();
+    if (!cleanOtp || cleanOtp.length !== 6) {
       return res.status(400).json({
         success: false,
-        message: '⚠️ ক্রেতার NID সিস্টেমে অনিবন্ধিত! শুধুমাত্র ডাটাবেজে নিবন্ধিত নাগরিকের নামেই জমি রেজিস্ট্রি ও মিউটেশন সম্ভব। ক্রেতাকে প্রথমে সিস্টেমে নিবন্ধন করতে বলুন।'
+        message: '🔒 সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ৬ ডিজিটের ওটিপি (OTP) ভেরিফিকেশন বাধ্যতামূলক। অনুগ্রহ করে ওটিপি কোড প্রদান করুন।'
       });
     }
 
-    const verifiedBuyerName = buyerUser.name || buyer_name;
-    const verifiedBuyerEmail = buyerUser.email || buyer_email;
-    const verifiedBuyerPhone = buyerUser.phone || buyer_phone;
+    const { findLatestDeedOtp, updateOtpRecord, deleteDeedOtps } = require('../utils/dbStore');
+    const otpRecord = await findLatestDeedOtp('', record._id.toString());
 
-    // Check LegalStatus for Court Case / Stay Order
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: 'দলিল নিবন্ধনের জন্য কোনো সক্রিয় ওটিপি রেকর্ড পাওয়া যায়নি। অনুগ্রহ করে প্রথমে "ওটিপি পাঠান" বাটনে ক্লিক করে ওটিপি নিন।'
+      });
+    }
+
+    if (new Date() > new Date(otpRecord.expiresAt)) {
+      return res.status(400).json({
+        success: false,
+        message: 'ওটিপির মেয়াদ শেষ হয়ে গেছে। অনুগ্রহ করে পুনরায় নতুন ওটিপি পাঠান।'
+      });
+    }
+
+    if (otpRecord.attempts >= 5) {
+      return res.status(429).json({
+        success: false,
+        message: 'সর্বোচ্চ ভুল প্রচেষ্টার সীমা অতিক্রম করেছে। পুনরায় নতুন ওটিপি কোড পাঠান।'
+      });
+    }
+
+    if (otpRecord.otp !== cleanOtp) {
+      const newAttempts = (otpRecord.attempts || 0) + 1;
+      await updateOtpRecord(otpRecord, { attempts: newAttempts });
+      return res.status(400).json({
+        success: false,
+        message: `ভুল ওটিপি কোড! অনুগ্রহ করে ইমেইলে প্রেরিত ৬ ডিজিটের কোডটি দিন। (বাকি চেষ্টা: ${5 - newAttempts})`
+      });
+    }
+
+    // Mark verified and clean up
+    await updateOtpRecord(otpRecord, { verified: true });
+    await deleteDeedOtps(otpRecord.email, record._id.toString());
+
+    // ─────────────────────────────────────────────────────────────
+    // Process and verify buyer(s) (Joint Deed support)
+    // ─────────────────────────────────────────────────────────────
+    let buyersList = [];
+    if (Array.isArray(buyers) && buyers.length > 0) {
+      buyersList = buyers.filter(b => b && (b.nid || '').toString().trim().length > 0);
+    }
+
+    if (buyersList.length === 0) {
+      const cleanBuyerNid = (buyer_nid || '').toString().trim();
+      if (!cleanBuyerNid) {
+        return res.status(400).json({ success: false, message: 'ক্রেতার NID প্রদান আবশ্যক।' });
+      }
+      buyersList.push({
+        nid: cleanBuyerNid,
+        name: buyer_name || '',
+        phone: buyer_phone || '',
+        email: buyer_email || '',
+        share_decimal: parseFloat(sold_area || 0)
+      });
+    }
+
+    // Verify each buyer in User database
+    const verifiedBuyers = [];
+    for (const b of buyersList) {
+      const cleanNid = (b.nid || '').toString().trim();
+      const engNid = toEnglishDigits(cleanNid);
+      const bngNid = toBengaliDigits(cleanNid);
+
+      const buyerUser = await User.findOne({
+        $or: [{ nid: cleanNid }, { nid: engNid }, { nid: bngNid }]
+      });
+
+      if (!buyerUser) {
+        return res.status(400).json({
+          success: false,
+          message: `⚠️ ক্রেতা [NID: ${cleanNid}] সিস্টেমে অনিবন্ধিত! শুধুমাত্র ডাটাবেজে নিবন্ধিত নাগরিকের নামেই জমি রেজিস্ট্রি সম্ভব।`
+        });
+      }
+
+      verifiedBuyers.push({
+        nid: buyerUser.nid,
+        name: buyerUser.name || b.name,
+        phone: buyerUser.phone || b.phone || '',
+        email: buyerUser.email || b.email || '',
+        share_decimal: parseFloat(b.share_decimal || 0)
+      });
+    }
+
+    // Check LegalStatus for Court Case / Stay Order (using Dag + Mouza)
     const LegalStatus = require('../models/LegalStatus');
     const cleanDag = (record.dag_no || '').toString().trim();
+    const cleanMouza = (record.mouza || '').toString().trim();
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
 
     const legalNotice = await LegalStatus.findOne({
-      $or: [
-        { dag_no: cleanDag },
-        { dag_no: engDag },
-        { dag_no: bngDag }
+      $and: [
+        {
+          $or: [
+            { dag_no: cleanDag },
+            { dag_no: engDag },
+            { dag_no: bngDag }
+          ]
+        },
+        cleanMouza ? { mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') } } : {}
       ]
     });
 
@@ -139,60 +228,108 @@ router.post('/grant-deed', async (req, res) => {
       });
     }
 
-    // Check area availability
+    // Calculate actual sold area
     const requestedSoldArea = parseFloat(sold_area || 0);
-    if (requestedSoldArea > record.available_area_decimal) {
+    const totalBuyerShare = verifiedBuyers.reduce((sum, b) => sum + (parseFloat(b.share_decimal) || 0), 0);
+    let actualSoldArea = requestedSoldArea;
+    if (totalBuyerShare > 0 && verifiedBuyers.length > 1) {
+      actualSoldArea = totalBuyerShare;
+    }
+    if (!actualSoldArea || actualSoldArea <= 0) {
+      actualSoldArea = record.available_area_decimal;
+    }
+
+    if (actualSoldArea > record.available_area_decimal) {
       return res.status(400).json({
         success: false,
-        message: `⚠️ অপর্যাপ্ত জমি! বিক্রয়যোগ্য জমি আছে ${record.available_area_decimal} শতক, কিন্তু বিক্রয়ের জন্য চাওয়া হয়েছে ${requestedSoldArea} শতক।`
+        message: `⚠️ অপর্যাপ্ত জমি! বিক্রয়যোগ্য জমি আছে ${record.available_area_decimal} শতক, কিন্তু বিক্রয়ের জন্য চাওয়া হয়েছে ${actualSoldArea} শতক।`
       });
     }
 
-    // Generate SHA-256 hash
-    const hashData = `${deed_no}-${deed_year}-${record.dag_no}-${record.owner_nid}-${buyerUser.nid}-${Date.now()}`;
+    // Assign shares & percentages
+    verifiedBuyers.forEach(b => {
+      b.share_decimal = b.share_decimal > 0 ? b.share_decimal : parseFloat((actualSoldArea / verifiedBuyers.length).toFixed(4));
+      b.share_percent = parseFloat(((b.share_decimal / actualSoldArea) * 100).toFixed(2));
+    });
+
+    const isJoint = verifiedBuyers.length > 1;
+    const primaryBuyer = verifiedBuyers[0];
+    const allBuyerNames = verifiedBuyers.map(b => b.name).join(', ');
+    const allBuyerNids = verifiedBuyers.map(b => b.nid).join(', ');
+
+    // Generate SHA-256 hash (including all joint buyer NIDs)
+    const buyerHashKey = verifiedBuyers.map(b => b.nid).join('-');
+    const hashData = `${deed_no}-${deed_year}-${record.dag_no}-${record.owner_nid}-${buyerHashKey}-${Date.now()}`;
     const deedHash = crypto.createHash('sha256').update(hashData).digest('hex');
     const qrCodeId = `QR-${deed_no}-${deed_year}-${record.dag_no}`;
 
-    // Update record
-    record.deed_no = deed_no;
-    record.deed_year = deed_year;
-    record.sub_registry_code = sub_registry_code;
-    record.deed_hash = deedHash;
-    record.qr_code_id = qrCodeId;
-    record.buyer_nid = buyerUser.nid;
-    record.buyer_name = verifiedBuyerName;
-    record.buyer_phone = verifiedBuyerPhone;
-    record.buyer_email = verifiedBuyerEmail;
-    record.sold_area = requestedSoldArea || record.available_area_decimal;
-    record.status = 'Pending_Mutation';
-    record.available_area_decimal = Math.max(0, record.available_area_decimal - (requestedSoldArea || record.available_area_decimal));
+    // Decrement seller's active record balance. Seller stays ACTIVE with remaining land!
+    record.available_area_decimal = Math.max(0, record.available_area_decimal - actualSoldArea);
     record.last_updated = new Date();
     await record.save();
 
+    // Create a dedicated Pending_Mutation record for this specific deed
+    const pendingDeed = new LandRecord({
+      record_id: `record_deed_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      division: record.division || 'ঢাকা',
+      district: record.district || 'ঢাকা',
+      upazila: record.upazila || 'ধানমন্ডি',
+      mouza: record.mouza,
+      jl_no: record.jl_no,
+      khatian_no: record.khatian_no,
+      dag_no: record.dag_no,
+      owner_nid: record.owner_nid,
+      owner_name: record.owner_name,
+      owner_phone: record.owner_phone || '',
+      owner_email: record.owner_email || '',
+      parent_record_id: record._id,
+      total_area_decimal: actualSoldArea,
+      available_area_decimal: 0,
+      sold_area: actualSoldArea,
+      status: 'Pending_Mutation',
+      deed_no,
+      deed_year,
+      sub_registry_code,
+      deed_hash: deedHash,
+      qr_code_id: qrCodeId,
+      buyer_nid: isJoint ? allBuyerNids : primaryBuyer.nid,
+      buyer_name: isJoint ? allBuyerNames : primaryBuyer.name,
+      buyer_phone: primaryBuyer.phone,
+      buyer_email: primaryBuyer.email,
+      buyers: verifiedBuyers,
+      is_joint_ownership: isJoint,
+      remarks: isJoint ? `যৌথ কবলা দলিল (${verifiedBuyers.length} জন ক্রেতা)` : 'একক দলিল'
+    });
+    await pendingDeed.save();
+
     return res.status(200).json({
       success: true,
-      message: '✅ Deed Granted! দলিল অনুমোদিত হয়েছে। জমি Pending Mutation-এ লক করা হয়েছে।',
+      message: isJoint
+        ? `✅ যৌথ দলিল অনুমোদিত হয়েছে (${verifiedBuyers.length} জন ক্রেতা, মোট ${actualSoldArea} শতক)। বিক্রেতার অবশিষ্ট জমি: ${record.available_area_decimal} শতক।`
+        : `✅ Deed Granted! দলিল অনুমোদিত হয়েছে (${actualSoldArea} শতক)। বিক্রেতার অবশিষ্ট জমি: ${record.available_area_decimal} শতক।`,
       deed_hash: deedHash,
       qr_code_id: qrCodeId,
       record: {
-        _id: record._id,
-        mouza: record.mouza,
-        jl_no: record.jl_no,
-        khatian_no: record.khatian_no,
-        dag_no: record.dag_no,
-        owner_name: record.owner_name,
-        owner_nid: record.owner_nid,
-        buyer_name: record.buyer_name,
-        buyer_nid: record.buyer_nid,
-        buyer_phone: record.buyer_phone,
-        buyer_email: record.buyer_email,
-        sold_area: sold_area,
-        deed_no: record.deed_no,
-        deed_year: record.deed_year,
-        sub_registry_code: record.sub_registry_code,
-        deed_hash: record.deed_hash,
-        qr_code_id: record.qr_code_id,
-        status: record.status
+        _id: pendingDeed._id,
+        mouza: pendingDeed.mouza,
+        jl_no: pendingDeed.jl_no,
+        khatian_no: pendingDeed.khatian_no,
+        dag_no: pendingDeed.dag_no,
+        owner_name: pendingDeed.owner_name,
+        owner_nid: pendingDeed.owner_nid,
+        buyer_name: pendingDeed.buyer_name,
+        buyer_nid: pendingDeed.buyer_nid,
+        buyer_phone: pendingDeed.buyer_phone,
+        buyer_email: pendingDeed.buyer_email,
+        buyers: verifiedBuyers,
+        is_joint_ownership: isJoint,
+        sold_area: actualSoldArea,
+        deed_no: pendingDeed.deed_no,
+        deed_year: pendingDeed.deed_year,
+        sub_registry_code: pendingDeed.sub_registry_code,
+        deed_hash: pendingDeed.deed_hash,
+        qr_code_id: pendingDeed.qr_code_id,
+        status: pendingDeed.status
       }
     });
 
@@ -268,16 +405,31 @@ router.post('/approve-mutation', async (req, res) => {
       return res.status(400).json({ success: false, message: 'এই জমির নামজারি ও মালিকানা হস্তান্তর ইতিমধ্যে সম্পন্ন হয়েছে।' });
     }
 
-    // Mark old record as Sold
+    const soldArea = parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal);
+    const isJoint = oldRecord.is_joint_ownership || (oldRecord.buyers && oldRecord.buyers.length > 1);
+    const buyerList = (oldRecord.buyers && oldRecord.buyers.length > 0) ? oldRecord.buyers : [
+      {
+        nid: oldRecord.buyer_nid,
+        name: oldRecord.buyer_name,
+        phone: oldRecord.buyer_phone || '',
+        email: oldRecord.buyer_email || '',
+        share_decimal: soldArea,
+        share_percent: 100
+      }
+    ];
+
+    // Mark current pending record as Sold & Paid
     oldRecord.status = 'Sold';
     oldRecord.payment_status = 'Paid';
     oldRecord.namjari_issued = true;
     oldRecord.last_updated = new Date();
     await oldRecord.save();
 
-    // Create new Active LandRecord for buyer
+    // Create new Active LandRecord for buyer(s)
     const newQrId = `QR-NAMJARI-${oldRecord.dag_no}-${Date.now()}`;
-    const newKhatianNo = oldRecord.khatian_no.includes('-M') ? oldRecord.khatian_no : `${oldRecord.khatian_no}-M`;
+    const newKhatianNo = oldRecord.khatian_no.includes('-M') 
+      ? `${oldRecord.khatian_no}-${Date.now().toString().slice(-3)}` 
+      : `${oldRecord.khatian_no}-M`;
 
     const newRecord = new LandRecord({
       record_id: `record_${Date.now()}`,
@@ -288,20 +440,48 @@ router.post('/approve-mutation', async (req, res) => {
       jl_no: oldRecord.jl_no,
       khatian_no: newKhatianNo,
       dag_no: oldRecord.dag_no,
-      owner_nid: oldRecord.buyer_nid || oldRecord.owner_nid || 'N/A',
-      owner_name: oldRecord.buyer_name || oldRecord.owner_name || 'নতুন মালিক',
-      owner_phone: oldRecord.buyer_phone || oldRecord.owner_phone || '',
-      owner_email: oldRecord.buyer_email || oldRecord.owner_email || '',
-      total_area_decimal: parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal),
-      available_area_decimal: parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal),
+      owner_nid: oldRecord.buyer_nid || 'N/A',
+      owner_name: oldRecord.buyer_name || 'নতুন মালিক',
+      owner_phone: oldRecord.buyer_phone || '',
+      owner_email: oldRecord.buyer_email || '',
+      total_area_decimal: soldArea,
+      available_area_decimal: soldArea,
       status: 'Active',
       qr_code_id: newQrId,
       deed_no: oldRecord.deed_no,
       deed_year: oldRecord.deed_year,
+      sub_registry_code: oldRecord.sub_registry_code,
       deed_hash: oldRecord.deed_hash,
-      remarks: remarks || `সহকারী কমিশনার (ভূমি) কর্তৃক অনুমোদিত ই-নামজারি খতিয়ান। সাবেক খতিয়ান: ${oldRecord.khatian_no}`
+      is_joint_ownership: isJoint,
+      co_owners: buyerList,
+      buyers: buyerList,
+      remarks: remarks || `সহকারী কমিশনার (ভূমি) কর্তৃক অনুমোদিত ই-নামজারি খতিয়ান${isJoint ? ` (যৌথ মালিকানা: ${buyerList.length} জন)` : ''}। সাবেক খতিয়ান: ${oldRecord.khatian_no}`
     });
     await newRecord.save();
+
+    // If this pending record was branched from a parent active record, update parent's total
+    if (oldRecord.parent_record_id) {
+      const parentRecord = await LandRecord.findById(oldRecord.parent_record_id);
+      if (parentRecord) {
+        parentRecord.total_area_decimal = parseFloat(Math.max(0, parentRecord.total_area_decimal - soldArea).toFixed(4));
+        if (parentRecord.total_area_decimal <= 0.0001 && parentRecord.available_area_decimal <= 0.0001) {
+          parentRecord.status = 'Sold';
+        }
+        parentRecord.last_updated = new Date();
+        await parentRecord.save();
+      }
+    } else {
+      // Legacy fallback: if oldRecord is the main record itself
+      const originalTotal = parseFloat(oldRecord.total_area_decimal);
+      const remainingArea = parseFloat(Math.max(0, originalTotal - soldArea).toFixed(4));
+      if (remainingArea > 0.0001) {
+        oldRecord.total_area_decimal = remainingArea;
+        oldRecord.available_area_decimal = remainingArea;
+        oldRecord.status = 'Active';
+        oldRecord.sold_area = null;
+        await oldRecord.save();
+      }
+    }
 
     return res.status(200).json({
       success: true,
@@ -322,6 +502,8 @@ router.post('/approve-mutation', async (req, res) => {
         deed_no: newRecord.deed_no,
         deed_hash: newRecord.deed_hash,
         qr_code_id: newRecord.qr_code_id,
+        is_joint_ownership: newRecord.is_joint_ownership,
+        co_owners: newRecord.co_owners,
         issue_date: new Date().toLocaleDateString('bn-BD'),
         status: 'Active'
       }
@@ -344,14 +526,31 @@ router.post('/complete-payment', async (req, res) => {
       return res.status(400).json({ success: false, message: 'পেমেন্ট ইতিমধ্যে সম্পন্ন হয়েছে।' });
     }
 
-    // Update old record to Sold
+    const soldArea = parseFloat(oldRecord.sold_area || oldRecord.total_area_decimal);
+    const isJoint = oldRecord.is_joint_ownership || (oldRecord.buyers && oldRecord.buyers.length > 1);
+    const buyerList = (oldRecord.buyers && oldRecord.buyers.length > 0) ? oldRecord.buyers : [
+      {
+        nid: oldRecord.buyer_nid,
+        name: oldRecord.buyer_name,
+        phone: oldRecord.buyer_phone || '',
+        email: oldRecord.buyer_email || '',
+        share_decimal: soldArea,
+        share_percent: 100
+      }
+    ];
+
+    // Mark current pending record as Sold & Paid
     oldRecord.status = 'Sold';
     oldRecord.payment_status = 'Paid';
     oldRecord.last_updated = new Date();
     await oldRecord.save();
 
-    // Create new Active record for buyer
-    const newQrId = `QR-NEW-${oldRecord.dag_no}-${Date.now()}`;
+    // Create new Active record for buyer(s)
+    const newQrId = `QR-NAMJARI-${oldRecord.dag_no}-${Date.now()}`;
+    const newKhatianNo = oldRecord.khatian_no.includes('-M') 
+      ? `${oldRecord.khatian_no}-${Date.now().toString().slice(-3)}` 
+      : `${oldRecord.khatian_no}-M`;
+
     const newRecord = new LandRecord({
       record_id: `record_${Date.now()}`,
       division: oldRecord.division || 'ঢাকা',
@@ -359,34 +558,72 @@ router.post('/complete-payment', async (req, res) => {
       upazila: oldRecord.upazila || 'ধানমন্ডি',
       mouza: oldRecord.mouza,
       jl_no: oldRecord.jl_no,
-      khatian_no: `${oldRecord.khatian_no}-M`, // Mutated khatian
+      khatian_no: newKhatianNo,
       dag_no: oldRecord.dag_no,
-      owner_nid: oldRecord.buyer_nid || oldRecord.owner_nid || 'N/A',
-      owner_name: oldRecord.buyer_name || oldRecord.owner_name || 'নতুন মালিক',
-      owner_phone: oldRecord.buyer_phone || oldRecord.owner_phone || '',
-      owner_email: oldRecord.buyer_email || oldRecord.owner_email || '',
-      total_area_decimal: parseFloat(oldRecord.total_area_decimal),
-      available_area_decimal: parseFloat(oldRecord.total_area_decimal),
+      owner_nid: oldRecord.buyer_nid || 'N/A',
+      owner_name: oldRecord.buyer_name || 'নতুন মালিক',
+      owner_phone: oldRecord.buyer_phone || '',
+      owner_email: oldRecord.buyer_email || '',
+      total_area_decimal: soldArea,
+      available_area_decimal: soldArea,
       status: 'Active',
       qr_code_id: newQrId,
-      deed_hash: oldRecord.deed_hash
+      deed_no: oldRecord.deed_no,
+      deed_year: oldRecord.deed_year,
+      sub_registry_code: oldRecord.sub_registry_code,
+      deed_hash: oldRecord.deed_hash,
+      is_joint_ownership: isJoint,
+      co_owners: buyerList,
+      buyers: buyerList,
+      remarks: `সহকারী কমিশনার (ভূমি) কর্তৃক অনুমোদিত ই-নামজারি খতিয়ান${isJoint ? ` (যৌথ মালিকানা: ${buyerList.length} জন)` : ''}। সাবেক খতিয়ান: ${oldRecord.khatian_no}`
     });
     await newRecord.save();
+
+    // If this pending record was branched from a parent active record, update parent's total
+    if (oldRecord.parent_record_id) {
+      const parentRecord = await LandRecord.findById(oldRecord.parent_record_id);
+      if (parentRecord) {
+        parentRecord.total_area_decimal = parseFloat(Math.max(0, parentRecord.total_area_decimal - soldArea).toFixed(4));
+        if (parentRecord.total_area_decimal <= 0.0001 && parentRecord.available_area_decimal <= 0.0001) {
+          parentRecord.status = 'Sold';
+        }
+        parentRecord.last_updated = new Date();
+        await parentRecord.save();
+      }
+    } else {
+      // Legacy fallback
+      const originalTotal = parseFloat(oldRecord.total_area_decimal);
+      const remainingArea = parseFloat(Math.max(0, originalTotal - soldArea).toFixed(4));
+      if (remainingArea > 0.0001) {
+        oldRecord.total_area_decimal = remainingArea;
+        oldRecord.available_area_decimal = remainingArea;
+        oldRecord.status = 'Active';
+        oldRecord.sold_area = null;
+        await oldRecord.save();
+      }
+    }
 
     return res.status(200).json({
       success: true,
       message: '🎉 পেমেন্ট সম্পন্ন! মালিকানা হস্তান্তর সফলভাবে সম্পন্ন হয়েছে। নতুন নামজারি খতিয়ান তৈরি হয়েছে।',
       khatian_data: {
         new_record_id: newRecord._id,
+        division: newRecord.division,
+        district: newRecord.district,
+        upazila: newRecord.upazila,
         mouza: newRecord.mouza,
         jl_no: newRecord.jl_no,
         khatian_no: newRecord.khatian_no,
         dag_no: newRecord.dag_no,
         owner_name: newRecord.owner_name,
         owner_nid: newRecord.owner_nid,
+        owner_phone: newRecord.owner_phone,
         total_area_decimal: newRecord.total_area_decimal,
+        deed_no: newRecord.deed_no,
         deed_hash: newRecord.deed_hash,
         qr_code_id: newRecord.qr_code_id,
+        is_joint_ownership: newRecord.is_joint_ownership,
+        co_owners: newRecord.co_owners,
         issue_date: new Date().toLocaleDateString('bn-BD'),
         status: 'Active'
       }
@@ -398,16 +635,19 @@ router.post('/complete-payment', async (req, res) => {
   }
 });
 
-// GET /api/land-records - For registry panel to search records
+// GET /api/land-records - For registry panel to search records (Standard: Mouza + Dag + Khatian)
 router.get('/land-records', async (req, res) => {
   try {
-    const { seller_nid, dag_no, mouza } = req.query;
+    const { seller_nid, dag_no, mouza, khatian_no } = req.query;
     const cleanDag = (dag_no || '').toString().trim();
     const cleanMouza = (mouza || '').toString().trim();
+    const cleanKhatian = (khatian_no || '').toString().trim();
     const cleanSellerNid = (seller_nid || '').toString().trim();
 
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
+    const engKhatian = toEnglishDigits(cleanKhatian);
+    const bngKhatian = toBengaliDigits(cleanKhatian);
     const engSellerNid = toEnglishDigits(cleanSellerNid);
     const bngSellerNid = toBengaliDigits(cleanSellerNid);
 
@@ -418,9 +658,20 @@ router.get('/land-records', async (req, res) => {
     if (cleanDag) {
       query.$or = [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }];
     }
+    if (cleanKhatian) {
+      const khatianConditions = [{ khatian_no: cleanKhatian }, { khatian_no: engKhatian }, { khatian_no: bngKhatian }];
+      if (query.$or) {
+        query.$and = [{ $or: query.$or }, { $or: khatianConditions }];
+        delete query.$or;
+      } else {
+        query.$or = khatianConditions;
+      }
+    }
     if (cleanSellerNid) {
       const nidConditions = [{ owner_nid: cleanSellerNid }, { owner_nid: engSellerNid }, { owner_nid: bngSellerNid }];
-      if (query.$or) {
+      if (query.$and) {
+        query.$and.push({ $or: nidConditions });
+      } else if (query.$or) {
         query.$and = [{ $or: query.$or }, { $or: nidConditions }];
         delete query.$or;
       } else {

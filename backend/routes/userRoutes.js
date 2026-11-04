@@ -26,7 +26,13 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
 
-    const nidQuery = { $or: [{ owner_nid: rawNid }, { owner_nid: engNid }, { owner_nid: bngNid }] };
+    const nidQuery = {
+      $or: [
+        { owner_nid: rawNid }, { owner_nid: engNid }, { owner_nid: bngNid },
+        { 'co_owners.nid': rawNid }, { 'co_owners.nid': engNid }, { 'co_owners.nid': bngNid },
+        { 'buyers.nid': rawNid }, { 'buyers.nid': engNid }, { 'buyers.nid': bngNid }
+      ]
+    };
     const userNidQuery = { $or: [{ user_nid: rawNid }, { user_nid: engNid }, { user_nid: bngNid }] };
 
     // 1. Find all active land records currently owned by this citizen

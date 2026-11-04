@@ -5,7 +5,7 @@ const LegalStatus = require('../models/LegalStatus');
 const User = require('../models/User');
 
 // POST /api/verify-deed
-// P3: Anti-Double Selling & Strict 3-Way Land Verification Engine (NID + Dag + Mouza)
+// P3: Anti-Double Selling & Strict 3-Way Land Verification Engine (NID + Dag + Mouza + Khatian)
 router.post('/verify-deed', async (req, res) => {
   try {
     const { seller_nid, dag_no, mouza, jl_no, khatian_no, requested_area } = req.body;
@@ -17,12 +17,14 @@ router.post('/verify-deed', async (req, res) => {
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
     const cleanMouza = (mouza || '').toString().trim();
+    const cleanKhatian = (khatian_no || '').toString().trim();
+    const engKhatian = toEnglishDigits(cleanKhatian);
+    const bngKhatian = toBengaliDigits(cleanKhatian);
     const cleanSellerNid = (seller_nid || '').toString().trim();
     const engSellerNid = toEnglishDigits(cleanSellerNid);
     const bngSellerNid = toBengaliDigits(cleanSellerNid);
 
-    // Rule 7 (Strict 3-Way Matching): NID, Dag, and Mouza must all be evaluated together.
-    // Searching or making decisions purely based on matching just Dag or Mouza is strictly prohibited.
+    // Standard Matching Parameter: Mouza + Dag Number (+ Khatian Number when provided)
     if (!cleanSellerNid || !cleanDag || !cleanMouza) {
       return res.status(400).json({
         success: false,
@@ -40,8 +42,6 @@ router.post('/verify-deed', async (req, res) => {
     const nidExistsInDb = !!userInDb || (nidLandRecords && nidLandRecords.length > 0);
 
     // Rule 1 (Random/Unregistered NID):
-    // If a random NID (which does not exist in the database) is searched,
-    // trigger "No Record" or state that the owner of this land is someone else, without revealing any real owner's data.
     if (!nidExistsInDb) {
       return res.status(200).json({
         success: false,
@@ -51,8 +51,6 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     // Rule 2 (NID with No Land):
-    // If an NID exists in the database but no land is assigned to it, the system must say:
-    // "এই NID-এ কোনো জমির তথ্য নাই।"
     if (!nidLandRecords || nidLandRecords.length === 0) {
       return res.status(200).json({
         success: false,
@@ -62,14 +60,19 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     // Rule 3 (Fraud Alert / Fake Owner):
-    // If the NID matches in the DB, but the Dag or Mouza does not match:
-    // The system must trigger: "Fraud Alert: Fake Owner!" (And under no circumstances should the real owner's details be leaked).
+    // Match NID against Mouza, Dag, and Khatian Number
     const landForThisSeller = nidLandRecords.filter(r => {
       const mouzaMatch = r.mouza && r.mouza.trim().toLowerCase() === cleanMouza.toLowerCase();
       const rDag = (r.dag_no || '').toString().trim();
       const dagMatch = rDag === cleanDag || rDag === engDag || rDag === bngDag ||
                        toEnglishDigits(rDag) === engDag || toBengaliDigits(rDag) === bngDag;
-      return mouzaMatch && dagMatch;
+      let khatianMatch = true;
+      if (cleanKhatian) {
+        const rKhat = (r.khatian_no || '').toString().trim();
+        khatianMatch = rKhat === cleanKhatian || rKhat === engKhatian || rKhat === bngKhatian ||
+                       toEnglishDigits(rKhat) === engKhatian || toBengaliDigits(rKhat) === bngKhatian;
+      }
+      return mouzaMatch && dagMatch && khatianMatch;
     });
 
     if (landForThisSeller.length === 0) {
@@ -93,12 +96,13 @@ router.post('/verify-deed', async (req, res) => {
       return res.status(200).json({
         success: false,
         alert_type: 'FAKE_OWNER',
-        message: '🚨 জালিয়াতি সতর্কতা (Fraud Alert: Fake Owner!): প্রদত্ত NID-এর সাথে এই দাগ বা মৌজার কোনো মালিকানা রেকর্ড মেলেনি। ভুয়া মালিক সনাক্ত হয়েছে!'
+        message: cleanKhatian 
+          ? '🚨 জালিয়াতি সতর্কতা (Fraud Alert: Fake Owner!): প্রদত্ত NID-এর সাথে এই মৌজা, দাগ বা খতিয়ান নম্বরের কোনো মালিকানা রেকর্ড মেলেনি। ভুয়া মালিক সনাক্ত হয়েছে!'
+          : '🚨 জালিয়াতি সতর্কতা (Fraud Alert: Fake Owner!): প্রদত্ত NID-এর সাথে এই দাগ বা মৌজার কোনো মালিকানা রেকর্ড মেলেনি। ভুয়া মালিক সনাক্ত হয়েছে!'
       });
     }
 
     // Rule 4 (Government Land Check):
-    // If the land belongs to the government, designated alert applies.
     const matchingRecord = landForThisSeller[0];
     const isUnassigned = !matchingRecord.owner_nid ||
       matchingRecord.owner_nid === '1000000000000' ||
@@ -116,8 +120,13 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     // Rule 5 (Legal Dispute / Stay Order):
-    // If the searched Dag and Mouza have an active Mamla (Lawsuit) or Stay Order
-    const legalNotice = await LegalStatus.findOne({ $or: dagConditions });
+    const legalNotice = await LegalStatus.findOne({
+      $and: [
+        { $or: dagConditions },
+        cleanMouza ? { mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') } } : {}
+      ]
+    });
+
     if (legalNotice && (legalNotice.has_court_case || legalNotice.stay_order || legalNotice.is_khas)) {
       if (legalNotice.is_khas) {
         return res.status(200).json({
@@ -146,9 +155,36 @@ router.post('/verify-deed', async (req, res) => {
       });
     }
 
+    // Rule 5.5: Deceased Landowner / Pending Bonton Nama Check
+    const deceasedRecordForSeller = landForThisSeller.find(r => r.is_deceased_locked || r.status === 'Deceased_Locked' || r.status === 'Transferred_To_Heirs');
+    if (deceasedRecordForSeller && !activeRecordForSeller) {
+      if (deceasedRecordForSeller.status === 'Transferred_To_Heirs') {
+        return res.status(200).json({
+          success: false,
+          alert_type: 'DECEASED_TRANSFERRED',
+          message: '⚠️ জমির মূল মালিক মৃত্যুবরণ করেছেন এবং ওয়ারিশ বণ্টননামা (Bonton Nama) সম্পন্ন হয়েছে। সাবেক মালিকের আর কোনো মালিকানা স্বত্ব অবশিষ্ট নেই। জমিটি ইতিমধ্যে নতুন ওয়ারিশদের নামে স্থানান্তরিত হয়েছে।'
+        });
+      }
+      return res.status(200).json({
+        success: false,
+        alert_type: 'DECEASED_LOCKED',
+        message: '⚠️ জমির মূল মালিক মৃত্যুবরণ করেছেন। মৃত্যু সনদ অনুমোদিত হওয়ায় ওয়ারিশদের মধ্যে বণ্টননামা (Bonton Nama) সম্পন্ন না হওয়া পর্যন্ত এই জমির বিক্রয় কার্যক্রম সাময়িকভাবে স্থগিত রয়েছে।'
+      });
+    }
+
+    // Also check if Seller User is marked as Deceased in database
+    const sellerUser = await User.findOne({
+      $or: [{ nid: cleanSellerNid }, { nid: engSellerNid }, { nid: bngSellerNid }]
+    });
+    if (sellerUser && (sellerUser.is_deceased || sellerUser.status === 'Deceased')) {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'DECEASED_LOCKED',
+        message: '⚠️ জমির মূল মালিক মৃত্যুবরণ করেছেন। মৃত্যু সনদ অনুমোদিত হওয়ায় ওয়ারিশদের মধ্যে বণ্টননামা (Bonton Nama) সম্পন্ন না হওয়া পর্যন্ত এই জমির বিক্রয় কার্যক্রম সাময়িকভাবে স্থগিত রয়েছে।'
+      });
+    }
+
     // Rule 6 (Actual Double Selling) & Core Ownership Logic:
-    // Old Owner: If land is sold, triggers Double Selling alert for old owner.
-    // New Owner/Buyer: Shows Active, checked independently. New owner can resell (2nd stage).
     const activeRecordForSeller = landForThisSeller.find(r => r.status === 'Active');
     const pendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Mutation' || r.status === 'Pending_AC_Land_Review');
     const soldRecordForSeller = landForThisSeller.find(r => r.status === 'Sold');
@@ -160,16 +196,6 @@ router.post('/verify-deed', async (req, res) => {
       status: { $in: ['Pending_Mutation', 'Pending_AC_Land_Review'] }
     });
 
-    if (pendingRecordForSeller || anyPendingOnPlot) {
-      const pendingStatus = (pendingRecordForSeller || anyPendingOnPlot).status;
-      return res.status(200).json({
-        success: false,
-        alert_type: 'DOUBLE_SELL',
-        message: `🔴 ডাবল-সেলিং সতর্কতা (Double-Selling Alert): এই জমির একটি দলিল বা নামজারি প্রক্রিয়া বর্তমানে চলমান (${pendingStatus})! জমিটি লক আছে, নতুন দলিল করা যাবে না।`,
-        status: pendingStatus
-      });
-    }
-
     if (soldRecordForSeller && !activeRecordForSeller) {
       return res.status(200).json({
         success: false,
@@ -180,6 +206,15 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     if (!activeRecordForSeller) {
+      if (anyPendingOnPlot) {
+        const pendingStatus = anyPendingOnPlot.status;
+        return res.status(200).json({
+          success: false,
+          alert_type: 'DOUBLE_SELL',
+          message: `🔴 ডাবল-সেলিং সতর্কতা (Double-Selling Alert): এই জমির একটি দলিল বা নামজারি প্রক্রিয়া বর্তমানে চলমান (${pendingStatus})! জমিটি লক আছে, নতুন দলিল করা যাবে না।`,
+          status: pendingStatus
+        });
+      }
       return res.status(200).json({
         success: false,
         alert_type: 'NOT_FOUND',
@@ -187,7 +222,18 @@ router.post('/verify-deed', async (req, res) => {
       });
     }
 
-    // Step 2: Land Volume Check
+    // Seller has an active record. If available area is 0 and mutations are pending, block double selling
+    if (activeRecordForSeller.available_area_decimal <= 0 && (pendingRecordForSeller || anyPendingOnPlot)) {
+      const pendingStatus = (pendingRecordForSeller || anyPendingOnPlot).status;
+      return res.status(200).json({
+        success: false,
+        alert_type: 'DOUBLE_SELL',
+        message: `🔴 ডাবল-সেলিং সতর্কতা (Double-Selling Alert): আপনার বিক্রয়যোগ্য সমস্ত জমির দলিল বা নামজারি প্রক্রিয়া বর্তমানে চলমান (${pendingStatus})! অবশিষ্ট জমি শূন্য।`,
+        status: pendingStatus
+      });
+    }
+
+    // Land Volume Check
     const reqArea = parseFloat(requested_area) || 0;
     if (reqArea > 0 && reqArea > activeRecordForSeller.available_area_decimal) {
       return res.status(200).json({
@@ -211,6 +257,8 @@ router.post('/verify-deed', async (req, res) => {
         dag_no: activeRecordForSeller.dag_no,
         owner_name: activeRecordForSeller.owner_name,
         owner_nid: activeRecordForSeller.owner_nid,
+        owner_email: activeRecordForSeller.owner_email || '',
+        owner_phone: activeRecordForSeller.owner_phone || '',
         available_area_decimal: activeRecordForSeller.available_area_decimal,
         total_area_decimal: activeRecordForSeller.total_area_decimal,
         status: activeRecordForSeller.status

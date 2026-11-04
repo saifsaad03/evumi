@@ -46,21 +46,22 @@ const buildFromAddress = () => {
  *
  * @param {string} toEmail      - Recipient email address
  * @param {string} otp          - 6-digit OTP code
- * @param {string} purpose      - 'ACCOUNT_REGISTRATION' | 'LAND_ASSIGNMENT'
- * @param {object} extraDetails - { citizen_name, dag_no, mouza }
+ * @param {string} purpose      - 'ACCOUNT_REGISTRATION' | 'LAND_ASSIGNMENT' | 'DEED_REGISTRATION'
+ * @param {object} extraDetails - { citizen_name, dag_no, mouza, khatian_no, deed_no }
  * @returns {{ success: boolean, simulated?: boolean, error?: string, messageId?: string }}
  */
 const sendOtpEmail = async (toEmail, otp, purpose, extraDetails = {}) => {
   try {
-    const isRegistration = purpose === 'ACCOUNT_REGISTRATION';
+    let title = 'e-ভূমি জমি হস্তান্তর ও সাব-রেজিস্ট্রি সম্মতি ওটিপি';
+    let subtitle = `সাব-রেজিস্ট্রি অফিস থেকে জমি বরাদ্দ আবেদন (দাগ নং: ${extraDetails.dag_no || 'N/A'}, মৌজা: ${extraDetails.mouza || 'N/A'}, খতিয়ান নং: ${extraDetails.khatian_no || 'N/A'}) যাচাইয়ের জন্য আপনার সম্মতি কোড।`;
 
-    const title = isRegistration
-      ? 'e-ভূমি নাগরিক অ্যাকাউন্ট ভেরিফিকেশন কোড'
-      : 'e-ভূমি জমি হস্তান্তর ও সাব-রেজিস্ট্রি সম্মতি ওটিপি';
-
-    const subtitle = isRegistration
-      ? 'আপনার নাগরিক অ্যাকাউন্ট সক্রিয় করতে নিচের ওটিপি কোডটি ব্যবহার করুন।'
-      : `সাব-রেজিস্ট্রি অফিস থেকে জমি বরাদ্দ আবেদন (দাগ নং: ${extraDetails.dag_no || 'N/A'}, মৌজা: ${extraDetails.mouza || 'N/A'}) যাচাইয়ের জন্য আপনার সম্মতি কোড।`;
+    if (purpose === 'ACCOUNT_REGISTRATION') {
+      title = 'e-ভূমি নাগরিক অ্যাকাউন্ট ভেরিফিকেশন কোড';
+      subtitle = 'আপনার নাগরিক অ্যাকাউন্ট সক্রিয় করতে নিচের ওটিপি কোডটি ব্যবহার করুন।';
+    } else if (purpose === 'DEED_REGISTRATION') {
+      title = 'e-ভূমি সাব-রেজিস্ট্রি দলিল নিবন্ধন ওটিপি (বাধ্যতামূলক ভেরিফিকেশন)';
+      subtitle = `সাব-রেজিস্ট্রি অফিসে দলিল নং [${extraDetails.deed_no || 'নতুন দলিল'}] নিবন্ধনের ক্ষেত্রে আপনার ওটিপি ভেরিফিকেশন কোড। জমি: মৌজা ${extraDetails.mouza || 'N/A'}, দাগ নং ${extraDetails.dag_no || 'N/A'}, খতিয়ান নং ${extraDetails.khatian_no || 'N/A'}।`;
+    }
 
     const htmlContent = `
       <!DOCTYPE html>
@@ -98,7 +99,7 @@ const sendOtpEmail = async (toEmail, otp, purpose, extraDetails = {}) => {
               <div style="font-size:12px;color:#64748b;margin-top:6px;">মেয়াদ: পরবর্তী ১০ মিনিট</div>
             </div>
             <p class="notice">
-              🔒 <strong>সতর্কতা:</strong> এই কোডটি গোপনীয়। এটি কারো সাথে শেয়ার করবেন না।
+              🔒 <strong>সতর্কতা:</strong> সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি প্রদান বাধ্যতামূলক। এই কোডটি কারো সাথে অননুমোদিতভাবে শেয়ার করবেন না।
             </p>
           </div>
           <div class="footer">
@@ -139,9 +140,6 @@ const sendOtpEmail = async (toEmail, otp, purpose, extraDetails = {}) => {
     // ── SMTP failure → graceful fallback (log OTP, never throw) ────────
     console.error('❌ [EMAIL SEND ERROR]:', error.message);
     console.log(`🔑 [FALLBACK OTP for ${toEmail}]: ${otp}`);
-    // Return success:true with simulated flag so the OTP flow can continue.
-    // The OTP is already saved in DB — user can proceed if they have the code
-    // (e.g. shown on screen in dev/staging or retrieved by admin from logs).
     return {
       success: true,
       simulated: true,

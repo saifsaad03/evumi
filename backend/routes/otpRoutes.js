@@ -17,7 +17,10 @@ const {
   deleteRegistrationOtps,
   createAssignOtp,
   findLatestAssignOtp,
-  deleteAssignOtps
+  deleteAssignOtps,
+  createDeedOtp,
+  findLatestDeedOtp,
+  deleteDeedOtps
 } = require('../utils/dbStore');
 
 // Helper to generate 6-digit OTP
@@ -152,7 +155,6 @@ router.post('/verify-and-register', async (req, res) => {
 
     // ─────────────────────────────────────────────────────────
     // STEP 1 (PRIMARY): Verify via signed JWT otpToken
-    // This works even when server restarts or memory resets
     // ─────────────────────────────────────────────────────────
     if (otpToken) {
       try {
@@ -179,13 +181,11 @@ router.post('/verify-and-register', async (req, res) => {
         }
       } catch (jwtErr) {
         console.warn('⚠️ otpToken validation error:', jwtErr.message);
-        // Token expired or invalid — fall through to DB check
       }
     }
 
     // ─────────────────────────────────────────────────────────
     // STEP 2 (FALLBACK): Check DB / disk / memory record
-    // Used when no otpToken present or token was expired
     // ─────────────────────────────────────────────────────────
     if (!isOtpValid) {
       const otpRecord = await findLatestRegistrationOtp(cleanEmail);
@@ -371,6 +371,126 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     return res.status(500).json({
       success: false,
       message: 'নাগরিকের ইমেইলে ওটিপি পাঠানো যায়নি।',
+      error: err.message
+    });
+  }
+});
+
+// ==========================================
+// 4. Send OTP for Sub-Registry Deed Registration (Mandatory OTP)
+// ==========================================
+router.post('/send-deed-registration-otp', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
+  try {
+    const {
+      record_id,
+      seller_nid,
+      seller_email,
+      seller_name,
+      buyer_nid,
+      buyer_email,
+      buyer_name,
+      deed_no,
+      mouza,
+      dag_no,
+      khatian_no,
+      target_recipient // 'seller' | 'buyer'
+    } = req.body;
+
+    if (!record_id || !deed_no) {
+      return res.status(400).json({
+        success: false,
+        message: 'জমির রেকর্ড আইডি এবং দলিল নম্বর প্রদান আবশ্যক।'
+      });
+    }
+
+    let recipientEmail = '';
+    let recipientName = '';
+    let recipientNid = '';
+
+    if (target_recipient === 'buyer' && (buyer_email || buyer_nid)) {
+      recipientEmail = (buyer_email || '').trim().toLowerCase();
+      recipientName = buyer_name || 'ক্রেতা';
+      recipientNid = (buyer_nid || '').toString().trim();
+    } else {
+      recipientEmail = (seller_email || '').trim().toLowerCase();
+      recipientName = seller_name || 'জমির মালিক/বিক্রেতা';
+      recipientNid = (seller_nid || '').toString().trim();
+    }
+
+    // If email is missing or generic, look up user profile by NID
+    if ((!recipientEmail || !recipientEmail.includes('@')) && recipientNid) {
+      const engNid = toEnglishDigits(recipientNid);
+      const bngNid = toBengaliDigits(recipientNid);
+      let user = null;
+      try {
+        user = await User.findOne({ $or: [{ nid: recipientNid }, { nid: engNid }, { nid: bngNid }] });
+      } catch (e) {}
+
+      if (!user) {
+        user = (await findUserByNid(recipientNid)) || (await findUserByNid(engNid)) || (await findUserByNid(bngNid));
+      }
+
+      if (user && user.email) {
+        recipientEmail = user.email.trim().toLowerCase();
+        recipientName = user.name || recipientName;
+      }
+    }
+
+    // Fallback to the other party's email if available
+    if (!recipientEmail && buyer_email) {
+      recipientEmail = buyer_email.trim().toLowerCase();
+      recipientName = buyer_name || 'ক্রেতা';
+    }
+
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'ওটিপি প্রেরণের জন্য বিক্রেতা বা ক্রেতার কোনো সক্রিয় নিবন্ধিত ইমেইল পাওয়া যায়নি। নাগরিকের প্রোফাইল চেক করুন।'
+      });
+    }
+
+    const otp = generate6DigitOtp();
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Save to resilient storage (Atlas + persistent disk + memory)
+    await createDeedOtp(recipientEmail, otp, {
+      record_id,
+      deed_no,
+      seller_nid,
+      buyer_nid,
+      mouza,
+      dag_no,
+      khatian_no
+    }, expiresAt);
+
+    console.log(`🔑 [DEED REGISTRATION OTP for ${recipientEmail} (Deed: ${deed_no})]: ${otp}`);
+
+    // Dispatch real email via Nodemailer
+    const emailResult = await sendOtpEmail(recipientEmail, otp, 'DEED_REGISTRATION', {
+      citizen_name: recipientName,
+      deed_no,
+      mouza,
+      dag_no,
+      khatian_no
+    });
+
+    const isEmailDelivered = !emailResult.simulated;
+    const responseMessage = isEmailDelivered
+      ? `দলিল রেজিস্ট্রেশনের ৬ ডিজিটের ওটিপি সফলভাবে '${recipientEmail}' ঠিকানায় পাঠানো হয়েছে।`
+      : `দলিল রেজিস্ট্রেশনের ওটিপি '${recipientEmail}' ঠিকানায় পাঠানো হয়েছে। ইনবক্স চেক করুন।`;
+
+    return res.status(200).json({
+      success: true,
+      message: responseMessage,
+      recipient_email: recipientEmail,
+      recipient_name: recipientName,
+      simulated: emailResult.simulated || false
+    });
+  } catch (err) {
+    console.error('Send deed registration OTP error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'দলিল রেজিস্ট্রেশনের ওটিপি পাঠাতে সমস্যা হয়েছে।',
       error: err.message
     });
   }

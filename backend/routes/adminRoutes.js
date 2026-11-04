@@ -6,6 +6,9 @@ const LegalStatus = require('../models/LegalStatus');
 const LandAssignRequest = require('../models/LandAssignRequest');
 const { verifyToken, requireRole } = require('../middleware/auth');
 
+const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
 // Protect all admin routes for Super Admin
 router.use(verifyToken, requireRole('Super Admin'));
 
@@ -237,11 +240,38 @@ router.get('/legal-statuses', async (req, res) => {
 });
 
 // POST /api/admin/legal-statuses
+// Standard Case Identification Parameters: Mouza + Dag Number + Khatian Number
 router.post('/legal-statuses', async (req, res) => {
   try {
-    const { dag_no, mouza, jl_no, is_khas, khas_reason, has_court_case, case_details, stay_order } = req.body;
-    let record = await LegalStatus.findOne({ dag_no, mouza });
+    const { dag_no, mouza, khatian_no, jl_no, is_khas, khas_reason, has_court_case, case_details, stay_order } = req.body;
+
+    const cleanDag = (dag_no || '').toString().trim();
+    const cleanMouza = (mouza || '').toString().trim();
+    const cleanKhatian = (khatian_no || '').toString().trim();
+
+    if (!cleanDag || !cleanMouza || !cleanKhatian) {
+      return res.status(400).json({
+        success: false,
+        message: 'জমির ওপর মামলা বা আইনি নোটিশ যুক্ত করার জন্য মৌজা, দাগ নম্বর এবং খতিয়ান নম্বর — ৩টি ফিল্ডই আবশ্যক।'
+      });
+    }
+
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+    const engKhatian = toEnglishDigits(cleanKhatian);
+    const bngKhatian = toBengaliDigits(cleanKhatian);
+
+    // Case identification parameter: Mouza + Dag + Khatian
+    let record = await LegalStatus.findOne({
+      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $and: [
+        { $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }] },
+        { $or: [{ khatian_no: cleanKhatian }, { khatian_no: engKhatian }, { khatian_no: bngKhatian }] }
+      ]
+    });
+
     if (record) {
+      record.khatian_no = cleanKhatian;
       record.is_khas = is_khas;
       record.khas_reason = khas_reason;
       record.has_court_case = has_court_case;
@@ -250,8 +280,9 @@ router.post('/legal-statuses', async (req, res) => {
       await record.save();
     } else {
       record = new LegalStatus({
-        dag_no,
-        mouza,
+        dag_no: cleanDag,
+        mouza: cleanMouza,
+        khatian_no: cleanKhatian,
         jl_no: jl_no || '54',
         is_khas,
         khas_reason,
@@ -261,7 +292,11 @@ router.post('/legal-statuses', async (req, res) => {
       });
       await record.save();
     }
-    return res.status(200).json({ success: true, message: 'আইনি স্ট্যাটাস সংরক্ষণ হয়েছে!', data: record });
+    return res.status(200).json({
+      success: true,
+      message: `✅ আইনি স্ট্যাটাস সফলভাবে সংরক্ষিত হয়েছে (মৌজা: ${cleanMouza}, দাগ: ${cleanDag}, খতিয়ান: ${cleanKhatian})!`,
+      data: record
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'আইনি স্ট্যাটাস সংরক্ষণ ব্যর্থ হয়েছে।' });
   }

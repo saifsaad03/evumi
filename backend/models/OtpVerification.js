@@ -15,7 +15,7 @@ const OtpVerificationSchema = new mongoose.Schema({
   },
   purpose: {
     type: String,
-    enum: ['ACCOUNT_REGISTRATION', 'LAND_ASSIGNMENT'],
+    enum: ['ACCOUNT_REGISTRATION', 'LAND_ASSIGNMENT', 'DEED_REGISTRATION'],
     required: true
   },
   metadata: {
