@@ -93,49 +93,66 @@ router.put('/profile', verifyToken, async (req, res) => {
 });
 
 // GET /api/user/assigned-lands
-// Returns all lands assigned to the user that are approved by AC Land
+// Returns only the lands assigned to and owned by this specific citizen
 router.get('/assigned-lands', verifyToken, async (req, res) => {
   try {
-    const rawNid = req.user.nid || '';
+    const rawNid = (req.user?.nid || '').toString().trim();
+    if (!rawNid) {
+      return res.status(200).json({
+        success: true,
+        data: {
+          active_lands: [],
+          sold_lands: [],
+          approved_assignments: [],
+          pending_assignments: []
+        }
+      });
+    }
+
     const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
     const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
 
-    const nidQuery = {
-      $or: [
-        { owner_nid: rawNid }, { owner_nid: engNid }, { owner_nid: bngNid },
-        { 'co_owners.nid': rawNid }, { 'co_owners.nid': engNid }, { 'co_owners.nid': bngNid },
-        { 'buyers.nid': rawNid }, { 'buyers.nid': engNid }, { 'buyers.nid': bngNid }
-      ]
-    };
-    const userNidQuery = { $or: [{ user_nid: rawNid }, { user_nid: engNid }, { user_nid: bngNid }] };
+    const nidConditions = [
+      { owner_nid: rawNid },
+      { owner_nid: engNid },
+      { owner_nid: bngNid },
+      { 'co_owners.nid': rawNid },
+      { 'co_owners.nid': engNid },
+      { 'co_owners.nid': bngNid },
+      { 'buyers.nid': rawNid },
+      { 'buyers.nid': engNid },
+      { 'buyers.nid': bngNid }
+    ];
 
-    // 1. Find all active land records currently owned by this citizen (including deceased-locked lands so they remain visible as locked)
+    const userNidConditions = [
+      { user_nid: rawNid },
+      { user_nid: engNid },
+      { user_nid: bngNid }
+    ];
+
+    // 1. Strictly find ONLY land records owned by THIS citizen (Active or Deceased_Locked)
     const activeLands = await LandRecord.find({
-      ...nidQuery,
-      $or: [
-        { status: 'Active' },
-        { status: 'Deceased_Locked' },
-        { is_deceased_locked: true, status: { $ne: 'Sold' } }
-      ]
+      $or: nidConditions,
+      status: { $in: ['Active', 'Deceased_Locked'] }
     }).sort({ updatedAt: -1 });
 
-    // 2. Find sold lands history for transparency
+    // 2. Find sold lands history for THIS citizen
     const soldLands = await LandRecord.find({
-      ...nidQuery,
+      $or: nidConditions,
       status: 'Sold'
     }).sort({ updatedAt: -1 });
 
-    // 3. Find approved assignment history
+    // 3. Find approved assignment history for THIS citizen
     const approvedAssignments = await LandAssignRequest.find({
-      ...userNidQuery,
+      $or: userNidConditions,
       status: 'Approved'
     }).sort({ updatedAt: -1 });
 
-    // 4. Find pending assignment requests for citizen awareness
+    // 4. Find pending assignment requests for THIS citizen
     const pendingAssignments = await LandAssignRequest.find({
-      ...userNidQuery,
+      $or: userNidConditions,
       status: 'Pending_AC_Land_Review'
     }).sort({ createdAt: -1 });
 
