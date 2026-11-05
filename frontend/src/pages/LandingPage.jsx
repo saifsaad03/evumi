@@ -406,7 +406,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           ROLES SECTION — PURE LIGHT GOVERNMENT PORTAL
       ══════════════════════════════════════════ */}
-      <section style={{ padding: '80px 20px', background: '#f8fafc' }}>
+      <section id="roles" style={{ padding: '80px 20px', background: '#f8fafc' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
 
           {/* Section Header */}
@@ -538,7 +538,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           WORKFLOW PIPELINE — LIGHT THEMED WITH WATERMARK
       ══════════════════════════════════════════ */}
-      <section className="bd-pattern-bg" style={{
+      <section id="workflow" className="bd-pattern-bg" style={{
         padding: '80px 20px',
         background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)',
         borderTop: '1px solid #e2e8f0',
@@ -627,7 +627,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           ORBIT INFOGRAPHIC — e-BHUMI ECOSYSTEM
       ══════════════════════════════════════════ */}
-      <section style={{
+      <section id="features" style={{
         padding: '80px 20px',
         background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 50%, #f8fafc 100%)',
         borderTop: '1px solid #e2e8f0',
@@ -712,7 +712,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           FEATURES GRID — CLEAN LIGHT CARDS
       ══════════════════════════════════════════ */}
-      <section style={{ padding: '80px 20px', background: '#f8fafc' }}>
+      <section id="security" style={{ padding: '80px 20px', background: '#f8fafc' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
 
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
@@ -799,7 +799,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           CALL TO ACTION (CTA) — LIGHT PRESTIGE BANNER
       ══════════════════════════════════════════ */}
-      <section style={{
+      <section id="helpline" style={{
         padding: '80px 20px',
         background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #fef3c7 100%)',
         borderTop: '1px solid #bbf7d0',
@@ -861,7 +861,7 @@ export default function LandingPage() {
       {/* ══════════════════════════════════════════
           GUIDELINE VIDEO TUTORIAL SECTION
       ══════════════════════════════════════════ */}
-      <section style={{
+      <section id="guide" style={{
         background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
         borderTop: '1px solid #e2e8f0',
         padding: '72px 20px',

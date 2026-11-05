@@ -1,7 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Search, Home, LogIn, LogOut, UserPlus, LayoutDashboard, Menu, X, ShieldCheck, MapPin, FileText } from 'lucide-react';
+import {
+  Search,
+  Home,
+  LogIn,
+  LogOut,
+  UserPlus,
+  LayoutDashboard,
+  Menu,
+  X,
+  ShieldCheck,
+  MapPin,
+  FileText,
+  PhoneCall,
+  Layers,
+  ChevronRight,
+  Sparkles,
+  Award
+} from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -10,14 +27,82 @@ export default function Navbar() {
   if (location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin')) {
     return null;
   }
+
   const navigate = useNavigate();
   const { user, logout, getDashboardRoute } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Right-to-Left IN and Left-to-Right OUT Off-Canvas Sidebar State
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const openSidebar = () => {
+    setSidebarVisible(true);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setSidebarOpen(true);
+      });
+    });
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+    setTimeout(() => {
+      setSidebarVisible(false);
+    }, 320);
+  };
+
+  // Close on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && sidebarOpen) {
+        closeSidebar();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [sidebarOpen]);
+
+  // Lock body scroll when sidebar drawer is open
+  useEffect(() => {
+    if (sidebarVisible) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [sidebarVisible]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
-    setMobileMenuOpen(false);
+    closeSidebar();
+  };
+
+  const handleNavigate = (path) => {
+    closeSidebar();
+    navigate(path);
+  };
+
+  const handleSectionScroll = (sectionId) => {
+    closeSidebar();
+    if (location.pathname === '/') {
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 330);
+    } else {
+      navigate('/#' + sectionId);
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 450);
+    }
   };
 
   const getRoleBadge = (role) => {
@@ -55,19 +140,20 @@ export default function Navbar() {
         alignItems: 'center',
         justifyContent: 'space-between',
         height: '62px',
+        boxSizing: 'border-box'
       }}>
         {/* Logo with Bangladesh Land Seal */}
         <NavLink 
           to="/" 
-          onClick={() => setMobileMenuOpen(false)}
+          onClick={closeSidebar}
           style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}
         >
           <img 
             src="/images/logo.png" 
             alt="e-ভূমি লোগো" 
             style={{
-              width: '44px',
-              height: '44px',
+              width: '42px',
+              height: '42px',
               objectFit: 'contain',
               flexShrink: 0
             }}
@@ -127,14 +213,14 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Auth Section & Mobile Toggle */}
+        {/* Auth Section & Right-to-Left Sliding Sidebar Trigger */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {/* Dashboard Link */}
               <NavLink
                 to={getDashboardRoute(user.role)}
-                onClick={() => setMobileMenuOpen(false)}
+                onClick={closeSidebar}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -182,7 +268,7 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {/* Logout Button */}
+              {/* Quick Logout Button */}
               <button
                 onClick={handleLogout}
                 title="লগআউট করুন"
@@ -223,7 +309,7 @@ export default function Navbar() {
                   whiteSpace: 'nowrap',
                 }}
               >
-                <LogIn size={14} /> লগইন
+                <LogIn size={14} /> <span>লগইন</span>
               </NavLink>
 
               <NavLink
@@ -250,124 +336,491 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* Mobile Menu Hamburger Button */}
+          {/* ── Right-Side Sidebar Toggle Button (Opens off-canvas drawer from right to left) ── */}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="মোবাইল মেনু"
+            onClick={openSidebar}
+            title="সাইডবার মেনু ও সেকশন তালিকা খুলুন"
+            aria-label="সাইডবার মেনু"
             style={{
-              display: 'none',
-              background: '#f1f5f9',
-              border: '1px solid #cbd5e1',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 12px',
               borderRadius: '8px',
-              padding: '7px',
+              background: '#f8fafc',
+              border: '1.5px solid #cbd5e1',
+              color: '#0f172a',
               cursor: 'pointer',
-              color: '#0f172a'
+              fontSize: '12.5px',
+              fontWeight: '700',
+              transition: 'all 0.18s ease',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
             }}
-            className="show-on-mobile-flex"
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#94a3b8'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
           >
-            {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+            <Menu size={17} color="#047857" />
+            <span style={{ fontSize: '13px' }}>মেনু</span>
           </button>
         </div>
       </div>
 
-      {/* Mobile Dropdown Menu */}
-      {mobileMenuOpen && (
+      {/* ══════════════════════════════════════════════════════════════════
+          OFF-CANVAS RIGHT SIDEBAR
+          Animation:
+          • Opening: Right-to-Left IN (translateX(100%) -> translateX(0))
+          • Closing: Left-to-Right OUT (translateX(0) -> translateX(100%))
+          ══════════════════════════════════════════════════════════════════ */}
+      {sidebarVisible && (
         <div style={{
-          background: '#ffffff',
-          borderTop: '1px solid #e2e8f0',
-          padding: '16px 20px',
-          boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+          position: 'fixed',
+          inset: 0,
+          zIndex: 99999,
           display: 'flex',
-          flexDirection: 'column',
-          gap: '10px'
+          justifyContent: 'flex-end',
+          pointerEvents: sidebarOpen ? 'auto' : 'none'
         }}>
-          <NavLink
-            to="/"
-            onClick={() => setMobileMenuOpen(false)}
+          {/* Backdrop (Dark blur overlay) */}
+          <div
+            onClick={closeSidebar}
             style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.55)',
+              backdropFilter: 'blur(4px)',
+              opacity: sidebarOpen ? 1 : 0,
+              transition: 'opacity 0.3s ease',
+              cursor: 'pointer'
+            }}
+          />
+
+          {/* Sliding Sidebar Panel */}
+          <div style={{
+            position: 'relative',
+            width: '100%',
+            maxWidth: '380px',
+            height: '100%',
+            background: '#ffffff',
+            boxShadow: '-8px 0 32px rgba(15, 23, 42, 0.18)',
+            display: 'flex',
+            flexDirection: 'column',
+            transform: sidebarOpen ? 'translateX(0)' : 'translateX(100%)',
+            transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
+            zIndex: 100000,
+            overflow: 'hidden',
+            boxSizing: 'border-box'
+          }}>
+            {/* Header: Logo, Title & Close Button */}
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1.5px solid #e2e8f0',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: '#0f172a',
-              fontWeight: '600',
-              background: location.pathname === '/' ? '#f0fdf4' : 'transparent',
-              border: location.pathname === '/' ? '1px solid #bbf7d0' : 'none'
-            }}
-          >
-            <Home size={16} color="#047857" /> <span>হোম পেজ</span>
-          </NavLink>
+              justifyContent: 'space-between',
+              background: '#f8fafc',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <img 
+                  src="/images/logo.png" 
+                  alt="e-ভূমি লোগো" 
+                  style={{ width: '36px', height: '36px', objectFit: 'contain' }} 
+                />
+                <div>
+                  <div style={{ fontSize: '16px', fontWeight: '900', color: '#065f46', lineHeight: 1.1 }}>
+                    e-ভূমি বাংলাদেশ
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600' }}>
+                    সাইডবার মেনু ও সেকশন তালিকা
+                  </div>
+                </div>
+              </div>
 
-          <NavLink
-            to="/verify"
-            onClick={() => setMobileMenuOpen(false)}
-            style={{
+              {/* Close Button (X) */}
+              <button
+                onClick={closeSidebar}
+                title="মেনু বন্ধ করুন (Close)"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  border: '1.5px solid #cbd5e1',
+                  background: '#ffffff',
+                  color: '#475569',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#fee2e2'; e.currentTarget.style.color = '#dc2626'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#475569'; }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Content Body */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '16px 18px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '10px 12px',
-              borderRadius: '8px',
-              textDecoration: 'none',
-              color: '#0f172a',
-              fontWeight: '600',
-              background: location.pathname === '/verify' ? '#f0fdf4' : 'transparent',
-              border: location.pathname === '/verify' ? '1px solid #bbf7d0' : 'none'
-            }}
-          >
-            <Search size={16} color="#047857" /> <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
-          </NavLink>
+              flexDirection: 'column',
+              gap: '18px'
+            }}>
+              {/* Profile Card if Logged In */}
+              {user && (
+                <div style={{
+                  background: 'linear-gradient(135deg, #f0fdf4 0%, #ede9fe 100%)',
+                  border: '1.5px solid #bbf7d0',
+                  borderRadius: '12px',
+                  padding: '12px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #059669, #047857)',
+                      color: '#ffffff',
+                      fontWeight: '900',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '16px',
+                      flexShrink: 0
+                    }}>
+                      {user.name ? user.name.charAt(0) : 'ম'}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {user.name}
+                      </div>
+                      <div style={{ fontSize: '10.5px', color: '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {user.email}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: '800',
+                    color: roleBadge.color,
+                    background: roleBadge.bg,
+                    border: `1px solid ${roleBadge.border}`,
+                    padding: '2px 8px',
+                    borderRadius: '999px',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {roleBadge.label}
+                  </span>
+                </div>
+              )}
 
-          {!user && (
-            <NavLink
-              to="/register"
-              onClick={() => setMobileMenuOpen(false)}
-              style={{
+              {/* ── Category 1: Main Page Navigation ── */}
+              <div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px',
+                  paddingLeft: '4px'
+                }}>
+                  প্রধান পেজসমূহ (Pages)
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {/* Home */}
+                  <button
+                    onClick={() => handleNavigate('/')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      background: location.pathname === '/' ? '#f0fdf4' : '#f8fafc',
+                      border: location.pathname === '/' ? '1.5px solid #86efac' : '1px solid #e2e8f0',
+                      color: location.pathname === '/' ? '#065f46' : '#0f172a',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Home size={16} color={location.pathname === '/' ? '#047857' : '#64748b'} />
+                      <span>হোম ও ল্যান্ডিং পেজ</span>
+                    </div>
+                    <ChevronRight size={15} color="#94a3b8" />
+                  </button>
+
+                  {/* Verify Land */}
+                  <button
+                    onClick={() => handleNavigate('/verify')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      background: location.pathname === '/verify' ? '#f0fdf4' : '#f8fafc',
+                      border: location.pathname === '/verify' ? '1.5px solid #86efac' : '1px solid #e2e8f0',
+                      color: location.pathname === '/verify' ? '#065f46' : '#0f172a',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Search size={16} color={location.pathname === '/verify' ? '#047857' : '#64748b'} />
+                      <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
+                    </div>
+                    <ChevronRight size={15} color="#94a3b8" />
+                  </button>
+
+                  {/* Dashboard (if user logged in) */}
+                  {user ? (
+                    <button
+                      onClick={() => handleNavigate(getDashboardRoute(user.role))}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        background: '#f5f3ff',
+                        border: '1.5px solid #ddd6fe',
+                        color: '#6d28d9',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        textAlign: 'left'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <LayoutDashboard size={16} color="#7c3aed" />
+                        <span>আমার ড্যাশবোর্ড প্যানেল</span>
+                      </div>
+                      <ChevronRight size={15} color="#a78bfa" />
+                    </button>
+                  ) : (
+                    <>
+                      {/* Login Page */}
+                      <button
+                        onClick={() => handleNavigate('/login')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          background: location.pathname === '/login' ? '#eff6ff' : '#f8fafc',
+                          border: location.pathname === '/login' ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
+                          color: location.pathname === '/login' ? '#1d4ed8' : '#0f172a',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <LogIn size={16} color={location.pathname === '/login' ? '#1d4ed8' : '#64748b'} />
+                          <span>নাগরিক / কর্মকর্তা লগইন</span>
+                        </div>
+                        <ChevronRight size={15} color="#94a3b8" />
+                      </button>
+
+                      {/* Register Page */}
+                      <button
+                        onClick={() => handleNavigate('/register')}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          background: location.pathname === '/register' ? '#eff6ff' : '#f8fafc',
+                          border: location.pathname === '/register' ? '1.5px solid #93c5fd' : '1px solid #e2e8f0',
+                          color: location.pathname === '/register' ? '#0369a1' : '#0f172a',
+                          fontSize: '13px',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          textAlign: 'left'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <UserPlus size={16} color={location.pathname === '/register' ? '#0284c7' : '#64748b'} />
+                          <span>নতুন নাগরিক অ্যাকাউন্ট নিবন্ধন</span>
+                        </div>
+                        <ChevronRight size={15} color="#94a3b8" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* ── Category 2: Landing Page Sections ── */}
+              <div>
+                <div style={{
+                  fontSize: '11px',
+                  fontWeight: '800',
+                  color: '#64748b',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginBottom: '8px',
+                  paddingLeft: '4px'
+                }}>
+                  ল্যান্ডিং পেজ সেকশনসমূহ (Sections)
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {[
+                    { id: 'features', label: 'সমন্বিত ৬টি ডিজিটাল ভূমি সেবা', icon: Sparkles, color: '#047857' },
+                    { id: 'workflow', label: '৬-ধাপের স্বয়ংক্রিয় সেবা পাইপলাইন', icon: Layers, color: '#0284c7' },
+                    { id: 'roles', label: '৪টি স্বতন্ত্র প্রশাসনিক ড্যাশবোর্ড', icon: ShieldCheck, color: '#7c3aed' },
+                    { id: 'security', label: 'কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত', icon: Award, color: '#b45309' },
+                    { id: 'guide', label: 'প্ল্যাটফর্ম ব্যবহারের ভিডিও নির্দেশিকা', icon: FileText, color: '#475569' },
+                    { id: 'helpline', label: 'স্মার্ট ভূমি সেবা হেল্পলাইন (১৬১২২)', icon: PhoneCall, color: '#dc2626' }
+                  ].map((sec) => {
+                    const SecIcon = sec.icon;
+                    return (
+                      <button
+                        key={sec.id}
+                        onClick={() => handleSectionScroll(sec.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '9px 12px',
+                          borderRadius: '8px',
+                          background: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          color: '#1e293b',
+                          fontSize: '12.5px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                          transition: 'all 0.15s ease'
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                          <SecIcon size={15} color={sec.color} />
+                          <span>{sec.label}</span>
+                        </div>
+                        <ChevronRight size={14} color="#94a3b8" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Bottom Actions: Login/Logout & Hotline */}
+            <div style={{
+              padding: '14px 18px',
+              borderTop: '1.5px solid #e2e8f0',
+              background: '#f8fafc',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              flexShrink: 0
+            }}>
+              {user ? (
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '9px 16px',
+                    borderRadius: '8px',
+                    background: '#fef2f2',
+                    border: '1.5px solid #fecaca',
+                    color: '#dc2626',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  <LogOut size={15} /> <span>লগআউট করুন</span>
+                </button>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <button
+                    onClick={() => handleNavigate('/login')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '9px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #065f46, #047857)',
+                      color: '#ffffff',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(6,95,70,0.2)'
+                    }}
+                  >
+                    <LogIn size={14} /> <span>লগইন</span>
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('/register')}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      padding: '9px',
+                      borderRadius: '8px',
+                      background: '#ffffff',
+                      border: '1.5px solid #cbd5e1',
+                      color: '#0f172a',
+                      fontSize: '13px',
+                      fontWeight: '700',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <UserPlus size={14} /> <span>নিবন্ধন</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Official Hotline Strip */}
+              <div style={{
+                background: '#ecfdf5',
+                border: '1px solid #a7f3d0',
+                borderRadius: '8px',
+                padding: '8px 12px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                textDecoration: 'none',
-                color: '#0f172a',
-                fontWeight: '600',
-                background: '#f8fafc',
-                border: '1px solid #e2e8f0'
-              }}
-            >
-              <UserPlus size={16} color="#0284c7" /> <span>নতুন নাগরিক অ্যাকাউন্ট তৈরি</span>
-            </NavLink>
-          )}
-
-          {user && (
-            <div style={{
-              marginTop: '4px',
-              padding: '10px',
-              borderRadius: '8px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
-              <div>
-                <div style={{ fontSize: '13px', fontWeight: '700', color: '#0f172a' }}>{user.name}</div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>{user.email}</div>
-              </div>
-              <span style={{
-                fontSize: '11px',
-                fontWeight: '800',
-                color: roleBadge.color,
-                background: roleBadge.bg,
-                border: `1px solid ${roleBadge.border}`,
-                padding: '2px 8px',
-                borderRadius: '4px'
+                justifyContent: 'space-between',
+                fontSize: '11.5px'
               }}>
-                {roleBadge.label}
-              </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#065f46', fontWeight: '700' }}>
+                  <PhoneCall size={14} color="#059669" />
+                  <span>ভূমি সেবা হটলাইন</span>
+                </div>
+                <span style={{ fontWeight: '900', color: '#047857', fontSize: '13px' }}>১৬১২২ (টোল ফ্রি)</span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </nav>
