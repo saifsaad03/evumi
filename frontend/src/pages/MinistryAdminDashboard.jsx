@@ -8,7 +8,7 @@ import DynamicLocationManager from '../components/DynamicLocationManager';
 
 export default function MinistryAdminDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'lands' | 'controls'
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'users' | 'lands' | 'logs' | 'locations'
 
   // Stats
   const [stats, setStats] = useState(null);
@@ -158,9 +158,6 @@ export default function MinistryAdminDashboard() {
     case_details: '',
     stay_order: false
   });
-
-  // Seed status
-  const [seeding, setSeeding] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
 
   useEffect(() => {
@@ -365,26 +362,6 @@ export default function MinistryAdminDashboard() {
     }
   };
 
-  // Seed demo data
-  const handleSeedDatabase = async () => {
-    if (!window.confirm('এটি সমস্ত ডেটা রিসেট করে ৪টি রোলের ডেমো ডেটা ও জমি পুনর্নির্মাণ করবে। চালিয়ে যাবেন?')) return;
-    setSeeding(true);
-    try {
-      const res = await axios.post('/api/seed');
-      if (res.data.success) {
-        showFeedback(res.data.message);
-        fetchStats();
-        fetchUsers();
-        fetchLands();
-        fetchLegalStatuses();
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || 'সিড ব্যর্থ হয়েছে');
-    } finally {
-      setSeeding(false);
-    }
-  };
-
   const showFeedback = (msg) => {
     setActionMessage(msg);
     setTimeout(() => setActionMessage(null), 3000);
@@ -415,11 +392,6 @@ export default function MinistryAdminDashboard() {
       badge: lands.length,
       badgeColor: '#047857',
       badgeBg: '#ecfdf5'
-    },
-    {
-      id: 'controls',
-      label: 'সিস্টেম কন্ট্রোল ও ডেটাবেস রিসেট',
-      icon: Database,
     },
     {
       id: 'logs',
@@ -1163,57 +1135,6 @@ export default function MinistryAdminDashboard() {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* TAB 4: System Control & Seed */}
-      {activeTab === 'controls' && (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div className="glass-card" style={{ padding: '32px', marginBottom: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Database size={20} color="#7c3aed" /> ডেমো ডেটাবেজ রিসেট ও পুনর্নির্মাণ
-            </h3>
-            <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.6, marginBottom: '20px' }}>
-              হ্যাকার্থন বা মূল্যায়নের জন্য যেকোনো সময় ডেটাবেজকে মূল অবস্থায় ফিরিয়ে নিন। এটি ৪টি প্রাথমিক ভূমিকা ইউজার (Admin, Register Office, AC Land, Citizen) এবং সকল ডেমো জমি ও আইনি নোটিশ নতুন করে তৈরি করবে।
-            </p>
-
-            <button
-              onClick={handleSeedDatabase}
-              disabled={seeding}
-              className="btn-primary"
-              style={{
-                padding: '12px 24px',
-                fontSize: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'linear-gradient(135deg, #be185d, #ec4899)'
-              }}
-            >
-              <RefreshCw size={16} className={seeding ? 'animate-spin' : ''} />
-              {seeding ? 'রিসেট হচ্ছে...' : 'সব ডেটা রিসেট ও ৪টি রোলের ডেমো তৈরি করুন'}
-            </button>
-          </div>
-
-          <div className="glass-card" style={{ padding: '28px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '14px' }}>
-              🔑 ৪টি রোলের স্থায়ী ক্রেডেনশিয়াল রেফারেন্স
-            </h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px', fontSize: '13px' }}>
-              <div style={{ background: '#fdf2f8', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #fbcfe8', color: '#9d174d', fontWeight: '600' }}>
-                👑 <strong>Super Admin:</strong> admin@gmail.com | পাসওয়ার্ড: 123456
-              </div>
-              <div style={{ background: '#eff6ff', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #bfdbfe', color: '#1e40af', fontWeight: '600' }}>
-                🏛️ <strong>Register Office:</strong> registry@evhumi.gov.bd | পাসওয়ার্ড: 123456
-              </div>
-              <div style={{ background: '#ecfdf5', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #a7f3d0', color: '#065f46', fontWeight: '600' }}>
-                ⚖️ <strong>AC Land Office:</strong> acland@evhumi.gov.bd | পাসওয়ার্ড: 123456
-              </div>
-              <div style={{ background: '#fffbeb', padding: '12px 16px', borderRadius: '8px', border: '1.5px solid #fde68a', color: '#92400e', fontWeight: '600' }}>
-                👤 <strong>Citizen User:</strong> citizen@example.com | পাসওয়ার্ড: 123456 (NID: 1998567890123)
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
