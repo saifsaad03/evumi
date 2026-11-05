@@ -678,31 +678,7 @@ export default function DashboardLayout({
                 </div>
               </div>
 
-              {/* Logout Button */}
-              <button
-                onClick={handleLogout}
-                title="লগআউট করুন"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '8px 14px',
-                  borderRadius: '8px',
-                  background: '#fee2e2',
-                  border: '1.5px solid #fecaca',
-                  color: '#b91c1c',
-                  fontWeight: '700',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease'
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
-              >
-                <LogOut size={14} />
-                <span className="hide-on-mobile">লগআউট</span>
-              </button>
-            </div>
+              </div>
           </header>
 
           {/* ── Body: Sticky Left-Flush Sidebar + Content ── */}
