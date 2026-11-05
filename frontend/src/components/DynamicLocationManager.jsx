@@ -52,7 +52,6 @@ export default function DynamicLocationManager() {
   const [loading, setLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const [migrating, setMigrating] = useState(false);
 
   // Edit modal state
   const [editingItem, setEditingItem] = useState(null); // { type, data }
@@ -375,24 +374,6 @@ export default function DynamicLocationManager() {
     }
   };
 
-  // One-click migrate from existing land records
-  const handleMigrateFromExistingLands = async () => {
-    if (!window.confirm('বিদ্যমান সকল জমির ডাটাবেজ থেকে অটো-মাইগ্রেশন করে ডায়নামিক লোকেশন কাঠামো তৈরি করতে চান?')) return;
-    setMigrating(true);
-    try {
-      const res = await axios.post('/api/locations/migrate-existing');
-      if (res.data.success) {
-        showFeedback(res.data.message);
-        fetchSummary();
-        fetchDivisions();
-      }
-    } catch (err) {
-      showFeedback(err.response?.data?.message || 'মাইগ্রেশন ব্যর্থ হয়েছে।', true);
-    } finally {
-      setMigrating(false);
-    }
-  };
-
   const stepsList = [
     { id: 'step1', title: 'Step 1: Division', label: '১. বিভাগ তৈরি', count: summary.divisions, color: '#2563eb' },
     { id: 'step2', title: 'Step 2: District', label: '২. জেলা তৈরি', count: summary.districts, color: '#059669' },
@@ -433,28 +414,6 @@ export default function DynamicLocationManager() {
           </div>
 
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-            <button
-              onClick={handleMigrateFromExistingLands}
-              disabled={migrating}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                background: 'linear-gradient(135deg, #059669, #10b981)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: '800',
-                cursor: migrating ? 'not-allowed' : 'pointer',
-                boxShadow: '0 4px 12px rgba(5, 150, 105, 0.35)'
-              }}
-            >
-              <Database size={15} />
-              {migrating ? 'মাইগ্রেশন হচ্ছে...' : 'বিদ্যমান জমি থেকে অটো-মাইগ্রেশন'}
-            </button>
-
             <button
               onClick={() => { fetchSummary(); fetchDivisions(); }}
               style={{
