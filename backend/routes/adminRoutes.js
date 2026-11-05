@@ -83,6 +83,15 @@ router.post('/users', async (req, res) => {
       upazila, phone, email, password, role, office_details
     } = req.body;
 
+    const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+    const cleanNid = toEnglishDigits((nid || '').toString().trim());
+    if (![10, 13, 17].includes(cleanNid.length) || !/^\d+$/.test(cleanNid)) {
+      return res.status(400).json({
+        success: false,
+        message: 'জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+      });
+    }
+
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ success: false, message: 'এই ইমেইল ইতিমধ্যে ব্যবহৃত হচ্ছে।' });

@@ -52,8 +52,16 @@ router.post('/send-registration-otp', async (req, res) => {
       });
     }
 
+    const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
     const cleanEmail = email.trim().toLowerCase();
-    const cleanNid = nid.trim();
+    const cleanNid = toEnglishDigits(nid.trim());
+
+    if (![10, 13, 17].includes(cleanNid.length) || !/^\d+$/.test(cleanNid)) {
+      return res.status(400).json({
+        success: false,
+        message: 'জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+      });
+    }
 
     // Check if email or NID already exists (resilient db call)
     const existingEmail = await findUserByEmail(cleanEmail);
@@ -147,8 +155,15 @@ router.post('/verify-and-register', async (req, res) => {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanNid = nid.trim();
+    const cleanNid = toEnglishDigits(nid.trim());
     const cleanOtp = otp.toString().trim();
+
+    if (![10, 13, 17].includes(cleanNid.length) || !/^\d+$/.test(cleanNid)) {
+      return res.status(400).json({
+        success: false,
+        message: 'জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+      });
+    }
 
     console.log(`🔍 [OTP VERIFY] email=${cleanEmail}, otp=${cleanOtp}, hasToken=${!!otpToken}`);
 

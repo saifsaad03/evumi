@@ -258,6 +258,11 @@ export default function MinistryAdminDashboard() {
       alert('অনুগ্রহ করে বিভাগ, জেলা এবং উপজেলা নির্বাচন করুন।');
       return;
     }
+    const cleanNid = (newUser.nid || '').toString().trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    if (![10, 13, 17].includes(cleanNid.length) || !/^\d+$/.test(cleanNid)) {
+      alert('জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
+      return;
+    }
     try {
       const res = await axios.post('/api/admin/users', newUser);
       if (res.data.success) {

@@ -242,8 +242,9 @@ export default function RegisterPage() {
       setError('অনুগ্রহ করে স্থায়ী এলাকার বিভাগ, জেলা, উপজেলা এবং মৌজা নির্বাচন করুন।');
       return;
     }
-    if (formData.nid.trim().length < 10) {
-      setError('জাতীয় পরিচয়পত্র (NID) নম্বর ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে।');
+    const cleanNid = formData.nid.trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    if (![10, 13, 17].includes(cleanNid.length) || !/^\d+$/.test(cleanNid)) {
+      setError('জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
       return;
     }
     if (formData.phone.trim().length < 11) {
@@ -443,7 +444,8 @@ export default function RegisterPage() {
                   type="text"
                   name="nid"
                   required
-                  placeholder="১০ বা ১৭ ডিজিটের এনআইডি"
+                  placeholder="১০, ১৩ অথবা ১৭ ডিজিটের এনআইডি"
+                  maxLength={17}
                   value={formData.nid}
                   onChange={handleChange}
                   className="register-input"
