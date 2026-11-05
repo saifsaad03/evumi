@@ -105,7 +105,11 @@ router.post('/users', async (req, res) => {
       email,
       password: password || '123456',
       role: role || 'User',
-      office_details
+      office_details: office_details || (role === 'Register Office' || role === 'AC Land Office' ? {
+        office_name: `${upazila || district} ${role === 'Register Office' ? 'সাব-রেজিস্ট্রি অফিস' : 'সহকারী কমিশনার (ভূমি) অফিস'}`,
+        designation: role === 'Register Office' ? 'সাব-রেজিস্ট্রার' : 'সহকারী কমিশনার (ভূমি)',
+        circle: upazila || district
+      } : undefined)
     });
 
     await newUser.save();

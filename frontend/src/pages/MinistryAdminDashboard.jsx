@@ -5,11 +5,6 @@ import { Shield, Users, Layers, AlertTriangle, Activity, Plus, Edit, Trash2, Che
 import DashboardLayout from '../components/DashboardLayout';
 import SystemLogsAdminSection from '../components/SystemLogsAdminSection';
 import DynamicLocationManager from '../components/DynamicLocationManager';
-import {
-  BANGLADESH_DIVISIONS,
-  getDistrictsForDivision,
-  getUpazilasForDistrict
-} from '../utils/geoData';
 
 export default function MinistryAdminDashboard() {
   const { user } = useAuth();
@@ -25,38 +20,108 @@ export default function MinistryAdminDashboard() {
   const [editingUser, setEditingUser] = useState(null);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
-  // Admin Add User cascade state
-  const [adminUserDistricts, setAdminUserDistricts] = useState(getDistrictsForDivision('রাজশাহী'));
-  const [adminUserUpazilas, setAdminUserUpazilas] = useState(getUpazilasForDistrict('বগুড়া'));
+  // Admin Add User cascade state (Dynamic Locations from DB)
+  const [adminDivisions, setAdminDivisions] = useState([]);
+  const [adminDistricts, setAdminDistricts] = useState([]);
+  const [adminUpazilas, setAdminUpazilas] = useState([]);
+  const [loadingAdminLocations, setLoadingAdminLocations] = useState(false);
+
   const [newUser, setNewUser] = useState({
     name: '',
     father_name: '',
     mother_name: '',
     nid: '',
-    division: 'রাজশাহী',
-    district: 'বগুড়া',
-    upazila: 'শিবগঞ্জ',
+    division: '',
+    district: '',
+    upazila: '',
     phone: '',
     email: '',
     password: '123456',
     role: 'User'
   });
 
-  const handleAdminUserDivisionChange = (div) => {
-    const districts = getDistrictsForDivision(div);
-    const defDist = districts[0] || '';
-    const upazilas = getUpazilasForDistrict(defDist);
-    const defUpz = upazilas[0] || '';
-    setAdminUserDistricts(districts);
-    setAdminUserUpazilas(upazilas);
-    setNewUser(p => ({ ...p, division: div, district: defDist, upazila: defUpz }));
+  const resetNewUserForm = () => {
+    setNewUser({
+      name: '',
+      father_name: '',
+      mother_name: '',
+      nid: '',
+      division: '',
+      district: '',
+      upazila: '',
+      phone: '',
+      email: '',
+      password: '123456',
+      role: 'User'
+    });
+    setAdminDistricts([]);
+    setAdminUpazilas([]);
   };
 
-  const handleAdminUserDistrictChange = (dist) => {
-    const upazilas = getUpazilasForDistrict(dist);
-    const defUpz = upazilas[0] || '';
-    setAdminUserUpazilas(upazilas);
-    setNewUser(p => ({ ...p, district: dist, upazila: defUpz }));
+  const fetchAdminDivisions = async () => {
+    setLoadingAdminLocations(true);
+    try {
+      const res = await axios.get('/api/locations/divisions');
+      if (res.data && res.data.success && Array.isArray(res.data.data)) {
+        setAdminDivisions(res.data.data);
+      } else {
+        setAdminDivisions([]);
+      }
+    } catch (err) {
+      console.warn('Failed to load dynamic divisions for admin modal:', err);
+      setAdminDivisions([]);
+    } finally {
+      setLoadingAdminLocations(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminDivisions();
+  }, []);
+
+  useEffect(() => {
+    if (showAddUserModal) {
+      fetchAdminDivisions();
+    }
+  }, [showAddUserModal]);
+
+  const handleAdminUserDivisionChange = async (selectedDivName) => {
+    const divObj = adminDivisions.find(d => d.name === selectedDivName);
+    setNewUser(p => ({ ...p, division: selectedDivName, district: '', upazila: '' }));
+    setAdminDistricts([]);
+    setAdminUpazilas([]);
+
+    if (divObj) {
+      try {
+        const res = await axios.get(`/api/locations/districts?division_id=${divObj._id}`);
+        if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          setAdminDistricts(res.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to load dynamic districts for admin modal:', err);
+      }
+    }
+  };
+
+  const handleAdminUserDistrictChange = async (selectedDistName) => {
+    const distObj = adminDistricts.find(d => d.name === selectedDistName);
+    setNewUser(p => ({ ...p, district: selectedDistName, upazila: '' }));
+    setAdminUpazilas([]);
+
+    if (distObj) {
+      try {
+        const res = await axios.get(`/api/locations/upazilas?district_id=${distObj._id}`);
+        if (res.data && res.data.success && Array.isArray(res.data.data)) {
+          setAdminUpazilas(res.data.data);
+        }
+      } catch (err) {
+        console.warn('Failed to load dynamic upazilas for admin modal:', err);
+      }
+    }
+  };
+
+  const handleAdminUserUpazilaChange = (selectedUpzName) => {
+    setNewUser(p => ({ ...p, upazila: selectedUpzName }));
   };
 
   // Land Management
@@ -192,11 +257,16 @@ export default function MinistryAdminDashboard() {
   // Create user
   const handleCreateUser = async (e) => {
     e.preventDefault();
+    if (!newUser.division || !newUser.district || !newUser.upazila) {
+      alert('অনুগ্রহ করে বিভাগ, জেলা এবং উপজেলা নির্বাচন করুন।');
+      return;
+    }
     try {
       const res = await axios.post('/api/admin/users', newUser);
       if (res.data.success) {
         showFeedback('নতুন ব্যবহারকারী তৈরি হয়েছে!');
         setShowAddUserModal(false);
+        resetNewUserForm();
         fetchUsers();
         fetchStats();
       }
@@ -682,27 +752,98 @@ export default function MinistryAdminDashboard() {
                   </div>
 
                   {/* Administrative Address Cascade for Bangladesh */}
+                  {/* Administrative Address Cascade for Bangladesh */}
                   <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1.5px solid #e2e8f0' }}>
-                    <div style={{ fontSize: '12px', color: '#047857', fontWeight: '800', marginBottom: '8px' }}>
-                      📍 ঠিকানা নির্ধারণ (বিভাগ ➔ জেলা ➔ উপজেলা)
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', color: '#047857', fontWeight: '800' }}>
+                        📍 ঠিকানা নির্ধারণ (বিভাগ ➔ জেলা ➔ উপজেলা)
+                      </span>
+                      {loadingAdminLocations && (
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>লোড হচ্ছে...</span>
+                      )}
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
                       <div>
                         <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>বিভাগ *</label>
-                        <select className="input-field" value={newUser.division} onChange={(e) => handleAdminUserDivisionChange(e.target.value)} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
-                          {BANGLADESH_DIVISIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                        <select 
+                          required
+                          className="input-field" 
+                          value={newUser.division} 
+                          onChange={(e) => handleAdminUserDivisionChange(e.target.value)} 
+                          style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}
+                        >
+                          <option value="">-- বিভাগ নির্বাচন করুন --</option>
+                          {adminDivisions.map(d => (
+                            <option key={d._id || d.name} value={d.name}>
+                              {d.name} {d.bn_name && d.bn_name !== d.name ? `(${d.bn_name})` : ''}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
                         <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>জেলা *</label>
-                        <select className="input-field" value={newUser.district} onChange={(e) => handleAdminUserDistrictChange(e.target.value)} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
-                          {adminUserDistricts.map(d => <option key={d} value={d}>{d}</option>)}
+                        <select 
+                          required
+                          className="input-field" 
+                          value={newUser.district} 
+                          onChange={(e) => handleAdminUserDistrictChange(e.target.value)} 
+                          disabled={!newUser.division || adminDistricts.length === 0}
+                          style={{ 
+                            width: '100%', 
+                            fontSize: '12px', 
+                            background: (!newUser.division || adminDistricts.length === 0) ? '#f1f5f9' : '#ffffff', 
+                            color: '#0f172a', 
+                            border: '1.5px solid #cbd5e1', 
+                            padding: '6px', 
+                            borderRadius: '6px',
+                            cursor: (!newUser.division || adminDistricts.length === 0) ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          <option value="">
+                            {!newUser.division 
+                              ? '-- প্রথমে বিভাগ বাছুন --' 
+                              : adminDistricts.length === 0 
+                                ? '-- কোনো জেলা নেই --' 
+                                : '-- জেলা নির্বাচন করুন --'}
+                          </option>
+                          {adminDistricts.map(d => (
+                            <option key={d._id || d.name} value={d.name}>
+                              {d.name} {d.bn_name && d.bn_name !== d.name ? `(${d.bn_name})` : ''}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div>
                         <label style={{ fontSize: '11px', color: '#475569', fontWeight: '700' }}>উপজেলা *</label>
-                        <select className="input-field" value={newUser.upazila} onChange={(e) => setNewUser(p => ({ ...p, upazila: e.target.value }))} style={{ width: '100%', fontSize: '12px', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '6px', borderRadius: '6px' }}>
-                          {adminUserUpazilas.map(u => <option key={u} value={u}>{u}</option>)}
+                        <select 
+                          required
+                          className="input-field" 
+                          value={newUser.upazila} 
+                          onChange={(e) => handleAdminUserUpazilaChange(e.target.value)} 
+                          disabled={!newUser.district || adminUpazilas.length === 0}
+                          style={{ 
+                            width: '100%', 
+                            fontSize: '12px', 
+                            background: (!newUser.district || adminUpazilas.length === 0) ? '#f1f5f9' : '#ffffff', 
+                            color: '#0f172a', 
+                            border: '1.5px solid #cbd5e1', 
+                            padding: '6px', 
+                            borderRadius: '6px',
+                            cursor: (!newUser.district || adminUpazilas.length === 0) ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          <option value="">
+                            {!newUser.district 
+                              ? '-- প্রথমে জেলা বাছুন --' 
+                              : adminUpazilas.length === 0 
+                                ? '-- কোনো উপজেলা নেই --' 
+                                : '-- উপজেলা নির্বাচন করুন --'}
+                          </option>
+                          {adminUpazilas.map(u => (
+                            <option key={u._id || u.name} value={u.name}>
+                              {u.name} {u.bn_name && u.bn_name !== u.name ? `(${u.bn_name})` : ''}
+                            </option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -725,7 +866,7 @@ export default function MinistryAdminDashboard() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '10px' }}>
-                    <button type="button" onClick={() => setShowAddUserModal(false)} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
+                    <button type="button" onClick={() => { setShowAddUserModal(false); resetNewUserForm(); }} className="btn-secondary" style={{ padding: '8px 18px', background: '#ffffff', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', borderRadius: '8px' }}>বাতিল</button>
                     <button type="submit" className="btn-primary" style={{ padding: '8px 20px', borderRadius: '8px' }}>সংরক্ষণ করুন</button>
                   </div>
                 </form>
