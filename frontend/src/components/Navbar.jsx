@@ -708,7 +708,7 @@ export default function Navbar() {
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {[
-                      { id: 'features', label: 'সমন্বিত ৬টি ডিজিটাল ভূমি সেবা', icon: Sparkles, color: '#047857' },
+                      { id: 'features', label: 'ক্রিপ্টোগ্রাফিক ও সিস্টেম আপগ্রেড', icon: Sparkles, color: '#047857' },
                       { id: 'workflow', label: '৬-ধাপের স্বয়ংক্রিয় সেবা পাইপলাইন', icon: Layers, color: '#0284c7' },
                       { id: 'roles', label: '৪টি স্বতন্ত্র প্রশাসনিক ড্যাশবোর্ড', icon: ShieldCheck, color: '#7c3aed' },
                       { id: 'security', label: 'কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত', icon: Award, color: '#b45309' },

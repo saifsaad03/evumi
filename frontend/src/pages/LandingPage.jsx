@@ -5,10 +5,11 @@ import {
   Shield, Search, ArrowRight, CheckCircle, Lock, Zap,
   LogIn, UserPlus, Database, MapPin, FileText, Star,
   ChevronRight, Globe, Award, TrendingUp, Sparkles, Check, PhoneCall,
-  ShieldCheck, ShieldAlert, AlertTriangle, PlayCircle
+  ShieldCheck, ShieldAlert, AlertTriangle, PlayCircle,
+  KeyRound, Link2, Cpu, FileCheck2, Binary, Fingerprint
 } from 'lucide-react';
 
-// ওয়েবসাইট ব্যবহার নির্দেশিকা ভিডিও লিংক (পরবর্তীতে ইউটিউব লিংক পরিবর্তন করতে চাইলে এখানে আপডেট করুন)
+// ওয়েবসাইট ব্যবহার নির্দেশিকা ভিডিও লিংক
 const GUIDELINE_VIDEO_URL = "https://youtu.be/wHDfV-j33jw";
 
 // YouTube URL কে স্বয়ংক্রিয়ভাবে embed URL-এ রূপান্তর করার ফাংশন
@@ -19,14 +20,85 @@ const getYouTubeEmbedUrl = (url) => {
   return match ? `https://www.youtube.com/embed/${match[1]}` : url;
 };
 
-/* ─── Data ─────────────────────────────────────────────── */
+/* ─── Live System Stats ─────────────────────────────────── */
 const STATS = [
-  { val: '৯টি', label: 'সিড মৌজা', sub: 'শিবগঞ্জ উপজেলা পাইলট', icon: '📍', color: '#047857', bg: '#ecfdf5' },
-  { val: '৪টি', label: 'সিস্টেম ভূমিকা', sub: 'নাগরিক, সাব-রেজিস্ট্রি, এসি ল্যান্ড, এডমিন', icon: '🏛️', color: '#0369a1', bg: '#f0f9ff' },
-  { val: 'SHA-256', label: 'দলিল ক্রিপ্টোগ্রাফি', sub: 'ভুয়া দলিল শতভাগ প্রতিরোধ', icon: '🛡️', color: '#7c3aed', bg: '#f5f3ff' },
-  { val: 'QR কোড', label: 'ডিজিটাল ই-খতিয়ান', sub: 'স্মার্টফোনে তাৎক্ষণিক যাচাই', icon: '⚡', color: '#b45309', bg: '#fef3c7' },
+  { val: '১০০% টেম্পার-প্রুফ', label: 'ব্লকচেইন হ্যাশ চেইন', sub: 'অপরিবর্তনীয় ও সুরক্ষিত রেকর্ড', icon: '⛓️', color: '#047857', bg: '#ecfdf5' },
+  { val: 'PKI সাইন', label: 'ডিজিটাল সিগনেচার', sub: 'কর্মকর্তা অনুমোদন ভেরিফাইড', icon: '🔑', color: '#0369a1', bg: '#f0f9ff' },
+  { val: 'AES-256', label: 'ফিল্ড-লেভেল এনক্রিপশন', sub: 'নাগরিক সংবেদনশীল ডাটা সুরক্ষিত', icon: '🛡️', color: '#7c3aed', bg: '#f5f3ff' },
+  { val: 'ডাইনামিক', label: 'ভৌগোলিক লোকেশন', sub: 'বিভাগ, জেলা, উপজেলা ও মৌজা', icon: '📍', color: '#b45309', bg: '#fef3c7' },
 ];
 
+/* ─── Today's Key Security & Architectural Upgrades ──────── */
+const TODAY_UPGRADES = [
+  {
+    icon: <KeyRound size={24} />,
+    badge: 'PKI Engine',
+    title: 'অ্যাসিমেট্রিক পিকেআই ডিজিটাল সিগনেচার',
+    subtitle: 'কর্মকর্তা ডিজিটাল অনুমোদন',
+    desc: 'সাব-রেজিস্ট্রার ও সহকারী কমিশনার (ভূমি) কর্মকর্তাদের প্রতিটি দলিল অনুমোদন ক্রিপ্টোগ্রাফিক কি (Key) দ্বারা ডিজিটাল স্বাক্ষরযুক্ত। ফলে জাল অনুমোদন সম্পূর্ণ অসম্ভব।',
+    bullets: ['RSA-2048 / ECC ক্রিপ্টো সাইনিং', 'কর্মকর্তার অফিসিয়াল আইডেন্টিটি যাচাই'],
+    color: '#047857',
+    bg: '#ecfdf5',
+    border: '#a7f3d0'
+  },
+  {
+    icon: <Link2 size={24} />,
+    badge: 'Blockchain Ledger',
+    title: 'ব্লকচেইন হ্যাশ চেইনিং লেজার',
+    subtitle: 'অপরিবর্তনীয় মালিকানা চেইন',
+    desc: 'প্রতিটি দলিলের ক্রিপ্টোগ্রাফিক হ্যাশ পূর্ববর্তী দলিলের সাথে লিংক করে একটি ব্লকচেইন লেজার তৈরি করা হয়েছে। গত ৫০-১০০ বছরের মালিকানা চেইনে এক অক্ষরের পরিবর্তনও ধরা পড়বে।',
+    bullets: ['SHA-256 Merkle Hash Chaining', 'ঐতিহাসিক মালিকানা রেকর্ড সুরক্ষিত'],
+    color: '#0284c7',
+    bg: '#f0f9ff',
+    border: '#bae6fd'
+  },
+  {
+    icon: <Fingerprint size={24} />,
+    badge: 'Chained Audit Logs',
+    title: 'ক্রিপ্টোগ্রাফিক অডিট ট্রেইল সিকিউরিটি',
+    subtitle: 'জিরো-ট্রাস্ট লগ নজরদারি',
+    desc: 'সিস্টেমের প্রতিটি প্রশাসনিক অ্যাকশন ও পরিবর্তনের সাথে আগের লগের হ্যাশ স্বয়ংক্রিয়ভাবে সংযুক্ত থাকে। ডাটাবেজ এডমিনও কোনো পুরোনো লগ মুছতে বা পরিবর্তন করতে পারে না।',
+    bullets: ['হ্যাশ-সংযুক্ত ক্রিপ্টোগ্রাফিক লগ', 'অননুমোদিত ব্যাকডোর হস্তক্ষেপ প্রতিরোধ'],
+    color: '#7c3aed',
+    bg: '#f5f3ff',
+    border: '#ddd6fe'
+  },
+  {
+    icon: <Lock size={24} />,
+    badge: 'Encryption at Rest',
+    title: 'AES-256-GCM ফিল্ড লেভেল এনক্রিপশন',
+    subtitle: 'নাগরিক ডাটা প্রটেকশন',
+    desc: 'নাগরিকদের জাতীয় পরিচয়পত্র (NID), মোবাইল নম্বর ও সংবেদনশীল তথ্য ক্লাউড ডাটাবেজে স্টোর হওয়ার পূর্বেই মিলিটারি-গ্রেড AES-256-GCM সাইফারটেক্সটে রূপান্তরিত হয়।',
+    bullets: ['ডাটাবেজ ব্রিচেও তথ্য সম্পূর্ণ সুরক্ষিত', 'GDPR ও ন্যাশনাল সাইবার সিকিউরিটি মানদণ্ড'],
+    color: '#b45309',
+    bg: '#fffbeb',
+    border: '#fde68a'
+  },
+  {
+    icon: <MapPin size={24} />,
+    badge: 'Dynamic Geolocation',
+    title: 'ডাইনামিক ভৌগোলিক লোকেশন ম্যানেজমেন্ট',
+    subtitle: 'ক্যাসকেডিং লোকেশন ইঞ্জিন',
+    desc: 'সারা দেশের বিভাগ, জেলা, উপজেলা এবং মৌজা সম্পূর্ণ সেন্ট্রালাইজড ডাটাবেজ থেকে রিয়েলটাইমে লোড হয়। নতুন মৌজা বা অঞ্চল যুক্ত হলে তা তাৎক্ষণিক লাইভ কার্যকর হয়।',
+    bullets: ['ডাইনামিক ক্যাসকেডিং ড্রপডাউন', 'রিয়েলটাইম ডাটাবেজ জিও-ফিল্টারিং'],
+    color: '#0d9488',
+    bg: '#f0fdfa',
+    border: '#99f6e4'
+  },
+  {
+    icon: <ShieldCheck size={24} />,
+    badge: 'Pending Land Lock',
+    title: 'রিয়েলটাইম অ্যান্টি-ডাবল সেলিং লকিং',
+    subtitle: 'স্বয়ংক্রিয় ডাটাবেজ প্রটেকশন',
+    desc: 'একটি নির্দিষ্ট দাগ বা খতিয়ানের দলিল প্রক্রিয়াকরণের মুহূর্তে জমিতে Pending Lock সক্রিয় হয়, ফলে আবেদন নিষ্পত্তি না হওয়া পর্যন্ত একই জমি দ্বিতীয়বার বিক্রয় সম্পূর্ণ অসম্ভব।',
+    bullets: ['একযোগে একাধিক বিক্রয় বা রেজিস্ট্রি রোধ', 'স্বয়ংক্রিয় ফ্রড ডিটেকশন নোটিফিকেশন'],
+    color: '#b91c1c',
+    bg: '#fef2f2',
+    border: '#fecaca'
+  }
+];
+
+/* ─── 4 Role Portals ────────────────────────────────────── */
 const ROLES = [
   {
     role: 'নাগরিক পোর্টাল',
@@ -78,15 +150,17 @@ const ROLES = [
   },
 ];
 
+/* ─── 6-Step Workflow ───────────────────────────────────── */
 const FLOW = [
   { step: '০১', icon: '📝', label: 'আবেদন দাখিল', sub: 'দলিল প্রস্তুত ও NID যাচাই', color: '#0369a1', bg: '#f0f9ff', border: '#bae6fd' },
   { step: '০২', icon: '🛡️', label: 'P3 ফ্রড ফিল্টার', sub: 'SHA-256 ক্রিপ্টো যাচাই', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
   { step: '০৩', icon: '🔒', label: 'পেন্ডিং লক', sub: 'ডাবল-সেলিং স্বয়ংক্রিয় রোধ', color: '#b91c1c', bg: '#fef2f2', border: '#fecaca' },
-  { step: '০৪', icon: '🏛️', label: 'এসি ল্যান্ড রিভিউ', sub: 'মাঠ পর্যায়ের সত্যতা যাচাই', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
+  { step: '০৪', icon: '🏛️', label: 'এসি ল্যান্ড রিভিউ', sub: 'মাঠ পর্যায়ের সত্যতা ও PKI সাইন', color: '#6d28d9', bg: '#f5f3ff', border: '#ddd6fe' },
   { step: '০৫', icon: '💳', label: 'অনলাইন পেমেন্ট', sub: 'সরকারি কোষাগারে ই-চালান', color: '#b45309', bg: '#fffbeb', border: '#fde68a' },
-  { step: '০৬', icon: '📄', label: 'ডিজিটাল খতিয়ান', sub: 'QR কোডযুক্ত সনদ প্রস্তুত', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
+  { step: '০৬', icon: '📄', label: 'ডিজিটাল খতিয়ান', sub: 'QR কোডযুক্ত সনদ ও হ্যাশ চেইন', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' },
 ];
 
+/* ─── Core Security Attributes ──────────────────────────── */
 const FEATURES = [
   {
     icon: <Shield size={24} />,
@@ -130,60 +204,15 @@ export default function LandingPage() {
   const navigate = useNavigate();
   const [activeRole, setActiveRole] = useState(null);
 
-  // Public quick verification states
-  const [verifyForm, setVerifyForm] = useState({ dag_no: '', khatian_no: '', mouza: 'গুজিয়া' });
-  const [verifyLoading, setVerifyLoading] = useState(false);
-  const [verifyResult, setVerifyResult] = useState(null);
-  const [verifyError, setVerifyError] = useState('');
-  const [landingMouzas, setLandingMouzas] = useState(['গুজিয়া', 'ধানমন্ডি', 'মিরপুর', 'শিবগঞ্জ', 'চকসারকার', 'মহাস্থান', 'পাইকপাড়া']);
-
-  useEffect(() => {
-    axios.get('/api/mouzas')
-      .then(res => {
-        if (res.data.success && res.data.mouzas?.length) {
-          setLandingMouzas(res.data.mouzas);
-        }
-      })
-      .catch(() => { });
-  }, []);
-
-  const handleQuickVerify = async (e) => {
-    if (e) e.preventDefault();
-    if (!verifyForm.dag_no?.trim() && !verifyForm.khatian_no?.trim()) {
-      setVerifyError('অনুগ্রহ করে দাগ নম্বর অথবা খতিয়ান নম্বর প্রদান করুন।');
-      return;
-    }
-    setVerifyLoading(true);
-    setVerifyError('');
-    setVerifyResult(null);
-
-    try {
-      const res = await axios.get('/api/verify-land', {
-        params: {
-          dag_no: verifyForm.dag_no?.trim(),
-          khatian_no: verifyForm.khatian_no?.trim(),
-          mouza: verifyForm.mouza?.trim()
-        }
-      });
-      if (res.data) {
-        setVerifyResult(res.data);
-      }
-    } catch (err) {
-      setVerifyError(err.response?.data?.message || 'যাচাইকরণে সমস্যা হয়েছে। আবার চেষ্টা করুন।');
-    } finally {
-      setVerifyLoading(false);
-    }
-  };
-
   return (
     <div style={{ background: '#f8fafc', color: '#0f172a', minHeight: '100vh', overflowX: 'hidden' }}>
 
       {/* ══════════════════════════════════════════
-          HERO SECTION — WITH EXISTING "bg.png" BACKGROUND
+          HERO SECTION — WITH "bg.png" BACKGROUND
       ══════════════════════════════════════════ */}
       <section style={{
         position: 'relative',
-        padding: '54px 20px 84px',
+        padding: '56px 20px 84px',
         backgroundImage: `linear-gradient(135deg, rgba(255, 255, 255, 0.93) 0%, rgba(240, 253, 244, 0.90) 50%, rgba(255, 255, 255, 0.92) 100%), url('/images/bg.png')`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
@@ -192,7 +221,7 @@ export default function LandingPage() {
       }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
-          {/* Top Pill Badge */}
+          {/* Top Pill Badges */}
           <div style={{ textAlign: 'center', marginBottom: '24px' }}>
             <div style={{
               display: 'inline-flex',
@@ -222,39 +251,38 @@ export default function LandingPage() {
 
           {/* Hero Content — Centered & Clean */}
           <div style={{
-            maxWidth: '860px',
+            maxWidth: '880px',
             margin: '0 auto',
             textAlign: 'center',
           }}>
             <h1 style={{
-              fontSize: 'clamp(32px, 5.5vw, 56px)',
+              fontSize: 'clamp(32px, 5.5vw, 54px)',
               fontWeight: '900',
               lineHeight: 1.18,
               color: '#0f172a',
               marginBottom: '20px',
               letterSpacing: '-0.02em',
             }}>
-              ডিজিটাল ভূমিসেবা ও{' '}
+              ডিজিটাল ভূমিসেবা, ই-নামজারি ও{' '}
               <span style={{
                 background: 'linear-gradient(135deg, #047857 0%, #16a34a 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}>
-                ই-নামজারি নেটওয়ার্ক
+                এন্টারপ্রাইজ ক্রিপ্টোগ্রাফিক নেটওয়ার্ক
               </span>
             </h1>
 
             <p style={{
-              fontSize: 'clamp(15px, 1.8vw, 18px)',
-              color: '#ff0101ff',
+              fontSize: 'clamp(15px, 1.8vw, 17.5px)',
+              color: '#334155',
               lineHeight: 1.8,
               marginBottom: '36px',
-              maxWidth: '720px',
+              maxWidth: '760px',
               marginLeft: 'auto',
               marginRight: 'auto',
             }}>
-              নাগরিকের ভূমির অধিকার সুরক্ষায় অত্যাধুনিক প্রযুক্তি উদ্ভাবনী প্ল্যাটফর্ম। এই প্ল্যাটফর্মর্মের সাথে সরকারি ডেটাবেস
-              এর কোনো সম্পৃক্ততা নেই। কেবলমাত্র উদ্ভাবনী ডেমো প্রজেক্ট হিসেবে ব্যবহারের জন্য ।
+              জাতীয় ভূমি নিরাপত্তা নিশ্চিতে পিকেআই (PKI) ডিজিটাল স্বাক্ষর, অপরিবর্তনীয় ব্লকচেইন হ্যাশ চেইনিং, ডাইনামিক মৌজা ডাটাবেজ এবং রিয়েলটাইম অ্যান্টি-ডাবল সেলিং সমন্বিত সরকারি স্মার্ট ভূমিসেবা প্ল্যাটফর্ম।
             </p>
 
             {/* Action Buttons */}
@@ -336,21 +364,22 @@ export default function LandingPage() {
               fontWeight: '600',
             }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle size={16} color="#16a34a" /> সরকারি গ্যাজেট ও ভূমি আইনসম্মত
+                <CheckCircle size={16} color="#16a34a" /> PKI ডিজিটাল স্বাক্ষর
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shield size={16} color="#0284c7" /> এনক্রিপ্টেড ও সম্পূর্ণ নিরাপদ
+                <Shield size={16} color="#0284c7" /> ব্লকচেইন হ্যাশ চেইনিং
               </span>
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="live-dot" style={{ display: 'inline-block' }} /> ২৪/৭ ডিজিটাল অনলাইন সেবা
+                <Lock size={16} color="#7c3aed" /> AES-256 ডাটা এনক্রিপশন
+              </span>
+              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <MapPin size={16} color="#b45309" /> ডাইনামিক লোকেশন ইঞ্জিন
               </span>
             </div>
           </div>
 
         </div>
       </section>
-
-
 
       {/* ══════════════════════════════════════════
           STATS BAR — LIGHT & ELEGANT
@@ -388,7 +417,7 @@ export default function LandingPage() {
                   সক্রিয়
                 </span>
               </div>
-              <div style={{ fontSize: '28px', fontWeight: '900', color: s.color, marginBottom: '2px' }}>
+              <div style={{ fontSize: '24px', fontWeight: '900', color: s.color, marginBottom: '2px' }}>
                 {s.val}
               </div>
               <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a' }}>
@@ -402,6 +431,242 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ══════════════════════════════════════════
+          TODAY'S ENTERPRISE SECURITY & FEATURE UPGRADES
+          (Modern CSS Grid Showcase — Pure Vector-free UI)
+      ══════════════════════════════════════════ */}
+      <section id="features" style={{
+        padding: '80px 20px',
+        background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 50%, #f8fafc 100%)',
+        borderTop: '1px solid #e2e8f0',
+      }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+
+          {/* Section Header */}
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 16px',
+              borderRadius: '999px',
+              background: '#ecfdf5',
+              border: '1.5px solid #a7f3d0',
+              color: '#065f46',
+              fontSize: '12.5px',
+              fontWeight: '700',
+              marginBottom: '12px',
+            }}>
+              <Sparkles size={14} color="#059669" />
+              <span>আজকের প্রধান প্রযুক্তিগত ও ক্রিপ্টোগ্রাফিক উদ্ভাবনসমূহ</span>
+            </div>
+
+            <h2 style={{
+              fontSize: 'clamp(24px, 4vw, 38px)',
+              fontWeight: '900',
+              color: '#0f172a',
+              marginBottom: '12px',
+              lineHeight: 1.25
+            }}>
+              জাতীয় ভূমি নিরাপত্তায় সর্বাধুনিক{' '}
+              <span style={{
+                background: 'linear-gradient(135deg, #047857, #16a34a)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                ক্রিপ্টোগ্রাফিক ও সিস্টেম আপগ্রেড
+              </span>
+            </h2>
+
+            <p style={{ color: '#475569', fontSize: '15px', maxWidth: '680px', margin: '0 auto', lineHeight: 1.7 }}>
+              জাল দলিল, ডাবল-সেলিং ও তথ্য বিকৃতি শতভাগ রোধ করতে যুক্ত করা হয়েছে এন্টারপ্রাইজ ক্রিপ্টোগ্রাফিক সিগনেচার, ব্লকচেইন হ্যাশ চেইন ও ডাইনামিক ক্লাউড লোকেশন ইঞ্জিন।
+            </p>
+          </div>
+
+          {/* 6 Feature Cards Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '24px',
+          }}>
+            {TODAY_UPGRADES.map((item, i) => (
+              <div
+                key={i}
+                className="bd-pattern-card"
+                style={{
+                  background: '#ffffff',
+                  borderRadius: '18px',
+                  padding: '26px 24px',
+                  border: `1.5px solid ${item.border}`,
+                  boxShadow: '0 4px 16px rgba(15,23,42,0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'all 0.25s ease',
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = item.color;
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                  e.currentTarget.style.boxShadow = '0 12px 28px rgba(15,23,42,0.08)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = item.border;
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 16px rgba(15,23,42,0.04)';
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      background: item.bg,
+                      color: item.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: `1px solid ${item.border}`
+                    }}>
+                      {item.icon}
+                    </div>
+
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      color: item.color,
+                      background: item.bg,
+                      border: `1px solid ${item.border}`,
+                      padding: '3px 10px',
+                      borderRadius: '999px',
+                      letterSpacing: '0.02em',
+                      textTransform: 'uppercase'
+                    }}>
+                      {item.badge}
+                    </span>
+                  </div>
+
+                  <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', marginBottom: '4px' }}>
+                    {item.title}
+                  </h3>
+                  <div style={{ fontSize: '12px', fontWeight: '700', color: item.color, marginBottom: '12px' }}>
+                    {item.subtitle}
+                  </div>
+
+                  <p style={{ fontSize: '13.5px', color: '#475569', lineHeight: 1.7, marginBottom: '20px' }}>
+                    {item.desc}
+                  </p>
+                </div>
+
+                <div style={{
+                  paddingTop: '16px',
+                  borderTop: '1px dashed #e2e8f0',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px'
+                }}>
+                  {item.bullets.map((b, bi) => (
+                    <div key={bi} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#334155', fontWeight: '600' }}>
+                      <CheckCircle size={14} color={item.color} style={{ flexShrink: 0 }} />
+                      <span>{b}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════
+          WORKFLOW PIPELINE — LIGHT THEMED WITH WATERMARK
+      ══════════════════════════════════════════ */}
+      <section id="workflow" className="bd-pattern-bg" style={{
+        padding: '80px 20px',
+        background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)',
+        borderTop: '1px solid #e2e8f0',
+        borderBottom: '1px solid #e2e8f0',
+      }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '4px 14px',
+              borderRadius: '999px',
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              color: '#065f46',
+              fontSize: '12px',
+              fontWeight: '700',
+              marginBottom: '12px',
+            }}>
+              <TrendingUp size={13} /> ডিজিটাল কার্যপ্রবাহ
+            </div>
+            <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '900', color: '#0f172a', marginBottom: '10px' }}>
+              ৬-ধাপের স্বয়ংক্রিয় ভূমি সেবা পাইপলাইন
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '15px', maxWidth: '560px', margin: '0 auto', lineHeight: 1.6 }}>
+              ম্যানুয়াল ফাইলিং ও হয়রানি মুক্ত—আবেদন দাখিল থেকে ব্লকচেইন ডিজিটাল খতিয়ান তৈরি সম্পূর্ণ স্বয়ংক্রিয়
+            </p>
+          </div>
+
+          {/* Workflow Steps Grid */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+            gap: '16px',
+          }}>
+            {FLOW.map((f, i) => (
+              <div
+                key={i}
+                style={{
+                  background: '#ffffff',
+                  border: `1.5px solid ${f.border}`,
+                  borderRadius: '16px',
+                  padding: '22px 18px',
+                  textAlign: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  position: 'relative',
+                  transition: 'transform 0.2s ease',
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
+                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: '12px',
+                  right: '12px',
+                  fontSize: '11px',
+                  fontWeight: '900',
+                  color: f.color,
+                  background: f.bg,
+                  padding: '1px 6px',
+                  borderRadius: '4px',
+                }}>
+                  {f.step}
+                </div>
+
+                <div style={{ fontSize: '32px', marginBottom: '12px', marginTop: '4px' }}>
+                  {f.icon}
+                </div>
+
+                <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '4px' }}>
+                  {f.label}
+                </h4>
+
+                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                  {f.sub}
+                </p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
 
       {/* ══════════════════════════════════════════
           ROLES SECTION — PURE LIGHT GOVERNMENT PORTAL
@@ -493,7 +758,7 @@ export default function LandingPage() {
                     {r.desc}
                   </p>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {r.features.map((feat, fi) => (
                       <div key={fi} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#334155' }}>
                         <div style={{ width: '16px', height: '16px', borderRadius: '50%', background: r.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -504,215 +769,17 @@ export default function LandingPage() {
                     ))}
                   </div>
                 </div>
-
-                <button
-                  onClick={() => navigate('/login')}
-                  style={{
-                    width: '100%',
-                    padding: '11px',
-                    background: r.bg,
-                    border: `1.5px solid ${r.border}`,
-                    color: r.color,
-                    borderRadius: '12px',
-                    fontSize: '13px',
-                    fontWeight: '800',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    transition: 'all 0.2s ease',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#ffffff'}
-                  onMouseLeave={e => e.currentTarget.style.background = r.bg}
-                >
-                  প্রবেশ করুন <ChevronRight size={15} />
-                </button>
               </div>
             ))}
           </div>
 
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          WORKFLOW PIPELINE — LIGHT THEMED WITH WATERMARK
-      ══════════════════════════════════════════ */}
-      <section id="workflow" className="bd-pattern-bg" style={{
-        padding: '80px 20px',
-        background: 'linear-gradient(180deg, #ffffff 0%, #f0fdf4 100%)',
-        borderTop: '1px solid #e2e8f0',
-        borderBottom: '1px solid #e2e8f0',
-      }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
-
-          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '4px 14px',
-              borderRadius: '999px',
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#065f46',
-              fontSize: '12px',
-              fontWeight: '700',
-              marginBottom: '12px',
-            }}>
-              <TrendingUp size={13} /> ডিজিটাল কার্যপ্রবাহ
-            </div>
-            <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '900', color: '#0f172a', marginBottom: '10px' }}>
-              ৬-ধাপের স্বয়ংক্রিয় ভূমি সেবা পাইপলাইন
-            </h2>
-            <p style={{ color: '#64748b', fontSize: '15px', maxWidth: '560px', margin: '0 auto', lineHeight: 1.6 }}>
-              ম্যানুয়াল ফাইলিং ও হয়রানি মুক্ত—আবেদন থেকে খতিয়ান তৈরি সম্পূর্ণ ডিজিটাল
-            </p>
-          </div>
-
-          {/* Workflow Steps Grid */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-            gap: '16px',
-          }}>
-            {FLOW.map((f, i) => (
-              <div
-                key={i}
-                style={{
-                  background: '#ffffff',
-                  border: `1.5px solid ${f.border}`,
-                  borderRadius: '16px',
-                  padding: '22px 18px',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                  position: 'relative',
-                  transition: 'transform 0.2s ease',
-                }}
-                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  right: '12px',
-                  fontSize: '11px',
-                  fontWeight: '900',
-                  color: f.color,
-                  background: f.bg,
-                  padding: '1px 6px',
-                  borderRadius: '4px',
-                }}>
-                  {f.step}
-                </div>
-
-                <div style={{ fontSize: '32px', marginBottom: '12px', marginTop: '4px' }}>
-                  {f.icon}
-                </div>
-
-                <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '4px' }}>
-                  {f.label}
-                </h4>
-
-                <p style={{ fontSize: '12px', color: '#64748b', margin: 0, lineHeight: 1.5 }}>
-                  {f.sub}
-                </p>
-              </div>
-            ))}
-          </div>
-
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
-          ORBIT INFOGRAPHIC — e-BHUMI ECOSYSTEM
-      ══════════════════════════════════════════ */}
-      <section id="features" style={{
-        padding: '80px 20px',
-        background: 'linear-gradient(180deg, #f8fafc 0%, #f0fdf4 50%, #f8fafc 100%)',
-        borderTop: '1px solid #e2e8f0',
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-            gap: '60px',
-            alignItems: 'center',
-          }}>
-            {/* Left: Text content */}
-            <div>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '6px',
-                padding: '4px 14px', borderRadius: '999px',
-                background: '#eff6ff', border: '1px solid #bfdbfe',
-                color: '#0369a1', fontSize: '12px', fontWeight: '700', marginBottom: '16px',
-              }}>
-                <Globe size={13} /> সংযুক্ত ইকোসিস্টেম
-              </div>
-              <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '900', color: '#0f172a', marginBottom: '16px', lineHeight: 1.2 }}>
-                ৬টি সেবা — একটি সমন্বিত
-                <span style={{
-                  background: 'linear-gradient(135deg, #047857, #16a34a)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>{' '}ভূমি নেটওয়ার্ক</span>
-              </h2>
-              <p style={{ fontSize: '15px', color: '#475569', lineHeight: 1.75, marginBottom: '28px' }}>
-                NID যাচাই, QR খতিয়ান, SHA-256 দলিল হ্যাশিং, ইমেইল OTP, ক্লাউড ডেটাবেস এবং
-                এসি ল্যান্ড অনুমোদন — সবকিছু একটি ইন্টিগ্রেটেড প্ল্যাটফর্মে।
-              </p>
-
-              {/* Feature bullets */}
-              {[
-                { icon: '🔐', color: '#065f46', bg: '#ecfdf5', border: '#a7f3d0', title: 'SHA-256 দলিল হ্যাশিং', desc: 'প্রতিটি দলিলের বিষয়বস্তু অপরিবর্তনীয় ক্রিপ্টো হ্যাশে সংরক্ষিত' },
-                { icon: '🆔', color: '#0369a1', bg: '#eff6ff', border: '#bfdbfe', title: 'NID বায়োমেট্রিক যাচাই', desc: 'জাতীয় পরিচয়পত্র দিয়ে মালিকানা প্রমাণ নিশ্চিতকরণ' },
-                { icon: '📱', color: '#7c3aed', bg: '#f5f3ff', border: '#ddd6fe', title: 'QR খতিয়ান স্ক্যান', desc: 'স্মার্টফোনে তাৎক্ষণিক মালিকানা সত্যতা যাচাই সম্ভব' },
-              ].map((item, i) => (
-                <div key={i} style={{
-                  display: 'flex', gap: '14px', alignItems: 'flex-start',
-                  padding: '14px', borderRadius: '14px',
-                  border: `1px solid ${item.border}`,
-                  background: item.bg,
-                  marginBottom: '12px',
-                  transition: 'transform 0.2s ease',
-                }}
-                  onMouseEnter={e => e.currentTarget.style.transform = 'translateX(4px)'}
-                  onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}
-                >
-                  <div style={{
-                    fontSize: '22px', width: '42px', height: '42px',
-                    background: '#ffffff', borderRadius: '10px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: `1px solid ${item.border}`, flexShrink: 0,
-                  }}>{item.icon}</div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: '800', color: item.color, marginBottom: '3px' }}>{item.title}</div>
-                    <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.5 }}>{item.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Right: Orbit SVG Diagram */}
-            <div style={{ textAlign: 'center' }}>
-              <div className="bd-orbit-animate" style={{ maxWidth: '420px', margin: '0 auto' }}>
-                <img
-                  src="/images/bd_land_orbit.svg"
-                  alt="e-ভূমি ডিজিটাল ইকোসিস্টেম ডায়াগ্রাম"
-                  style={{ width: '100%', height: 'auto' }}
-                />
-              </div>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '12px', fontStyle: 'italic' }}>
-                e-ভূমি সমন্বিত সেবা নেটওয়ার্ক — সকল স্টেকহোল্ডার একই প্ল্যাটফর্মে সংযুক্ত
-              </p>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════
           FEATURES GRID — CLEAN LIGHT CARDS
       ══════════════════════════════════════════ */}
-      <section id="security" style={{ padding: '80px 20px', background: '#f8fafc' }}>
+      <section id="security" style={{ padding: '80px 20px', background: '#ffffff', borderTop: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
 
           <div style={{ textAlign: 'center', marginBottom: '48px' }}>
@@ -729,10 +796,10 @@ export default function LandingPage() {
               fontWeight: '700',
               marginBottom: '12px',
             }}>
-              <Sparkles size={13} /> নিরাপত্তা ও স্বাচ্ছন্দ্য
+              <Award size={13} /> নিরাপত্তা ও জাতীয় মানদণ্ড
             </div>
             <h2 style={{ fontSize: 'clamp(24px, 4vw, 38px)', fontWeight: '900', color: '#0f172a', marginBottom: '10px' }}>
-              কেন e-ভূমি প্ল্যাটফর্ম অনন্য?
+              কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত?
             </h2>
             <p style={{ color: '#64748b', fontSize: '15px', maxWidth: '560px', margin: '0 auto', lineHeight: 1.6 }}>
               জালিয়াতি শূন্যে নামিয়ে আনতে ক্রিপ্টোগ্রাফিক সুরক্ষা ও রিয়েলটাইম ক্লাউড প্রযুক্তি
@@ -797,72 +864,10 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════
-          CALL TO ACTION (CTA) — LIGHT PRESTIGE BANNER
-      ══════════════════════════════════════════ */}
-      <section id="helpline" style={{
-        padding: '80px 20px',
-        background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #fef3c7 100%)',
-        borderTop: '1px solid #bbf7d0',
-      }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          <img
-            src="/images/logo.png"
-            alt="e-ভূমি লোগো"
-            style={{ width: '80px', height: '80px', objectFit: 'contain', margin: '0 auto 20px', display: 'block' }}
-          />
-
-          <h2 style={{ fontSize: 'clamp(28px, 4.5vw, 46px)', fontWeight: '900', color: '#065f46', marginBottom: '16px', lineHeight: 1.2 }}>
-            স্মার্ট ভূমি সেবায় আপনাকে স্বাগতম
-          </h2>
-
-          <p style={{ fontSize: '16px', color: '#334155', maxWidth: '580px', margin: '0 auto 36px', lineHeight: 1.7 }}>
-            ঘরে বসেই নিজের ভূমির অধিকার যাচাই করুন অথবা নির্ধারিত ভূমি কর্মকর্তা হিসেবে সিস্টেমে লগইন করুন।
-          </p>
-
-          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => navigate('/register')}
-              className="btn-primary"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '14px 32px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                background: 'linear-gradient(135deg, #065f46, #047857)',
-                boxShadow: '0 4px 16px rgba(6,95,70,0.3)',
-              }}
-            >
-              <UserPlus size={18} /> নাগরিক অ্যাকাউন্ট খুলুন
-            </button>
-
-            <button
-              onClick={() => navigate('/login')}
-              className="btn-secondary"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '14px 28px',
-                borderRadius: '12px',
-                fontSize: '15px',
-                background: '#ffffff',
-                borderColor: '#cbd5e1',
-                color: '#0f172a',
-              }}
-            >
-              <LogIn size={18} /> কর্মকর্তা পোর্টাল
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ══════════════════════════════════════════
           GUIDELINE VIDEO TUTORIAL SECTION
       ══════════════════════════════════════════ */}
       <section id="guide" style={{
-        background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
+        background: 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
         borderTop: '1px solid #e2e8f0',
         padding: '72px 20px',
         position: 'relative'
@@ -904,7 +909,7 @@ export default function LandingPage() {
               margin: '0 auto',
               lineHeight: 1.6
             }}>
-              ডিজিটাল ভূমিসেবা গ্রহণ, জমির খতিয়ান অনুসন্ধান, মালিকানা দাবি ও অনলাইন প্রক্রিয়াসমূহ সহজে বুঝতে নিচের ভিডিও নির্দেশিকাটি দেখুন।
+              ডিজিタル ভূমিসেবা গ্রহণ, জমির খতিয়ান অনুসন্ধান, মালিকানা দাবি ও অনলাইন প্রক্রিয়াসমূহ সহজে বুঝতে নিচের ভিডিও নির্দেশিকাটি দেখুন।
             </p>
           </div>
 
@@ -959,14 +964,10 @@ export default function LandingPage() {
               color: '#475569'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontWeight: '700', color: '#0f172a' }}> </span>
+                <span style={{ fontWeight: '700', color: '#0f172a' }}>নির্দেশনা ধাপসমূহ:</span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>১. খতিয়ান অনুসন্ধান</span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>২. নাগরিক ড্যাশবোর্ড</span>
                 <span style={{ background: '#ffffff', padding: '3px 10px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>৩. মালিকানা দাবি ফরম</span>
-              </div>
-
-              <div style={{ fontSize: '11.5px', color: '#64748b' }}>
-
               </div>
             </div>
           </div>
@@ -974,219 +975,63 @@ export default function LandingPage() {
       </section>
 
       {/* ══════════════════════════════════════════
-          DEMO CREDENTIALS FOR HACKATHON EVALUATION
+          CALL TO ACTION (CTA) — LIGHT PRESTIGE BANNER
       ══════════════════════════════════════════ */}
-      <section style={{
-        padding: '50px 20px',
-        background: '#f8fafc',
-        borderTop: '1px solid #e2e8f0',
-        borderBottom: '1px solid #e2e8f0'
+      <section id="helpline" style={{
+        padding: '70px 20px',
+        background: 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 50%, #fef3c7 100%)',
+        borderTop: '1px solid #bbf7d0',
       }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%)',
-            borderRadius: '18px',
-            border: '2px solid #a7f3d0',
-            boxShadow: '0 10px 25px -5px rgba(5, 150, 105, 0.08), 0 8px 10px -6px rgba(5, 150, 105, 0.05)',
-            padding: '32px 28px',
-          }}>
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <div style={{
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <img
+            src="/images/logo.png"
+            alt="e-ভূমি লোগো"
+            style={{ width: '70px', height: '70px', objectFit: 'contain', margin: '0 auto 18px', display: 'block' }}
+          />
+
+          <h2 style={{ fontSize: 'clamp(26px, 4vw, 42px)', fontWeight: '900', color: '#065f46', marginBottom: '14px', lineHeight: 1.2 }}>
+            স্মার্ট ও সুরক্ষিত ভূমি সেবায় আপনাকে স্বাগতম
+          </h2>
+
+          <p style={{ fontSize: '15.5px', color: '#334155', maxWidth: '580px', margin: '0 auto 32px', lineHeight: 1.7 }}>
+            ঘরে বসেই নিজের ভূমির অধিকার যাচাই করুন অথবা নির্ধারিত ভূমি কর্মকর্তা হিসেবে সিস্টেমে লগইন করুন।
+          </p>
+
+          <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => navigate('/register')}
+              className="btn-primary"
+              style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '6px 14px',
-                background: '#dcfce7',
-                border: '1px solid #86efac',
-                borderRadius: '999px',
-                fontSize: '13px',
-                fontWeight: '700',
-                color: '#166534',
-                marginBottom: '12px'
-              }}>
-                <Award size={16} /> Land Tech Innovation Hackathon
-              </div>
-              <h3 style={{
-                fontSize: 'clamp(20px, 2.5vw, 24px)',
-                fontWeight: '800',
+                padding: '13px 30px',
+                borderRadius: '12px',
+                fontSize: '15px',
+                background: 'linear-gradient(135deg, #065f46, #047857)',
+                boxShadow: '0 4px 16px rgba(6,95,70,0.3)',
+              }}
+            >
+              <UserPlus size={18} /> নাগরিক অ্যাকাউন্ট খুলুন
+            </button>
+
+            <button
+              onClick={() => navigate('/login')}
+              className="btn-secondary"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '13px 26px',
+                borderRadius: '12px',
+                fontSize: '15px',
+                background: '#ffffff',
+                borderColor: '#cbd5e1',
                 color: '#0f172a',
-                marginBottom: '8px'
-              }}>
-                Role Based Login (For the Honourable Judges and mentor of Land Tech innovation hackathon)
-              </h3>
-              <p style={{ fontSize: '14px', color: '#64748b', maxWidth: '640px', margin: '0 auto' }}>
-                সিস্টেমের বিভিন্ন মডিউল ও কার্যপ্রণালী সরাসরি যাচাই করার জন্য নির্ধারিত ডেমো অ্যাকাউন্টের বিবরণ নিচে দেওয়া হলো:
-              </p>
-            </div>
-
-            {/* 3 Role Cards */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '18px',
-            }}>
-              {/* Register Office */}
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '12px',
-                padding: '20px',
-                border: '1px solid #cbd5e1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '20px' }}>🏛️</span>
-                    <div>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Register Office</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>সাব-রেজিস্ট্রি অফিসার ড্যাশবোর্ড</div>
-                    </div>
-                  </div>
-                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>registry@evhumi.gov.bd</span>
-                    </div>
-                    <div>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/login', { state: { email: 'registry@evhumi.gov.bd' } })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    background: '#047857',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    marginTop: '8px'
-                  }}
-                >
-                  <LogIn size={14} /> লগইন করুন
-                </button>
-              </div>
-
-              {/* AC Land Office */}
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '12px',
-                padding: '20px',
-                border: '1px solid #cbd5e1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '20px' }}>⚖️</span>
-                    <div>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>AC Land Office</div>
-                      <div style={{ fontSize: '11px', color: '#64748b' }}>সহকারী কমিশনার (ভূমি) প্যানেল</div>
-                    </div>
-                  </div>
-                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>acland@evhumi.gov.bd</span>
-                    </div>
-                    <div>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/login', { state: { email: 'acland@evhumi.gov.bd' } })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    background: '#047857',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    marginTop: '8px'
-                  }}
-                >
-                  <LogIn size={14} /> লগইন করুন
-                </button>
-              </div>
-
-              {/* Citizen User */}
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '12px',
-                padding: '20px',
-                border: '1px solid #cbd5e1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-              }}>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                    <span style={{ fontSize: '20px' }}>👤</span>
-                    <div>
-                      <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>Citizen User</div>
-                      <div style={{ fontSize: '11px', color: '#d97706', fontWeight: '600' }}>
-                        (not for OTP verification)
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '13px', color: '#334155', marginBottom: '8px' }}>
-                    <div style={{ marginBottom: '4px' }}>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>ইমেইল / আইডি:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#047857', fontWeight: '700' }}>citizen@example.com</span>
-                    </div>
-                    <div>
-                      <strong style={{ color: '#64748b', fontSize: '11px' }}>পাসওয়ার্ড:</strong><br />
-                      <span style={{ fontFamily: 'monospace', color: '#0f172a', fontWeight: '700' }}>123456</span>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => navigate('/login', { state: { email: 'citizen@example.com' } })}
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    background: '#047857',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '6px',
-                    marginTop: '8px'
-                  }}
-                >
-                  <LogIn size={14} /> লগইন করুন
-                </button>
-              </div>
-            </div>
+              }}
+            >
+              <LogIn size={18} /> কর্মকর্তা পোর্টাল
+            </button>
           </div>
         </div>
       </section>
@@ -1242,7 +1087,7 @@ export default function LandingPage() {
             color: '#94a3b8'
           }}>
             <div>© ২০২৬ গণপ্রজাতন্ত্রী বাংলাদেশ সরকার · সর্বস্বত্ব সংরক্ষিত।</div>
-            <div>সমন্বিত ডিজিটাল ভূমি প্রশাসন আর্কিটেকচার (P3, P4, P5 ও এনক্রিপ্টেড ওটিপি ইঞ্জিন)</div>
+            <div>সমন্বিত ডিজিটাল ভূমি প্রশাসন আর্কিটেকচার (PKI, ব্লকচেইন হ্যাশ চেইন ও এনক্রিপ্টেড ডাটাবেজ)</div>
           </div>
 
           <div style={{
