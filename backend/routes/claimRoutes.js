@@ -45,6 +45,9 @@ const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '
 router.post('/submit', verifyToken, async (req, res) => {
   try {
     const {
+      division,
+      district,
+      upazila,
       mouza,
       dag_no,
       khatian_no,
@@ -55,7 +58,7 @@ router.post('/submit', verifyToken, async (req, res) => {
     if (!mouza || !dag_no || !khatian_no || !previous_assignment_status) {
       return res.status(400).json({
         success: false,
-        message: 'দয়া করে মৌজা, দাগ নম্বর, খতিয়ান নম্বর এবং পূর্ববর্তী অ্যাসাইন সংক্রান্ত তথ্য প্রদান করুন।'
+        message: 'দয়া করে বিভাগ, জেলা, উপজেলা, মৌজা, দাগ নম্বর, খতিয়ান নম্বর এবং পূর্ববর্তী অ্যাসাইন সংক্রান্ত তথ্য প্রদান করুন।'
       });
     }
 
@@ -65,9 +68,13 @@ router.post('/submit', verifyToken, async (req, res) => {
     const applicant_email = req.user.email || '';
     const user_id = req.user._id && mongoose.Types.ObjectId.isValid(req.user._id) ? req.user._id : null;
 
+    const selDiv = (division || 'রাজশাহী').trim();
+    const selDist = (district || 'বগুড়া').trim();
+    const selUpz = (upazila || 'শিবগঞ্জ').trim();
+
     // Auto-generate declaration text if not provided
     const finalDeclaration = declaration_text || 
-      `আমি ${applicant_name}, NID: ${applicant_nid} দাবি করছি যে, বগুড়া জেলা, শিবগঞ্জ উপজেলার অন্তর্গত মৌজা: ${mouza}, দাগ নম্বর: ${dag_no}, খতিয়ান নম্বর: ${khatian_no} এ থাকা জমির অনলাইন মালিকানা দাবি করছি। বর্তমানে আমি জমিটি ডিজিটাল ভাবে নিবন্ধন/বিক্রি করতে চাই। তাই সাব রেজিস্ট্রার মহোদয় এর কাছে আবেদন ভেরিফাই করে জমিটি আমার নামে অনলাইনে বরদ্দ দিন।`;
+      `আমি ${applicant_name}, NID: ${applicant_nid} দাবি করছি যে, ${selDiv} বিভাগ, ${selDist} জেলা, ${selUpz} উপজেলার অন্তর্গত মৌজা: ${mouza.trim()}, দাগ নম্বর: ${dag_no.trim()}, খতিয়ান নম্বর: ${khatian_no.trim()} এ থাকা জমির অনলাইন মালিকানা দাবি করছি। বর্তমানে আমি জমিটি ডিজিটাল ভাবে নিবন্ধন/বিক্রি করতে চাই। তাই সাব রেজিস্ট্রার মহোদয় এর কাছে আবেদন ভেরিফাই করে জমিটি আমার নামে অনলাইনে বরাদ্দ দিন।`;
 
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const claim_id = `CLM-${Date.now().toString().slice(-6)}-${randomSuffix}`;
@@ -79,9 +86,9 @@ router.post('/submit', verifyToken, async (req, res) => {
       applicant_phone,
       applicant_email,
       user_id,
-      division: 'রাজশাহী',
-      district: 'বগুড়া',
-      upazila: 'শিবগঞ্জ',
+      division: selDiv,
+      district: selDist,
+      upazila: selUpz,
       mouza: mouza.trim(),
       dag_no: dag_no.trim(),
       khatian_no: khatian_no.trim(),

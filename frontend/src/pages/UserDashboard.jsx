@@ -13,7 +13,6 @@ import html2canvas from 'html2canvas';
 import { QRCodeSVG } from 'qrcode.react';
 import DashboardLayout from '../components/DashboardLayout';
 import P5CitizenVerify from './P5CitizenVerify';
-import { SHIBGANJ_MOUZAS } from '../utils/geoData';
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -44,9 +43,22 @@ export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Land Ownership Claim States
+  // Land Ownership Claim States (Dynamic Cascading Locations from Database)
+  const [claimDivisions, setClaimDivisions] = useState([]);
+  const [claimDistricts, setClaimDistricts] = useState([]);
+  const [claimUpazilas, setClaimUpazilas] = useState([]);
+  const [claimMouzas, setClaimMouzas] = useState([]);
+  const [selectedClaimDivId, setSelectedClaimDivId] = useState('');
+  const [selectedClaimDistId, setSelectedClaimDistId] = useState('');
+  const [selectedClaimUpzId, setSelectedClaimUpzId] = useState('');
+  const [selectedClaimMouzaId, setSelectedClaimMouzaId] = useState('');
+  const [loadingClaimLocations, setLoadingClaimLocations] = useState(false);
+
   const [claimForm, setClaimForm] = useState({
-    mouza: SHIBGANJ_MOUZAS[0]?.mouza || 'গুজিয়া',
+    division: '',
+    district: '',
+    upazila: '',
+    mouza: '',
     dag_no: '',
     khatian_no: '',
     previous_assignment_status: 'হ্যাঁ'
@@ -109,7 +121,152 @@ export default function UserDashboard() {
   useEffect(() => {
     fetchAssignedLands();
     fetchMyClaims();
+    loadClaimDivisions();
   }, [user?.nid]);
+
+  const loadClaimDivisions = async () => {
+    setLoadingClaimLocations(true);
+    try {
+      const res = await axios.get('/api/locations/divisions');
+      setClaimDivisions(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load divisions for claim form:', err);
+      setClaimDivisions([]);
+    } finally {
+      setLoadingClaimLocations(false);
+    }
+  };
+
+  const handleClaimDivisionChange = async (divId) => {
+    setSelectedClaimDivId(divId);
+    setSelectedClaimDistId('');
+    setSelectedClaimUpzId('');
+    setSelectedClaimMouzaId('');
+    setClaimDistricts([]);
+    setClaimUpazilas([]);
+    setClaimMouzas([]);
+
+    if (!divId) {
+      setClaimForm(prev => ({
+        ...prev,
+        division: '',
+        district: '',
+        upazila: '',
+        mouza: ''
+      }));
+      return;
+    }
+
+    const divObj = claimDivisions.find(d => d._id === divId);
+    const divName = divObj ? (divObj.name || divObj.bn_name) : '';
+    setClaimForm(prev => ({
+      ...prev,
+      division: divName,
+      district: '',
+      upazila: '',
+      mouza: ''
+    }));
+
+    try {
+      setLoadingClaimLocations(true);
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      setClaimDistricts(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to fetch districts:', err);
+      setClaimDistricts([]);
+    } finally {
+      setLoadingClaimLocations(false);
+    }
+  };
+
+  const handleClaimDistrictChange = async (distId) => {
+    setSelectedClaimDistId(distId);
+    setSelectedClaimUpzId('');
+    setSelectedClaimMouzaId('');
+    setClaimUpazilas([]);
+    setClaimMouzas([]);
+
+    if (!distId) {
+      setClaimForm(prev => ({
+        ...prev,
+        district: '',
+        upazila: '',
+        mouza: ''
+      }));
+      return;
+    }
+
+    const distObj = claimDistricts.find(d => d._id === distId);
+    const distName = distObj ? (distObj.name || distObj.bn_name) : '';
+    setClaimForm(prev => ({
+      ...prev,
+      district: distName,
+      upazila: '',
+      mouza: ''
+    }));
+
+    try {
+      setLoadingClaimLocations(true);
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      setClaimUpazilas(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to fetch upazilas:', err);
+      setClaimUpazilas([]);
+    } finally {
+      setLoadingClaimLocations(false);
+    }
+  };
+
+  const handleClaimUpazilaChange = async (upzId) => {
+    setSelectedClaimUpzId(upzId);
+    setSelectedClaimMouzaId('');
+    setClaimMouzas([]);
+
+    if (!upzId) {
+      setClaimForm(prev => ({
+        ...prev,
+        upazila: '',
+        mouza: ''
+      }));
+      return;
+    }
+
+    const upzObj = claimUpazilas.find(u => u._id === upzId);
+    const upzName = upzObj ? (upzObj.name || upzObj.bn_name) : '';
+    setClaimForm(prev => ({
+      ...prev,
+      upazila: upzName,
+      mouza: ''
+    }));
+
+    try {
+      setLoadingClaimLocations(true);
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      setClaimMouzas(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to fetch mouzas:', err);
+      setClaimMouzas([]);
+    } finally {
+      setLoadingClaimLocations(false);
+    }
+  };
+
+  const handleClaimMouzaChange = (mouzaId) => {
+    setSelectedClaimMouzaId(mouzaId);
+    if (!mouzaId) {
+      setClaimForm(prev => ({
+        ...prev,
+        mouza: ''
+      }));
+      return;
+    }
+    const mouzaObj = claimMouzas.find(m => m._id === mouzaId);
+    const mouzaName = mouzaObj ? (mouzaObj.name || mouzaObj.bn_name) : '';
+    setClaimForm(prev => ({
+      ...prev,
+      mouza: mouzaName
+    }));
+  };
 
   const fetchAssignedLands = async () => {
     setLoading(true);
@@ -176,15 +333,30 @@ export default function UserDashboard() {
   const getDeclarationText = () => {
     const citizenName = user?.name || '[নাম]';
     const citizenNid = user?.nid || '[NID]';
+    const selectedDivision = claimForm.division || '[বিভাগ]';
+    const selectedDistrict = claimForm.district || '[জেলা]';
+    const selectedUpazila = claimForm.upazila || '[উপজেলা]';
     const selectedMouza = claimForm.mouza || '[মৌজা]';
     const dagInput = claimForm.dag_no.trim() || '[দাগ নম্বর]';
     const khotiyanInput = claimForm.khatian_no.trim() || '[খতিয়ান নম্বর]';
 
-    return `আমি ${citizenName}, NID: ${citizenNid} দাবি করছি যে, বগুড়া জেলা, শিবগঞ্জ উপজেলার অন্তর্গত মৌজা: ${selectedMouza}, দাগ নম্বর: ${dagInput}, খতিয়ান নম্বর: ${khotiyanInput} এ থাকা জমির অনলাইন মালিকানা দাবি করছি। বর্তমানে আমি জমিটি ডিজিটাল ভাবে নিবন্ধন/বিক্রি করতে চাই। তাই সাব রেজিস্ট্রার মহোদয় এর কাছে আবেদন ভেরিফাই করে জমিটি আমার নামে অনলাইনে বরদ্দ দিন।`;
+    return `আমি ${citizenName}, NID: ${citizenNid} দাবি করছি যে, ${selectedDivision} বিভাগ, ${selectedDistrict} জেলা, ${selectedUpazila} উপজেলার অন্তর্গত মৌজা: ${selectedMouza}, দাগ নম্বর: ${dagInput}, খতিয়ান নম্বর: ${khotiyanInput} এ থাকা জমির অনলাইন মালিকানা দাবি করছি। বর্তমানে আমি জমিটি ডিজিটাল ভাবে নিবন্ধন/বিক্রি করতে চাই। তাই সাব রেজিস্ট্রার মহোদয় এর কাছে আবেদন ভেরিফাই করে জমিটি আমার নামে অনলাইনে বরাদ্দ দিন।`;
   };
 
   const handleSubmitClaim = async (e) => {
     e.preventDefault();
+    if (!claimForm.division) {
+      setClaimError('অনুগ্রহ করে বিভাগ নির্বাচন করুন।');
+      return;
+    }
+    if (!claimForm.district) {
+      setClaimError('অনুগ্রহ করে জেলা নির্বাচন করুন।');
+      return;
+    }
+    if (!claimForm.upazila) {
+      setClaimError('অনুগ্রহ করে উপজেলা নির্বাচন করুন।');
+      return;
+    }
     if (!claimForm.mouza) {
       setClaimError('অনুগ্রহ করে মৌজা নির্বাচন করুন।');
       return;
@@ -204,6 +376,9 @@ export default function UserDashboard() {
 
     try {
       const res = await axios.post('/api/claim/submit', {
+        division: claimForm.division,
+        district: claimForm.district,
+        upazila: claimForm.upazila,
         mouza: claimForm.mouza,
         dag_no: claimForm.dag_no.trim(),
         khatian_no: claimForm.khatian_no.trim(),
@@ -1049,33 +1224,133 @@ export default function UserDashboard() {
                   </span>
                 </div>
 
-                {/* 3. Mouza: Dropdown */}
+                {/* 3. Division: Dropdown */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                    ৩. মৌজা নির্বাচন (বগুড়া জেলা, শিবগঞ্জ উপজেলা) <span style={{ color: '#dc2626' }}>*</span>
+                    ৩. বিভাগ নির্বাচন (Division) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
                     className="input-field"
-                    value={claimForm.mouza}
-                    onChange={(e) => setClaimForm(prev => ({ ...prev, mouza: e.target.value }))}
+                    value={selectedClaimDivId}
+                    onChange={(e) => handleClaimDivisionChange(e.target.value)}
                     style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: '#ffffff' }}
                     required
                   >
-                    {SHIBGANJ_MOUZAS.map((m) => (
-                      <option key={m.jl_no + m.mouza} value={m.mouza}>
-                        {m.mouza} (জে.এল নং {m.jl_no})
+                    <option value="">-- বিভাগ নির্বাচন করুন --</option>
+                    {claimDivisions.map((div) => (
+                      <option key={div._id} value={div._id}>
+                        {div.name || div.bn_name}
                       </option>
                     ))}
                   </select>
                   <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                    বগুড়া জেলার শিবগঞ্জ উপজেলার অন্তর্ভুক্ত মৌজা তালিকা
+                    ডাটাবেজে সংরক্ষিত সক্রিয় বিভাগসমূহ
                   </span>
                 </div>
 
-                {/* 4. Dag Number: Manual input */}
+                {/* 4. District: Dropdown */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                    ৪. দাগ নম্বর (Dag Number) <span style={{ color: '#dc2626' }}>*</span>
+                    ৪. জেলা নির্বাচন (District) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="input-field"
+                    value={selectedClaimDistId}
+                    onChange={(e) => handleClaimDistrictChange(e.target.value)}
+                    disabled={!selectedClaimDivId || loadingClaimLocations}
+                    style={{
+                      width: '100%',
+                      color: '#0f172a',
+                      fontWeight: '600',
+                      background: (!selectedClaimDivId) ? '#f8fafc' : '#ffffff',
+                      cursor: (!selectedClaimDivId) ? 'not-allowed' : 'pointer'
+                    }}
+                    required
+                  >
+                    <option value="">
+                      {!selectedClaimDivId ? '-- প্রথমে বিভাগ নির্বাচন করুন --' : claimDistricts.length === 0 ? '-- কোনো জেলা পাওয়া যায়নি --' : '-- জেলা নির্বাচন করুন --'}
+                    </option>
+                    {claimDistricts.map((dist) => (
+                      <option key={dist._id} value={dist._id}>
+                        {dist.name || dist.bn_name}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    নির্বাচিত বিভাগের অধীনে নিবন্ধিত জেলা
+                  </span>
+                </div>
+
+                {/* 5. Upazila: Dropdown */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৫. উপজেলা নির্বাচন (Upazila) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="input-field"
+                    value={selectedClaimUpzId}
+                    onChange={(e) => handleClaimUpazilaChange(e.target.value)}
+                    disabled={!selectedClaimDistId || loadingClaimLocations}
+                    style={{
+                      width: '100%',
+                      color: '#0f172a',
+                      fontWeight: '600',
+                      background: (!selectedClaimDistId) ? '#f8fafc' : '#ffffff',
+                      cursor: (!selectedClaimDistId) ? 'not-allowed' : 'pointer'
+                    }}
+                    required
+                  >
+                    <option value="">
+                      {!selectedClaimDistId ? '-- প্রথমে জেলা নির্বাচন করুন --' : claimUpazilas.length === 0 ? '-- কোনো উপজেলা পাওয়া যায়নি --' : '-- উপজেলা নির্বাচন করুন --'}
+                    </option>
+                    {claimUpazilas.map((upz) => (
+                      <option key={upz._id} value={upz._id}>
+                        {upz.name || upz.bn_name}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    নির্বাচিত জেলার অধীনে নিবন্ধিত উপজেলা
+                  </span>
+                </div>
+
+                {/* 6. Mouza: Dropdown */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৬. মৌজা নির্বাচন (Mouza) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    className="input-field"
+                    value={selectedClaimMouzaId}
+                    onChange={(e) => handleClaimMouzaChange(e.target.value)}
+                    disabled={!selectedClaimUpzId || loadingClaimLocations}
+                    style={{
+                      width: '100%',
+                      color: '#0f172a',
+                      fontWeight: '600',
+                      background: (!selectedClaimUpzId) ? '#f8fafc' : '#ffffff',
+                      cursor: (!selectedClaimUpzId) ? 'not-allowed' : 'pointer'
+                    }}
+                    required
+                  >
+                    <option value="">
+                      {!selectedClaimUpzId ? '-- প্রথমে উপজেলা নির্বাচন করুন --' : claimMouzas.length === 0 ? '-- কোনো মৌজা পাওয়া যায়নি --' : '-- মৌজা নির্বাচন করুন --'}
+                    </option>
+                    {claimMouzas.map((m) => (
+                      <option key={m._id} value={m._id}>
+                        {m.name || m.bn_name} {m.jl_no ? `(জে.এল নং ${m.jl_no})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <span style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', display: 'block' }}>
+                    ডাটাবেজে সংরক্ষিত নির্বাচিত উপজেলার মৌজা তালিকা
+                  </span>
+                </div>
+
+                {/* 7. Dag Number: Manual input */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
+                    ৭. দাগ নম্বর (Dag Number) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1091,10 +1366,10 @@ export default function UserDashboard() {
                   </span>
                 </div>
 
-                {/* 5. Khotiyan Number: Manual input */}
+                {/* 8. Khotiyan Number: Manual input */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                    ৫. খতিয়ান নম্বর (Khotiyan Number) <span style={{ color: '#dc2626' }}>*</span>
+                    ৮. খতিয়ান নম্বর (Khotiyan Number) <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -1110,10 +1385,10 @@ export default function UserDashboard() {
                   </span>
                 </div>
 
-                {/* 6. Previous Online Assignment Status: Dropdown */}
+                {/* 9. Previous Online Assignment Status: Dropdown */}
                 <div>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: '#1e293b', marginBottom: '6px' }}>
-                    ৬. বর্টমানে এই জমির অনলাইন নিবন্ধন অন্য কারো নামে ভুলভাবেASSIGN হয়ে আছে কি? <span style={{ color: '#dc2626' }}>*</span>
+                    ৯. বর্টমানে এই জমির অনলাইন নিবন্ধন অন্য কারো নামে ভুলভাবেASSIGN হয়ে আছে কি? <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <select
                     className="input-field"
@@ -1340,6 +1615,10 @@ export default function UserDashboard() {
                       padding: '12px 14px',
                       borderRadius: '8px'
                     }}>
+                      <div>
+                        <span style={{ color: '#64748b' }}>অবস্থান:</span>{' '}
+                        <strong>{[claim.division, claim.district, claim.upazila].filter(Boolean).join(' > ') || 'বগুড়া > শিবগঞ্জ'}</strong>
+                      </div>
                       <div>
                         <span style={{ color: '#64748b' }}>মৌজা:</span> <strong>{claim.mouza}</strong>
                       </div>

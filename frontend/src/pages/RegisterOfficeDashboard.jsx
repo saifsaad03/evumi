@@ -1919,7 +1919,9 @@ export default function RegisterOfficeDashboard() {
                     <div>
                       <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>তফসিল ও অবস্থান</div>
                       <div style={{ color: '#0f172a', fontWeight: '700', marginTop: '2px' }}>মৌজা: {claim.mouza}</div>
-                      <div style={{ fontSize: '12px', color: '#475569' }}>উপজেলা: {claim.upazila || 'শিবগঞ্জ'} | জেলা: {claim.district || 'বগুড়া'}</div>
+                      <div style={{ fontSize: '12px', color: '#475569' }}>
+                        উপজেলা: {claim.upazila || 'শিবগঞ্জ'} | জেলা: {claim.district || 'বগুড়া'}{claim.division ? ` (${claim.division} বিভাগ)` : ''}
+                      </div>
                     </div>
 
                     <div>
