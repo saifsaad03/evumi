@@ -14,27 +14,52 @@ router.post('/verify-deed', async (req, res) => {
     const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
 
     const cleanDag = (dag_no || '').toString().trim();
-    const engDag = toEnglishDigits(cleanDag);
-    const bngDag = toBengaliDigits(cleanDag);
+    const engDag = toEnglishDigits(cleanDag.replace(/\s+/g, ''));
+    const bngDag = toBengaliDigits(cleanDag.replace(/\s+/g, ''));
+    const normCleanDag = engDag.replace(/^0+/, '');
+
     const cleanMouza = (mouza || '').toString().trim();
+    const normCleanMouza = cleanMouza.normalize('NFC').toLowerCase();
+
     const cleanKhatian = (khatian_no || '').toString().trim();
-    const engKhatian = toEnglishDigits(cleanKhatian);
-    const bngKhatian = toBengaliDigits(cleanKhatian);
+    const engKhatian = toEnglishDigits(cleanKhatian.replace(/\s+/g, ''));
+    const bngKhatian = toBengaliDigits(cleanKhatian.replace(/\s+/g, ''));
+    const normCleanKhatian = engKhatian.replace(/^0+/, '');
+
     const cleanSellerNid = (seller_nid || '').toString().trim();
-    const engSellerNid = toEnglishDigits(cleanSellerNid);
-    const bngSellerNid = toBengaliDigits(cleanSellerNid);
+    const normSellerNid = cleanSellerNid.replace(/\s+/g, '');
+    const engSellerNid = toEnglishDigits(normSellerNid);
+    const bngSellerNid = toBengaliDigits(normSellerNid);
 
     // Standard Matching Parameter: Mouza + Dag Number (+ Khatian Number when provided)
-    if (!cleanSellerNid || !cleanDag || !cleanMouza) {
+    if (!normSellerNid || !cleanDag || !cleanMouza) {
       return res.status(400).json({
         success: false,
         message: 'অনুগ্রহ করে বিক্রেতার NID নম্বর, দাগ নম্বর এবং মৌজা — এই ৩টি তথ্যই প্রদান করুন (৩টি ফিল্ডই আবশ্যক)।'
       });
     }
 
-    const dagConditions = [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }];
-    const nidConditions = [{ owner_nid: cleanSellerNid }, { owner_nid: engSellerNid }, { owner_nid: bngSellerNid }];
-    const userNidConditions = [{ nid: cleanSellerNid }, { nid: engSellerNid }, { nid: bngSellerNid }];
+    const dagConditions = [
+      { dag_no: cleanDag },
+      { dag_no: engDag },
+      { dag_no: bngDag },
+      { dag_no: normCleanDag }
+    ];
+
+    const nidConditions = [
+      { owner_nid: normSellerNid },
+      { owner_nid: engSellerNid },
+      { owner_nid: bngSellerNid },
+      { 'co_owners.nid': normSellerNid },
+      { 'co_owners.nid': engSellerNid },
+      { 'co_owners.nid': bngSellerNid }
+    ];
+
+    const userNidConditions = [
+      { nid: normSellerNid },
+      { nid: engSellerNid },
+      { nid: bngSellerNid }
+    ];
 
     // 1. Check if the searched NID exists in the system database
     const userInDb = await User.findOne({ $or: userNidConditions });
@@ -60,17 +85,26 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     // Rule 3 (Fraud Alert / Fake Owner):
-    // Match NID against Mouza, Dag, and Khatian Number
+    // Match NID against Mouza, Dag, and Khatian Number (robust Unicode and digit tolerance)
     const landForThisSeller = nidLandRecords.filter(r => {
-      const mouzaMatch = r.mouza && r.mouza.trim().toLowerCase() === cleanMouza.toLowerCase();
-      const rDag = (r.dag_no || '').toString().trim();
-      const dagMatch = rDag === cleanDag || rDag === engDag || rDag === bngDag ||
-                       toEnglishDigits(rDag) === engDag || toBengaliDigits(rDag) === bngDag;
+      const normRMouza = (r.mouza || '').toString().trim().normalize('NFC').toLowerCase();
+      const mouzaMatch = normRMouza === normCleanMouza || normRMouza.includes(normCleanMouza) || normCleanMouza.includes(normRMouza);
+
+      const rDagStr = (r.dag_no || '').toString().trim();
+      const normRDag = toEnglishDigits(rDagStr.replace(/\s+/g, '')).replace(/^0+/, '');
+      const dagMatch = normRDag === normCleanDag || 
+                       rDagStr === cleanDag || 
+                       rDagStr === engDag || 
+                       rDagStr === bngDag;
+
       let khatianMatch = true;
-      if (cleanKhatian) {
-        const rKhat = (r.khatian_no || '').toString().trim();
-        khatianMatch = rKhat === cleanKhatian || rKhat === engKhatian || rKhat === bngKhatian ||
-                       toEnglishDigits(rKhat) === engKhatian || toBengaliDigits(rKhat) === bngKhatian;
+      if (normCleanKhatian) {
+        const rKhatStr = (r.khatian_no || '').toString().trim();
+        const normRKhat = toEnglishDigits(rKhatStr.replace(/\s+/g, '')).replace(/^0+/, '');
+        khatianMatch = normRKhat === normCleanKhatian || 
+                       rKhatStr === cleanKhatian || 
+                       rKhatStr === engKhatian || 
+                       rKhatStr === bngKhatian;
       }
       return mouzaMatch && dagMatch && khatianMatch;
     });
@@ -155,8 +189,13 @@ router.post('/verify-deed', async (req, res) => {
       });
     }
 
-    // Rule 5.5: Deceased Landowner / Pending Bonton Nama Check
+    // ── Define all record types for this seller before checking statuses ──
+    const activeRecordForSeller = landForThisSeller.find(r => r.status === 'Active');
+    const pendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Mutation' || r.status === 'Pending_AC_Land_Review');
+    const soldRecordForSeller = landForThisSeller.find(r => r.status === 'Sold');
     const deceasedRecordForSeller = landForThisSeller.find(r => r.is_deceased_locked || r.status === 'Deceased_Locked' || r.status === 'Transferred_To_Heirs');
+
+    // Rule 5.5: Deceased Landowner / Pending Bonton Nama Check
     if (deceasedRecordForSeller && !activeRecordForSeller) {
       if (deceasedRecordForSeller.status === 'Transferred_To_Heirs') {
         return res.status(200).json({
@@ -173,9 +212,7 @@ router.post('/verify-deed', async (req, res) => {
     }
 
     // Also check if Seller User is marked as Deceased in database
-    const sellerUser = await User.findOne({
-      $or: [{ nid: cleanSellerNid }, { nid: engSellerNid }, { nid: bngSellerNid }]
-    });
+    const sellerUser = await User.findOne({ $or: userNidConditions });
     if (sellerUser && (sellerUser.is_deceased || sellerUser.status === 'Deceased')) {
       return res.status(200).json({
         success: false,
@@ -183,11 +220,6 @@ router.post('/verify-deed', async (req, res) => {
         message: '⚠️ জমির মূল মালিক মৃত্যুবরণ করেছেন। মৃত্যু সনদ অনুমোদিত হওয়ায় ওয়ারিশদের মধ্যে বণ্টননামা (Bonton Nama) সম্পন্ন না হওয়া পর্যন্ত এই জমির বিক্রয় কার্যক্রম সাময়িকভাবে স্থগিত রয়েছে।'
       });
     }
-
-    // Rule 6 (Actual Double Selling) & Core Ownership Logic:
-    const activeRecordForSeller = landForThisSeller.find(r => r.status === 'Active');
-    const pendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Mutation' || r.status === 'Pending_AC_Land_Review');
-    const soldRecordForSeller = landForThisSeller.find(r => r.status === 'Sold');
 
     // Also check if ANY mutation is currently pending for this plot in the entire ledger
     const anyPendingOnPlot = await LandRecord.findOne({

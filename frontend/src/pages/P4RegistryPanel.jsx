@@ -1008,6 +1008,8 @@ export default function P4RegistryPanel() {
                    doubleSellAlert.alert_type === 'FAKE_OWNER' ? '🚨 জালিয়াতি সতর্কতা (Fake Owner Detected)' :
                    doubleSellAlert.alert_type === 'UNASSIGNED_LAND' ? '⚠️ সরকারি খাস জমি সতর্কতা (Unassigned Land)' :
                    doubleSellAlert.alert_type === 'ALREADY_SOLD' ? '🚫 পূর্বেই বিক্রিত জমি (Already Sold)' :
+                   doubleSellAlert.alert_type === 'DECEASED_LOCKED' ? '🔒 লককৃত জমি সতর্কতা (মালিকের মৃত্যুজনিত কারণে স্থগিত)' :
+                   doubleSellAlert.alert_type === 'DECEASED_TRANSFERRED' ? '📜 ওয়ারিশদের বণ্টনকৃত জমি (Transferred To Heirs)' :
                    doubleSellAlert.alert_type === 'NOT_FOUND' ? '🔍 রেকর্ড পাওয়া যায়নি (Record Not Found)' :
                    '⚠️ ভূমি রেকর্ড যাচাইকরণ সতর্কতা'}
                 </div>
