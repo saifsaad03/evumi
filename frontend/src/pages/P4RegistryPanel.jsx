@@ -12,9 +12,12 @@ import html2canvas from 'html2canvas';
 export default function P4RegistryPanel() {
   const [searchForm, setSearchForm] = useState({ 
     seller_nid: '', 
-    dag_no: '', 
+    division: '',
+    district: '',
+    upazila: '',
     mouza: '', 
     khatian_no: '', 
+    dag_no: '', 
     requested_area: '' 
   });
   const [searchLoading, setSearchLoading] = useState(false);
@@ -22,8 +25,21 @@ export default function P4RegistryPanel() {
   const [searchError, setSearchError] = useState('');
   const [doubleSellAlert, setDoubleSellAlert] = useState(null);
 
-  // Mouza list state for dropdown
-  const [mouzasList, setMouzasList] = useState(['গুজিয়া', 'ধানমন্ডি', 'মিরপুর', 'শিবগঞ্জ', 'চকসারকার', 'মহাস্থান', 'পাইকপাড়া', 'তেজগাঁও', 'উত্তরা']);
+  // Cascading Location States from Database (Admin-created real data only)
+  const [divisionsList, setDivisionsList] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [upazilasList, setUpazilasList] = useState([]);
+  const [mouzasList, setMouzasList] = useState([]);
+  const [khatiansList, setKhatiansList] = useState([]);
+  const [dagsList, setDagsList] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  const [selectedDivId, setSelectedDivId] = useState('');
+  const [selectedDistId, setSelectedDistId] = useState('');
+  const [selectedUpzId, setSelectedUpzId] = useState('');
+  const [selectedMouzaId, setSelectedMouzaId] = useState('');
+  const [selectedKhatianId, setSelectedKhatianId] = useState('');
+  const [selectedDagId, setSelectedDagId] = useState('');
 
   // Buyer verification states
   const [buyerVerifying, setBuyerVerifying] = useState(false);
@@ -158,19 +174,292 @@ export default function P4RegistryPanel() {
     }
   };
 
-  useEffect(() => {
-    fetchMouzas();
-  }, []);
-
-  const fetchMouzas = async () => {
+  // ── Cascading Fetch Functions (Admin-created dynamic hierarchy from DB) ──
+  const fetchDagsForKhatian = async (khatianId, khatianNo) => {
     try {
-      const res = await axios.get('/api/mouzas');
-      if (res.data.success && res.data.mouzas && res.data.mouzas.length > 0) {
-        setMouzasList(res.data.mouzas);
+      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}`);
+      const dags = res.data?.data || [];
+      setDagsList(dags);
+      if (dags.length > 0) {
+        setSelectedDagId(dags[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          khatian_no: khatianNo,
+          dag_no: dags[0].dag_no
+        }));
+      } else {
+        setSelectedDagId('');
+        setSearchForm(prev => ({
+          ...prev,
+          khatian_no: khatianNo,
+          dag_no: ''
+        }));
       }
     } catch (err) {
-      console.warn('Failed to load mouzas list, fallback list active:', err);
+      console.error('Error fetching dags:', err);
+      setDagsList([]);
+      setSelectedDagId('');
     }
+  };
+
+  const fetchKhatiansForMouza = async (mouzaId, mouzaName) => {
+    try {
+      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}`);
+      const khatians = res.data?.data || [];
+      setKhatiansList(khatians);
+      if (khatians.length > 0) {
+        setSelectedKhatianId(khatians[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          mouza: mouzaName,
+          khatian_no: khatians[0].khatian_no
+        }));
+        await fetchDagsForKhatian(khatians[0]._id, khatians[0].khatian_no);
+      } else {
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        setSearchForm(prev => ({
+          ...prev,
+          mouza: mouzaName,
+          khatian_no: '',
+          dag_no: ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching khatians:', err);
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+    }
+  };
+
+  const fetchMouzasForUpazila = async (upzId, upzName) => {
+    try {
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      const mouzas = res.data?.data || [];
+      setMouzasList(mouzas);
+      if (mouzas.length > 0) {
+        setSelectedMouzaId(mouzas[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          upazila: upzName,
+          mouza: mouzas[0].name
+        }));
+        await fetchKhatiansForMouza(mouzas[0]._id, mouzas[0].name);
+      } else {
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        setSearchForm(prev => ({
+          ...prev,
+          upazila: upzName,
+          mouza: '',
+          khatian_no: '',
+          dag_no: ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching mouzas:', err);
+      setMouzasList([]);
+      setSelectedMouzaId('');
+    }
+  };
+
+  const fetchUpazilasForDistrict = async (distId, distName) => {
+    try {
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      const upazilas = res.data?.data || [];
+      setUpazilasList(upazilas);
+      if (upazilas.length > 0) {
+        setSelectedUpzId(upazilas[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          district: distName,
+          upazila: upazilas[0].name
+        }));
+        await fetchMouzasForUpazila(upazilas[0]._id, upazilas[0].name);
+      } else {
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        setSearchForm(prev => ({
+          ...prev,
+          district: distName,
+          upazila: '',
+          mouza: '',
+          khatian_no: '',
+          dag_no: ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching upazilas:', err);
+      setUpazilasList([]);
+      setSelectedUpzId('');
+    }
+  };
+
+  const fetchDistrictsForDivision = async (divId, divName) => {
+    try {
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      const districts = res.data?.data || [];
+      setDistrictsList(districts);
+      if (districts.length > 0) {
+        setSelectedDistId(districts[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          division: divName,
+          district: districts[0].name
+        }));
+        await fetchUpazilasForDistrict(districts[0]._id, districts[0].name);
+      } else {
+        setSelectedDistId('');
+        setUpazilasList([]);
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        setSearchForm(prev => ({
+          ...prev,
+          division: divName,
+          district: '',
+          upazila: '',
+          mouza: '',
+          khatian_no: '',
+          dag_no: ''
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching districts:', err);
+      setDistrictsList([]);
+      setSelectedDistId('');
+    }
+  };
+
+  const loadInitialHierarchy = async () => {
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get('/api/locations/divisions');
+      const divs = res.data?.data || [];
+      setDivisionsList(divs);
+      if (divs.length > 0) {
+        setSelectedDivId(divs[0]._id);
+        setSearchForm(prev => ({
+          ...prev,
+          division: divs[0].name
+        }));
+        await fetchDistrictsForDivision(divs[0]._id, divs[0].name);
+      } else {
+        setSelectedDivId('');
+        setDistrictsList([]);
+        setSelectedDistId('');
+        setUpazilasList([]);
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+      }
+    } catch (err) {
+      console.error('Failed to load initial hierarchy:', err);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInitialHierarchy();
+  }, []);
+
+  // Dropdown selection change handlers
+  const handleDivisionChange = async (divId) => {
+    const div = divisionsList.find(d => d._id === divId);
+    if (!div) return;
+    setSelectedDivId(div._id);
+    setSearchForm(prev => ({
+      ...prev,
+      division: div.name,
+      district: '',
+      upazila: '',
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+    await fetchDistrictsForDivision(div._id, div.name);
+  };
+
+  const handleDistrictChange = async (distId) => {
+    const dist = districtsList.find(d => d._id === distId);
+    if (!dist) return;
+    setSelectedDistId(dist._id);
+    setSearchForm(prev => ({
+      ...prev,
+      district: dist.name,
+      upazila: '',
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+    await fetchUpazilasForDistrict(dist._id, dist.name);
+  };
+
+  const handleUpazilaChange = async (upzId) => {
+    const upz = upazilasList.find(u => u._id === upzId);
+    if (!upz) return;
+    setSelectedUpzId(upz._id);
+    setSearchForm(prev => ({
+      ...prev,
+      upazila: upz.name,
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+    await fetchMouzasForUpazila(upz._id, upz.name);
+  };
+
+  const handleMouzaChange = async (mouzaId) => {
+    const mouza = mouzasList.find(m => m._id === mouzaId);
+    if (!mouza) return;
+    setSelectedMouzaId(mouza._id);
+    setSearchForm(prev => ({
+      ...prev,
+      mouza: mouza.name,
+      khatian_no: '',
+      dag_no: ''
+    }));
+    await fetchKhatiansForMouza(mouza._id, mouza.name);
+  };
+
+  const handleKhatianChange = async (khatianId) => {
+    const kh = khatiansList.find(k => k._id === khatianId);
+    if (!kh) return;
+    setSelectedKhatianId(kh._id);
+    setSearchForm(prev => ({
+      ...prev,
+      khatian_no: kh.khatian_no,
+      dag_no: ''
+    }));
+    await fetchDagsForKhatian(kh._id, kh.khatian_no);
+  };
+
+  const handleDagChange = (dagId) => {
+    const dag = dagsList.find(d => d._id === dagId);
+    if (!dag) return;
+    setSelectedDagId(dag._id);
+    setSearchForm(prev => ({
+      ...prev,
+      dag_no: dag.dag_no
+    }));
   };
 
   // Buyer NID live verification in database
@@ -211,7 +500,7 @@ export default function P4RegistryPanel() {
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
     if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim() || !searchForm.khatian_no?.trim()) {
-      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, মৌজা, দাগ নম্বর এবং খতিয়ান নম্বর — এই ৪টি তথ্যই প্রদান করুন (স্ট্যান্ডার্ড: মৌজা + দাগ + খতিয়ান)।');
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, বিভাগ, জেলা, উপজেলা, মৌজা, খতিয়ান ও দাগ নম্বর নির্বাচন করুন।');
       return;
     }
     setSearchLoading(true);
@@ -227,9 +516,12 @@ export default function P4RegistryPanel() {
       // Live Anti-Double Selling & Ownership check via verify-deed
       const verifyRes = await axios.post('/api/verify-deed', {
         seller_nid: searchForm.seller_nid?.trim(),
-        dag_no: searchForm.dag_no?.trim(),
+        division: searchForm.division?.trim(),
+        district: searchForm.district?.trim(),
+        upazila: searchForm.upazila?.trim(),
         mouza: searchForm.mouza?.trim(),
         khatian_no: searchForm.khatian_no?.trim(),
+        dag_no: searchForm.dag_no?.trim(),
         requested_area: searchForm.requested_area || '1'
       });
 
@@ -523,56 +815,160 @@ export default function P4RegistryPanel() {
                 />
               </div>
 
-              <div style={{ gridColumn: 'span 2' }}>
+              {/* ১. বিভাগ (Division) */}
+              <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
+                  ১. বিভাগ (Division) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <select
                   required
                   className="input-field"
-                  value={searchForm.mouza}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
+                  value={selectedDivId}
+                  onChange={(e) => handleDivisionChange(e.target.value)}
                   style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || divisionsList.length === 0}
                 >
-                  <option value="">-- মৌজা নির্বাচন করুন --</option>
-                  {mouzasList.map((m, idx) => (
-                    <option key={idx} value={m}>{m}</option>
+                  {divisionsList.length === 0 && <option value="">বিভাগ নেই</option>}
+                  {divisionsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                </select>
+              </div>
+
+              {/* ২. জেলা (District) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                  ২. জেলা (District) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  required
+                  className="input-field"
+                  value={selectedDistId}
+                  onChange={(e) => handleDistrictChange(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || districtsList.length === 0}
+                >
+                  {districtsList.length === 0 && <option value="">জেলা নেই</option>}
+                  {districtsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
+                </select>
+              </div>
+
+              {/* ৩. উপজেলা (Upazila) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                  ৩. উপজেলা (Upazila) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  required
+                  className="input-field"
+                  value={selectedUpzId}
+                  onChange={(e) => handleUpazilaChange(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || upazilasList.length === 0}
+                >
+                  {upazilasList.length === 0 && <option value="">উপজেলা নেই</option>}
+                  {upazilasList.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
+                </select>
+              </div>
+
+              {/* ৪. মৌজা (Mouza) */}
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                  ৪. মৌজা (Mouza) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  required
+                  className="input-field"
+                  value={selectedMouzaId}
+                  onChange={(e) => handleMouzaChange(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || mouzasList.length === 0}
+                >
+                  {mouzasList.length === 0 && <option value="">মৌজা নেই</option>}
+                  {mouzasList.map(m => (
+                    <option key={m._id} value={m._id}>
+                      {m.name} {m.jl_no ? `(জে.এল ${m.jl_no})` : ''}
+                    </option>
                   ))}
                 </select>
               </div>
 
+              {/* ৫. খতিয়ান নং (Khatian No) */}
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
+                  ৫. খতিয়ান নম্বর (Khatian No) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   className="input-field"
-                  placeholder="যেমন: ১০১"
-                  value={searchForm.dag_no}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
-                />
+                  value={selectedKhatianId}
+                  onChange={(e) => handleKhatianChange(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || khatiansList.length === 0}
+                >
+                  {khatiansList.length === 0 && <option value="">খতিয়ান নেই</option>}
+                  {khatiansList.map(k => (
+                    <option key={k._id} value={k._id}>
+                      {k.khatian_no} {k.khatian_type ? `(${k.khatian_type})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
+              {/* ৬. দাগ নম্বর (Plot No) */}
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
-                  খতিয়ান নম্বর (Khatian No) <span style={{ color: '#dc2626' }}>*</span>
+                  ৬. দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   required
                   className="input-field"
-                  placeholder="যেমন: ২৫০"
-                  value={searchForm.khatian_no}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, khatian_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '10px 12px' }}
-                />
+                  value={selectedDagId}
+                  onChange={(e) => handleDagChange(e.target.value)}
+                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                  disabled={loadingLocations || dagsList.length === 0}
+                >
+                  {dagsList.length === 0 && <option value="">দাগ নেই</option>}
+                  {dagsList.map(d => (
+                    <option key={d._id} value={d._id}>
+                      দাগ {d.dag_no} {d.total_area_decimal ? `(${d.total_area_decimal} শতক)` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div style={{ gridColumn: 'span 2', background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11px', color: '#1e40af', fontWeight: '600' }}>
-                📌 জমি অনুসন্ধান ও শনাক্তকরণের স্ট্যান্ডার্ড: <strong>মৌজা + দাগ নম্বর + খতিয়ান নম্বর</strong>
+              <div style={{
+                gridColumn: 'span 2',
+                background: '#eff6ff',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #bfdbfe',
+                fontSize: '11px',
+                color: '#1e40af',
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <span>📌 জমি অনুসন্ধান ও শনাক্তকরণের স্ট্যান্ডার্ড: <strong>বিভাগ ➔ জেলা ➔ উপজেলা ➔ মৌজা ➔ খতিয়ান ➔ দাগ নম্বর</strong></span>
+                <button
+                  type="button"
+                  onClick={loadInitialHierarchy}
+                  disabled={loadingLocations}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
+                >
+                  <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
+                  রিফ্রেশ
+                </button>
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>
