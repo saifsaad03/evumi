@@ -949,26 +949,49 @@ export default function P4RegistryPanel() {
                 justifyContent: 'space-between'
               }}>
                 <span>📌 জমি অনুসন্ধান ও শনাক্তকরণের স্ট্যান্ডার্ড: <strong>বিভাগ ➔ জেলা ➔ উপজেলা ➔ মৌজা ➔ খতিয়ান ➔ দাগ নম্বর</strong></span>
-                <button
-                  type="button"
-                  onClick={loadInitialHierarchy}
-                  disabled={loadingLocations}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563eb',
-                    cursor: 'pointer',
-                    fontSize: '11px',
-                    fontWeight: '700',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px'
-                  }}
-                  title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
-                >
-                  <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
-                  রিফ্রেশ
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <a
+                    href="#/register-office?tab=create_land"
+                    style={{
+                      background: '#dcfce7',
+                      border: '1px solid #86efac',
+                      color: '#166534',
+                      textDecoration: 'none',
+                      cursor: 'pointer',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="নতুন জমি, খতিয়ান বা দাগ এন্ট্রি করুন"
+                  >
+                    <Plus size={12} />
+                    নতুন জমি তৈরি
+                  </a>
+                  <button
+                    type="button"
+                    onClick={loadInitialHierarchy}
+                    disabled={loadingLocations}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                    title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
+                  >
+                    <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
+                    রিফ্রেশ
+                  </button>
+                </div>
               </div>
 
               <div style={{ gridColumn: 'span 2' }}>

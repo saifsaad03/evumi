@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell } from 'lucide-react';
+import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell, Plus } from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
 import BontonNamaRegistrySection from '../components/BontonNamaRegistrySection';
+import DynamicLocationManager from '../components/DynamicLocationManager';
 
 
 export default function RegisterOfficeDashboard() {
@@ -754,6 +755,11 @@ export default function RegisterOfficeDashboard() {
       badge: claimNotifications.length > 0 ? claimNotifications.length : undefined,
       badgeColor: '#b45309',
       badgeBg: '#fef3c7'
+    },
+    {
+      id: 'create_land',
+      label: 'নতুন জমি ও লোকেশন এন্ট্রি (দাগ/খতিয়ান তৈরি)',
+      icon: Plus,
     }
   ];
 
@@ -822,26 +828,49 @@ export default function RegisterOfficeDashboard() {
                   gap: '8px'
                 }}>
                   <span>বিভাগ ➔ জেলা ➔ উপজেলা/সার্কেল ➔ মৌজা ➔ জেল নম্বর ➔ খতিয়ান ➔ দাগ নম্বর</span>
-                  <button
-                    type="button"
-                    onClick={loadInitialHierarchy}
-                    disabled={loadingLocations}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#2563eb',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      fontSize: '11px',
-                      fontWeight: '700'
-                    }}
-                    title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
-                  >
-                    <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
-                    রিফ্রেশ
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleTabChange('create_land')}
+                      style={{
+                        background: '#dcfce7',
+                        border: '1px solid #86efac',
+                        color: '#166534',
+                        cursor: 'pointer',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title="নতুন জমি, খতিয়ান বা দাগ এন্ট্রি করুন"
+                    >
+                      <Plus size={12} />
+                      নতুন জমি তৈরি
+                    </button>
+                    <button
+                      type="button"
+                      onClick={loadInitialHierarchy}
+                      disabled={loadingLocations}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#2563eb',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '11px',
+                        fontWeight: '700'
+                      }}
+                      title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
+                    >
+                      <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
+                      রিফ্রেশ
+                    </button>
+                  </div>
                 </div>
 
                 {divisionsList.length === 0 && !loadingLocations && (
@@ -2046,6 +2075,12 @@ export default function RegisterOfficeDashboard() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {activeTab === 'create_land' && (
+        <div style={{ marginTop: '10px' }}>
+          <DynamicLocationManager />
         </div>
       )}
     </DashboardLayout>

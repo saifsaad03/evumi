@@ -182,7 +182,7 @@ router.get('/dags', async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 
 // STEP 1: Division Create & Manage
-router.post('/divisions', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/divisions', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { name, code, bn_name, description } = req.body;
     if (!name || !name.trim()) {
@@ -217,7 +217,7 @@ router.post('/divisions', verifyToken, requireRole('Super Admin'), async (req, r
   }
 });
 
-router.put('/divisions/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/divisions/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { name, code, bn_name, status, description } = req.body;
     const division = await Division.findById(req.params.id);
@@ -236,7 +236,7 @@ router.put('/divisions/:id', verifyToken, requireRole('Super Admin'), async (req
   }
 });
 
-router.delete('/divisions/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/divisions/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const division = await Division.findById(req.params.id);
     if (!division) return res.status(404).json({ success: false, message: 'বিভাগ পাওয়া যায়নি।' });
@@ -258,7 +258,7 @@ router.delete('/divisions/:id', verifyToken, requireRole('Super Admin'), async (
 });
 
 // STEP 2: District Create & Manage (Parent: Division)
-router.post('/districts', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/districts', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { division_id, name, code, description } = req.body;
     if (!division_id) {
@@ -302,7 +302,7 @@ router.post('/districts', verifyToken, requireRole('Super Admin'), async (req, r
   }
 });
 
-router.put('/districts/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/districts/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { name, code, status, description } = req.body;
     const district = await District.findById(req.params.id);
@@ -320,7 +320,7 @@ router.put('/districts/:id', verifyToken, requireRole('Super Admin'), async (req
   }
 });
 
-router.delete('/districts/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/districts/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const district = await District.findById(req.params.id);
     if (!district) return res.status(404).json({ success: false, message: 'জেলা পাওয়া যায়নি।' });
@@ -341,7 +341,7 @@ router.delete('/districts/:id', verifyToken, requireRole('Super Admin'), async (
 });
 
 // STEP 3: Upazila Create & Manage (Parent: District)
-router.post('/upazilas', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/upazilas', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { district_id, name, code, description } = req.body;
     if (!district_id) {
@@ -386,7 +386,7 @@ router.post('/upazilas', verifyToken, requireRole('Super Admin'), async (req, re
   }
 });
 
-router.put('/upazilas/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/upazilas/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { name, code, status, description } = req.body;
     const upazila = await Upazila.findById(req.params.id);
@@ -404,7 +404,7 @@ router.put('/upazilas/:id', verifyToken, requireRole('Super Admin'), async (req,
   }
 });
 
-router.delete('/upazilas/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/upazilas/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const upazila = await Upazila.findById(req.params.id);
     if (!upazila) return res.status(404).json({ success: false, message: 'উপজেলা পাওয়া যায়নি।' });
@@ -425,7 +425,7 @@ router.delete('/upazilas/:id', verifyToken, requireRole('Super Admin'), async (r
 });
 
 // STEP 4: Mouza Create & Manage (Parent: Upazila)
-router.post('/mouzas', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/mouzas', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { upazila_id, name, jl_no, remarks } = req.body;
     if (!upazila_id) {
@@ -472,7 +472,7 @@ router.post('/mouzas', verifyToken, requireRole('Super Admin'), async (req, res)
   }
 });
 
-router.put('/mouzas/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/mouzas/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { name, jl_no, status, remarks } = req.body;
     const mouza = await Mouza.findById(req.params.id);
@@ -490,7 +490,7 @@ router.put('/mouzas/:id', verifyToken, requireRole('Super Admin'), async (req, r
   }
 });
 
-router.delete('/mouzas/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/mouzas/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const mouza = await Mouza.findById(req.params.id);
     if (!mouza) return res.status(404).json({ success: false, message: 'মৌজা পাওয়া যায়নি।' });
@@ -511,7 +511,7 @@ router.delete('/mouzas/:id', verifyToken, requireRole('Super Admin'), async (req
 });
 
 // STEP 5: Khatian Number Create & Manage (Parent: Mouza)
-router.post('/khatians', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/khatians', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { mouza_id, khatian_no, khatian_type, owner_name, owner_nid, remarks } = req.body;
     if (!mouza_id) {
@@ -561,7 +561,7 @@ router.post('/khatians', verifyToken, requireRole('Super Admin'), async (req, re
   }
 });
 
-router.put('/khatians/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/khatians/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { khatian_no, khatian_type, owner_name, owner_nid, status, remarks } = req.body;
     const khatian = await Khatian.findById(req.params.id);
@@ -581,7 +581,7 @@ router.put('/khatians/:id', verifyToken, requireRole('Super Admin'), async (req,
   }
 });
 
-router.delete('/khatians/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/khatians/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const khatian = await Khatian.findById(req.params.id);
     if (!khatian) return res.status(404).json({ success: false, message: 'খতিয়ান পাওয়া যায়নি।' });
@@ -603,7 +603,7 @@ router.delete('/khatians/:id', verifyToken, requireRole('Super Admin'), async (r
 
 // STEP 6: Dag Number Create & Manage (Parent: Khatian)
 // Super Admin adds Dag parcels under a Khatian; also syncs with LandRecord for Register Office & AC Land!
-router.post('/dags', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/dags', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { khatian_id, dag_no, land_type, total_area_decimal, remarks } = req.body;
     if (!khatian_id) {
@@ -689,7 +689,7 @@ router.post('/dags', verifyToken, requireRole('Super Admin'), async (req, res) =
   }
 });
 
-router.put('/dags/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.put('/dags/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const { dag_no, land_type, total_area_decimal, status, remarks } = req.body;
     const dag = await Dag.findById(req.params.id);
@@ -708,7 +708,7 @@ router.put('/dags/:id', verifyToken, requireRole('Super Admin'), async (req, res
   }
 });
 
-router.delete('/dags/:id', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.delete('/dags/:id', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const dag = await Dag.findById(req.params.id);
     if (!dag) return res.status(404).json({ success: false, message: 'দাগ নম্বর পাওয়া যায়নি।' });
@@ -725,7 +725,7 @@ router.delete('/dags/:id', verifyToken, requireRole('Super Admin'), async (req, 
 // ─────────────────────────────────────────────────────────────
 
 // POST /api/locations/migrate-existing - Auto-populate dynamic hierarchy from existing LandRecords
-router.post('/migrate-existing', verifyToken, requireRole('Super Admin'), async (req, res) => {
+router.post('/migrate-existing', verifyToken, requireRole('Super Admin', 'Register Office'), async (req, res) => {
   try {
     const lands = await LandRecord.find({});
     let createdDivs = 0, createdDists = 0, createdUpzs = 0, createdMouzas = 0, createdKhatians = 0, createdDags = 0;
