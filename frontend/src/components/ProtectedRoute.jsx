@@ -1,21 +1,17 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import EvumiLoader from './EvumiLoader';
 
 export default function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        color: '#94a3b8',
-        fontSize: '16px'
-      }}>
-        লোড হচ্ছে... অনুগ্রহ করে অপেক্ষা করুন...
-      </div>
+      <EvumiLoader
+        fullScreen={true}
+        message="ব্যবহারকারী অ্যাকাউন্ট ও নিরাপত্তা সনদ যাচাই করা হচ্ছে..."
+        subMessage="অনুগ্রহ করে অপেক্ষা করুন…"
+      />
     );
   }
 

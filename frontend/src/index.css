@@ -425,13 +425,154 @@ select option:checked {
 /* ============================================================
    Loading & Animations
    ============================================================ */
-.loader {
+/* Button / Inline spinners */
+.spinner,
+.btn-spinner,
+.loader:not(#evumi-loader *):not(.evumi-loader-root *) {
   width: 22px;
   height: 22px;
   border: 3px solid var(--border-strong);
   border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin-slow 0.8s linear infinite;
+}
+
+/* ===== e-ভূমি Brand Loader (Exact match to specification) ===== */
+#evumi-loader,
+.evumi-loader-root {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #fbfcf9;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  transition: opacity .6s ease, visibility .6s;
+  font-family: 'Hind Siliguri', system-ui, sans-serif;
+}
+#evumi-loader::before,
+.evumi-loader-root::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #0f5132;
+}
+#evumi-loader.hide,
+.evumi-loader-root.hide {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#evumi-loader .loader,
+.evumi-loader-root .loader {
+  display: inline-flex !important;
+  font-family: 'Noto Serif Bengali', 'Hind Siliguri', Georgia, serif !important;
+  font-weight: 700 !important;
+  font-size: clamp(2.8rem, 11vw, 5rem) !important;
+  color: #0f5132 !important;
+  width: auto !important;
+  height: auto !important;
+  border: none !important;
+  border-radius: 0 !important;
+  animation: none !important;
+}
+
+#evumi-loader .ch,
+.evumi-loader-root .ch {
+  display: inline-block;
+  height: 1.5em;
+  line-height: 1.5em;
+  overflow: hidden;
+}
+
+#evumi-loader .ch > span,
+.evumi-loader-root .ch > span {
+  display: flex;
+  flex-direction: column;
+  animation: up 1.4s cubic-bezier(.7, 0, .3, 1) infinite;
+  animation-delay: var(--d);
+}
+
+#evumi-loader .ch > span > b,
+.evumi-loader-root .ch > span > b {
+  display: block;
+  font-weight: inherit;
+  height: 1.5em;
+}
+
+#evumi-loader .ch.down > span,
+.evumi-loader-root .ch.down > span {
+  animation-name: down;
+}
+
+#evumi-loader .ch.gold,
+.evumi-loader-root .ch.gold {
+  color: #b8912f !important;
+}
+
+#evumi-loader .rule,
+.evumi-loader-root .rule {
+  width: min(200px, 50vw);
+  height: 2px;
+  background: rgba(15, 81, 50, .15);
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+#evumi-loader .rule i,
+.evumi-loader-root .rule i {
+  display: block;
+  height: 100%;
+  width: 40%;
+  background: #b8912f;
+  border-radius: 2px;
+  animation: slide 1.4s ease-in-out infinite;
+}
+
+#evumi-loader .sub,
+.evumi-loader-root .sub {
+  font-size: .95rem;
+  color: #5d6f64;
+  font-weight: 500;
+  text-align: center;
+  padding: 0 20px;
+}
+
+#evumi-loader .foot,
+.evumi-loader-root .foot {
+  position: absolute;
+  bottom: 26px;
+  font-size: .8rem;
+  color: #5d6f64;
+}
+
+@keyframes up {
+  0% { transform: translateY(0); }
+  60%, 100% { transform: translateY(-50%); }
+}
+
+@keyframes down {
+  0% { transform: translateY(-50%); }
+  60%, 100% { transform: translateY(0); }
+}
+
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(260%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #evumi-loader *,
+  .evumi-loader-root * {
+    animation-duration: .01s !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 @keyframes spin-slow {
@@ -1372,5 +1513,11 @@ select option:checked {
   .register-select {
     height: 38px !important;
     font-size: 13px !important;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 900px) {
+  .register-submit-col {
+    grid-column: span 2 !important;
   }
 }

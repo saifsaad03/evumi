@@ -6,6 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="e-ভূমি - বাংলাদেশের ডিজিটাল ভূমি ব্যবস্থাপনা সিস্টেম। জাল দলিল, ডাবল-সেলিং এবং ভূমি জালিয়াতি প্রতিরোধ।" />
     <title>e-ভূমি | ডিজিটাল ভূমি ব্যবস্থাপনা ও ই-নামজারি সিস্টেম</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Noto+Serif+Bengali:wght@700&display=swap" rel="stylesheet">
+
+    <!-- SPA Hash Redirect for GitHub Pages / Vercel fallback -->
     <script>
       (function() {
         var path = window.location.pathname;
@@ -14,9 +18,83 @@
         }
       })();
     </script>
+
+    <style>
+      :root{ --primary:#0f5132; --gold:#b8912f; --muted:#5d6f64; --bg:#fbfcf9; }
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'Hind Siliguri',system-ui,sans-serif;background:#fff}
+
+      /* ===== Loader overlay ===== */
+      #evumi-loader{
+        position:fixed;inset:0;z-index:99999;background:var(--bg);
+        display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
+        transition:opacity .6s ease,visibility .6s;
+      }
+      #evumi-loader::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:var(--primary)}
+      #evumi-loader.hide{opacity:0;visibility:hidden;pointer-events:none}
+
+      /* ---- flipping wordmark (same idea as the snippet, split per glyph for Bengali) ---- */
+      .loader{
+        display:inline-flex;
+        font-family:'Noto Serif Bengali','Hind Siliguri',Georgia,serif;font-weight:700;
+        font-size:clamp(2.8rem,11vw,5rem);color:var(--primary);
+      }
+      .ch{display:inline-block;height:1.5em;line-height:1.5em;overflow:hidden}
+      .ch > span{display:flex;flex-direction:column;animation:up 1.4s cubic-bezier(.7,0,.3,1) infinite;animation-delay:var(--d)}
+      .ch > span > b{display:block;font-weight:inherit;height:1.5em}
+      .ch.down > span{animation-name:down}
+      .ch.gold{color:var(--gold)}
+      @keyframes up  {0%{transform:translateY(0)}   60%,100%{transform:translateY(-50%)}}
+      @keyframes down{0%{transform:translateY(-50%)}60%,100%{transform:translateY(0)}}
+
+      .rule{width:min(200px,50vw);height:2px;background:rgba(15,81,50,.15);overflow:hidden;border-radius:2px}
+      .rule i{display:block;height:100%;width:40%;background:var(--gold);border-radius:2px;animation:slide 1.4s ease-in-out infinite}
+      @keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+
+      .sub{font-size:.95rem;color:var(--muted);font-weight:500;text-align:center;padding:0 20px}
+      .foot{position:absolute;bottom:26px;font-size:.8rem;color:var(--muted)}
+
+      @media (prefers-reduced-motion:reduce){ #evumi-loader *{animation-duration:.01s!important;animation-iteration-count:1!important} }
+    </style>
   </head>
   <body>
+
+    <!-- ===== e-ভূমি Loader ===== -->
+    <div id="evumi-loader" role="status" aria-live="polite" aria-label="লোড হচ্ছে...">
+      <div class="loader" aria-hidden="true">
+        <span class="ch"        style="--d:0ms">  <span><b>e</b><b>e</b></span></span>
+        <span class="ch down"   style="--d:120ms"><span><b>-</b><b>-</b></span></span>
+        <span class="ch gold"   style="--d:240ms"><span><b>ভূ</b><b>ভূ</b></span></span>
+        <span class="ch gold down" style="--d:360ms"><span><b>মি</b><b>মি</b></span></span>
+      </div>
+      <div class="rule"><i aria-hidden="true"></i></div>
+      <div class="sub">ভূমি সেবা এখন আপনার হাতের মুঠোয়</div>
+      <div class="foot">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
+    </div>
+
     <div id="root"></div>
+
+    <script>
+      (function(){
+        function dismissLoader(){
+          const MIN = 2000;
+          const elapsed = performance.now();
+          const remain = Math.max(0, MIN - elapsed);
+          setTimeout(() => {
+            const el = document.getElementById('evumi-loader');
+            if(el){
+              el.classList.add('hide');
+              setTimeout(() => el.remove(), 600);
+            }
+          }, remain);
+        }
+        if (document.readyState === 'complete') {
+          dismissLoader();
+        } else {
+          window.addEventListener('load', dismissLoader);
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

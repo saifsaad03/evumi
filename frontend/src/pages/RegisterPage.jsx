@@ -43,6 +43,7 @@ export default function RegisterPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   // ─────────────────────────────────────────────────────────────
   // Dynamic Locations Fetching from Database (Admin Panel Configured)
@@ -251,6 +252,14 @@ export default function RegisterPage() {
     }
     if (formData.password.length < 6) {
       setError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।');
+      return;
+    }
+    if (!confirmPassword) {
+      setError('অনুগ্রহ করে কনফার্ম পাসওয়ার্ড ফিল্ডটি পূরণ করুন।');
+      return;
+    }
+    if (formData.password !== confirmPassword) {
+      setError('পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না। অনুগ্রহ করে একই পাসওয়ার্ড প্রদান করুন।');
       return;
     }
 
@@ -610,7 +619,7 @@ export default function RegisterPage() {
             </div>
 
             {/* Row 4: Password & Submit Button (Responsive Grid) */}
-            <div className="register-grid-action">
+            <div className="register-grid-3" style={{ alignItems: 'flex-end' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
                   পাসওয়ার্ড (Password) <span style={{ color: '#dc2626' }}>*</span>
@@ -627,6 +636,35 @@ export default function RegisterPage() {
               </div>
 
               <div>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
+                  <span>কনফার্ম পাসওয়ার্ড (Confirm) <span style={{ color: '#dc2626' }}>*</span></span>
+                  {confirmPassword && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      color: formData.password === confirmPassword ? '#16a34a' : '#dc2626'
+                    }}>
+                      {formData.password === confirmPassword ? '✓ মিলেছে' : '✕ মিলছে না'}
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="password"
+                  name="confirm_password"
+                  required
+                  placeholder="পুনরায় একই পাসওয়ার্ড লিখুন"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="register-input"
+                  style={{
+                    borderColor: confirmPassword 
+                      ? (formData.password === confirmPassword ? '#16a34a' : '#dc2626') 
+                      : '#cbd5e1'
+                  }}
+                />
+              </div>
+
+              <div className="register-submit-col">
                 <button
                   type="submit"
                   disabled={loading}

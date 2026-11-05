@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -62,15 +63,18 @@ export default function Navbar() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen]);
 
-  // Lock body scroll when sidebar drawer is open
+  // Lock body and html scroll when sidebar drawer is open to prevent background scrolling
   useEffect(() => {
     if (sidebarVisible) {
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
     return () => {
       document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
   }, [sidebarVisible]);
 
@@ -339,7 +343,7 @@ export default function Navbar() {
           {/* ── Right-Side Sidebar Toggle Button (Opens off-canvas drawer from right to left) ── */}
           <button
             onClick={openSidebar}
-            title="সাইডবার মেনু ও সেকশন তালিকা খুলুন"
+            title="সাইডবার মেনু খুলুন"
             aria-label="সাইডবার মেনু"
             style={{
               display: 'flex',
@@ -366,30 +370,46 @@ export default function Navbar() {
       </div>
 
       {/* ══════════════════════════════════════════════════════════════════
-          OFF-CANVAS RIGHT SIDEBAR
+          OFF-CANVAS RIGHT SIDEBAR (Rendered via React Portal directly into body)
+          This guarantees top layer z-index on mobile without stacking context issues!
           Animation:
           • Opening: Right-to-Left IN (translateX(100%) -> translateX(0))
           • Closing: Left-to-Right OUT (translateX(0) -> translateX(100%))
           ══════════════════════════════════════════════════════════════════ */}
-      {sidebarVisible && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 99999,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          pointerEvents: sidebarOpen ? 'auto' : 'none'
-        }}>
+      {sidebarVisible && typeof document !== 'undefined' && createPortal(
+        <div
+          id="evumi-public-sidebar-portal"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100dvh',
+            zIndex: 2147483647, // Maximum integer z-index to stay on top of all mobile layers
+            display: 'flex',
+            justifyContent: 'flex-end',
+            pointerEvents: sidebarOpen ? 'auto' : 'none',
+            isolation: 'isolate'
+          }}
+        >
           {/* Backdrop (Dark blur overlay) */}
           <div
             onClick={closeSidebar}
             style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'rgba(15, 23, 42, 0.55)',
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: '100%',
+              background: 'rgba(15, 23, 42, 0.65)',
               backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
               opacity: sidebarOpen ? 1 : 0,
-              transition: 'opacity 0.3s ease',
+              transition: 'opacity 0.28s ease',
               cursor: 'pointer'
             }}
           />
@@ -400,13 +420,14 @@ export default function Navbar() {
             width: '100%',
             maxWidth: '380px',
             height: '100%',
+            maxHeight: '100dvh',
             background: '#ffffff',
-            boxShadow: '-8px 0 32px rgba(15, 23, 42, 0.18)',
+            boxShadow: '-8px 0 32px rgba(15, 23, 42, 0.25)',
             display: 'flex',
             flexDirection: 'column',
             transform: sidebarOpen ? 'translateX(0)' : 'translateX(100%)',
             transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
-            zIndex: 100000,
+            zIndex: 1,
             overflow: 'hidden',
             boxSizing: 'border-box'
           }}>
@@ -670,61 +691,64 @@ export default function Navbar() {
               </div>
 
               {/* ── Category 2: Landing Page Sections ── */}
-              <div>
-                <div style={{
-                  fontSize: '11px',
-                  fontWeight: '800',
-                  color: '#64748b',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '8px',
-                  paddingLeft: '4px'
-                }}>
-                  ল্যান্ডিং পেজ সেকশনসমূহ (Sections)
-                </div>
+              {/* Only shown on Home/Landing page (location.pathname === '/'), NOT on login/register pages */}
+              {location.pathname !== '/login' && location.pathname !== '/register' && (
+                <div>
+                  <div style={{
+                    fontSize: '11px',
+                    fontWeight: '800',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    marginBottom: '8px',
+                    paddingLeft: '4px'
+                  }}>
+                    ল্যান্ডিং পেজ সেকশনসমূহ (Sections)
+                  </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {[
-                    { id: 'features', label: 'সমন্বিত ৬টি ডিজিটাল ভূমি সেবা', icon: Sparkles, color: '#047857' },
-                    { id: 'workflow', label: '৬-ধাপের স্বয়ংক্রিয় সেবা পাইপলাইন', icon: Layers, color: '#0284c7' },
-                    { id: 'roles', label: '৪টি স্বতন্ত্র প্রশাসনিক ড্যাশবোর্ড', icon: ShieldCheck, color: '#7c3aed' },
-                    { id: 'security', label: 'কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত', icon: Award, color: '#b45309' },
-                    { id: 'guide', label: 'প্ল্যাটফর্ম ব্যবহারের ভিডিও নির্দেশিকা', icon: FileText, color: '#475569' },
-                    { id: 'helpline', label: 'স্মার্ট ভূমি সেবা হেল্পলাইন (১৬১২২)', icon: PhoneCall, color: '#dc2626' }
-                  ].map((sec) => {
-                    const SecIcon = sec.icon;
-                    return (
-                      <button
-                        key={sec.id}
-                        onClick={() => handleSectionScroll(sec.id)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '9px 12px',
-                          borderRadius: '8px',
-                          background: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          color: '#1e293b',
-                          fontSize: '12.5px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.15s ease'
-                        }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                          <SecIcon size={15} color={sec.color} />
-                          <span>{sec.label}</span>
-                        </div>
-                        <ChevronRight size={14} color="#94a3b8" />
-                      </button>
-                    );
-                  })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {[
+                      { id: 'features', label: 'সমন্বিত ৬টি ডিজিটাল ভূমি সেবা', icon: Sparkles, color: '#047857' },
+                      { id: 'workflow', label: '৬-ধাপের স্বয়ংক্রিয় সেবা পাইপলাইন', icon: Layers, color: '#0284c7' },
+                      { id: 'roles', label: '৪টি স্বতন্ত্র প্রশাসনিক ড্যাশবোর্ড', icon: ShieldCheck, color: '#7c3aed' },
+                      { id: 'security', label: 'কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত', icon: Award, color: '#b45309' },
+                      { id: 'guide', label: 'প্ল্যাটফর্ম ব্যবহারের ভিডিও নির্দেশিকা', icon: FileText, color: '#475569' },
+                      { id: 'helpline', label: 'স্মার্ট ভূমি সেবা হেল্পলাইন (১৬১২২)', icon: PhoneCall, color: '#dc2626' }
+                    ].map((sec) => {
+                      const SecIcon = sec.icon;
+                      return (
+                        <button
+                          key={sec.id}
+                          onClick={() => handleSectionScroll(sec.id)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            background: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            color: '#1e293b',
+                            fontSize: '12.5px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease'
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
+                            <SecIcon size={15} color={sec.color} />
+                            <span>{sec.label}</span>
+                          </div>
+                          <ChevronRight size={14} color="#94a3b8" />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Drawer Bottom Actions: Login/Logout & Hotline */}
@@ -821,7 +845,8 @@ export default function Navbar() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </nav>
   );
