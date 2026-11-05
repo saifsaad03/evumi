@@ -63,7 +63,7 @@ export default function P4RegistryPanel() {
 
   // Mandatory Deed Registration OTP states
   const [deedOtp, setDeedOtp] = useState('');
-  const [otpTarget, setOtpTarget] = useState('buyer'); // strictly 'buyer'
+  const [otpTarget, setOtpTarget] = useState('seller'); // strictly 'seller' (current land owner)
   const [sendingDeedOtp, setSendingDeedOtp] = useState(false);
   const [deedOtpSentMsg, setDeedOtpSentMsg] = useState(null);
   const [deedOtpError, setDeedOtpError] = useState(null);
@@ -104,7 +104,7 @@ export default function P4RegistryPanel() {
         mouza: landRecord.mouza,
         dag_no: landRecord.dag_no,
         khatian_no: landRecord.khatian_no,
-        target_recipient: otpTarget
+        target_recipient: 'seller'
       });
       if (res.data.success) {
         setDeedOtpSentMsg(res.data.message || `ওটিপি সফলভাবে পাঠানো হয়েছে: ${res.data.recipient_email}`);
@@ -1378,20 +1378,20 @@ export default function P4RegistryPanel() {
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 12px 0' }}>
-                  সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি ভেরিফিকেশন বাধ্যতামূলক। ক্রেতার ইমেইলে কোড পাঠাতে বাটনে ক্লিক করুন।
+                  সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি ভেরিফিকেশন বাধ্যতামূলক। জমির বর্তমান মালিক/বিক্রেতার ইমেইলে কোড পাঠাতে নিচের বাটনে ক্লিক করুন।
                 </p>
 
-                {/* Recipient Selection (Buyer Only) */}
+                {/* Recipient Selection (Seller/Owner Only) */}
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', fontSize: '12px', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', color: '#0f172a' }}>
                     <input
                       type="radio"
                       name="otpTarget"
-                      value="buyer"
-                      checked={otpTarget === 'buyer'}
-                      onChange={() => setOtpTarget('buyer')}
+                      value="seller"
+                      checked={otpTarget === 'seller'}
+                      onChange={() => setOtpTarget('seller')}
                     />
-                    ক্রেতার ইমেইলে পাঠান ({deedForm.buyer_name || 'ক্রেতা'})
+                    মালিক/বিক্রেতার ইমেইলে পাঠান ({landRecord.owner_name})
                   </label>
                 </div>
 
