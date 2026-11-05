@@ -412,8 +412,10 @@ export default function RegisterOfficeDashboard() {
     handleSearchLandWithParams(updatedFilter);
   };
 
-  // Selected land & found user
+  // Selected land, meta & partial assignment state
   const [selectedLand, setSelectedLand] = useState(null);
+  const [plotMeta, setPlotMeta] = useState(null);
+  const [assignArea, setAssignArea] = useState('');
   const [searchingLand, setSearchingLand] = useState(false);
   const [editingKhatian, setEditingKhatian] = useState(false);
   const [customKhatianInput, setCustomKhatianInput] = useState('');
@@ -452,20 +454,11 @@ export default function RegisterOfficeDashboard() {
   const [statusSelections, setStatusSelections] = useState({});
   const [statusUpdateMessage, setStatusUpdateMessage] = useState(null);
 
-  // Check if land is actually allocated to a private citizen (not unassigned / khas)
+  // Check if land in this Dag is completely allocated (available <= 0)
   const checkIsAllocated = (land) => {
     if (!land) return false;
-    if (land.status === 'Pending_AC_Land_Review' || land.status === 'Pending_Mutation' || land.status === 'Sold') {
-      return true;
-    }
-    const isUnassigned = !land.owner_nid ||
-      land.owner_nid === '1000000000000' ||
-      land.owner_nid === 'অনলাইনে রেকর্ড নেই' ||
-      land.owner_name === 'অনলাইনে অনিবন্ধিত' ||
-      (land.owner_name && land.owner_name.includes('সরকার')) ||
-      (land.owner_name && land.owner_name.includes('খাস'));
-
-    return !isUnassigned;
+    const avail = plotMeta?.available_area ?? land.available_area_decimal ?? 0;
+    return avail <= 0;
   };
 
   useEffect(() => {
@@ -526,6 +519,8 @@ export default function RegisterOfficeDashboard() {
     const current = searchFilter && typeof searchFilter === 'object' && searchFilter.mouza ? searchFilter : filter;
     if (!current?.division || !current?.district || !current?.upazila || !current?.mouza || !current?.dag_no) {
       setSelectedLand(null);
+      setPlotMeta(null);
+      setAssignArea('');
       return;
     }
     setSearchingLand(true);
@@ -544,17 +539,25 @@ export default function RegisterOfficeDashboard() {
       });
       if (res.data.success && res.data.data?.length > 0) {
         const land = res.data.data[0];
+        const meta = res.data.meta || null;
         setSelectedLand(land);
+        setPlotMeta(meta);
+        const avail = meta?.available_area ?? land.available_area_decimal ?? 0;
+        setAssignArea(avail > 0 ? String(avail) : '');
         setCustomKhatianInput(land.khatian_no || current.khatian_no || '');
         if (land.khatian_no && land.khatian_no !== current.khatian_no) {
           setFilter(prev => ({ ...prev, khatian_no: land.khatian_no }));
         }
       } else {
         setSelectedLand(null);
+        setPlotMeta(null);
+        setAssignArea('');
       }
     } catch (err) {
       console.error('Land search error:', err);
       setSelectedLand(null);
+      setPlotMeta(null);
+      setAssignArea('');
     } finally {
       setSearchingLand(false);
     }
@@ -624,6 +627,18 @@ export default function RegisterOfficeDashboard() {
       alert('অনুগ্রহ করে জমি নির্বাচন করুন!');
       return;
     }
+
+    const currentAvailable = plotMeta?.available_area ?? selectedLand.available_area_decimal ?? 0;
+    const requestedArea = parseFloat(assignArea || currentAvailable);
+    if (isNaN(requestedArea) || requestedArea <= 0) {
+      alert('অনুগ্রহ করে বৈধ বরাদ্দকৃত জমির পরিমাণ (শতক) প্রদান করুন!');
+      return;
+    }
+    if (requestedArea > currentAvailable) {
+      alert(`⚠️ অপর্যাপ্ত জমি! এই দাগে অবশিষ্ট বরাদ্দযোগ্য জমি রয়েছে ${currentAvailable} শতক, কিন্তু আপনি বরাদ্দ দিতে চেয়েছেন ${requestedArea} শতক।`);
+      return;
+    }
+
     setSendingCitizenOtp(true);
     setOtpSentMessage(null);
     setOtpError(null);
@@ -633,7 +648,8 @@ export default function RegisterOfficeDashboard() {
         citizen_email: foundUser.email,
         dag_no: selectedLand.dag_no,
         mouza: selectedLand.mouza,
-        land_record_id: selectedLand._id
+        land_record_id: selectedLand._id,
+        area_decimal: requestedArea
       });
       if (res.data.success) {
         setOtpSentMessage(res.data.message || `নাগরিকের ইমেইল (${foundUser.email}) এ ৬ ডিজিটের ওটিপি সফলভাবে পাঠানো হয়েছে।`);
@@ -655,6 +671,18 @@ export default function RegisterOfficeDashboard() {
       alert('অনুগ্রহ করে লক্ষ্য নাগরিক খুঁজে নির্বাচন করুন!');
       return;
     }
+
+    const currentAvailable = plotMeta?.available_area ?? selectedLand.available_area_decimal ?? 0;
+    const requestedArea = parseFloat(assignArea || currentAvailable);
+    if (isNaN(requestedArea) || requestedArea <= 0) {
+      alert('অনুগ্রহ করে বৈধ বরাদ্দকৃত জমির পরিমাণ (শতক) প্রদান করুন!');
+      return;
+    }
+    if (requestedArea > currentAvailable) {
+      alert(`⚠️ অপর্যাপ্ত জমি! এই দাগে অবশিষ্ট জমি ${currentAvailable} শতকের চেয়ে বেশি বরাদ্দ দেওয়া সম্ভব নয়।`);
+      return;
+    }
+
     if (!volumeBook || !pageNo) {
       alert('ভলিউম বই নম্বর এবং পৃষ্ঠা নম্বর প্রদান আবশ্যক!');
       return;
@@ -676,6 +704,7 @@ export default function RegisterOfficeDashboard() {
         page_no: pageNo,
         deed_no: deedNo,
         remarks: remarks,
+        assign_area: requestedArea,
         otp: citizenOtp.trim(),
         khatian_no: selectedLand.khatian_no || filter.khatian_no
       });
@@ -685,7 +714,7 @@ export default function RegisterOfficeDashboard() {
         setCitizenOtp('');
         setOtpSentMessage(null);
         fetchSentRequests();
-        handleSearchLand(); // refresh land status
+        handleSearchLand(); // refresh land status and update available area
       }
     } catch (err) {
       setAssignError(err.response?.data?.message || 'বরাদ্দ অনুরোধ পাঠানো ব্যর্থ হয়েছে');
@@ -951,30 +980,52 @@ export default function RegisterOfficeDashboard() {
 
               {/* Selected Land Preview */}
               {selectedLand && (() => {
-                const isLandAllocated = checkIsAllocated(selectedLand);
-                const displayOwnerName = isLandAllocated ? selectedLand.owner_name : 'অনলাইনে অনিবন্ধিত';
-                const displayOwnerNid = isLandAllocated ? selectedLand.owner_nid : 'প্রযোজ্য নয় (অনলাইনে অনিবন্ধিত)';
+                const totalDagArea = plotMeta?.total_dag_area ?? selectedLand.total_area_decimal ?? 0;
+                const availableArea = plotMeta?.available_area ?? selectedLand.available_area_decimal ?? 0;
+                const assignedArea = plotMeta?.assigned_area ?? 0;
+                const pendingArea = plotMeta?.pending_area ?? 0;
+                const isFullyAllocated = availableArea <= 0;
 
                 return (
-                  <div className="glass-card" style={{ padding: '20px', borderLeft: `5px solid ${isLandAllocated ? '#ef4444' : '#16a34a'}`, background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+                  <div className="glass-card" style={{ padding: '20px', borderLeft: `5px solid ${isFullyAllocated ? '#ef4444' : '#16a34a'}`, background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                       <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                        নির্বাচিত জমি: দাগ {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
+                        দাগের তথ্য: দাগ নং {selectedLand.dag_no} (মৌজা: {selectedLand.mouza})
                       </h4>
                       <span style={{
                         fontSize: '11px',
                         padding: '4px 10px',
                         borderRadius: '999px',
-                        background: isLandAllocated ? '#fee2e2' : '#dcfce7',
-                        color: isLandAllocated ? '#991b1b' : '#166534',
-                        border: `1px solid ${isLandAllocated ? '#f87171' : '#86efac'}`,
+                        background: isFullyAllocated ? '#fee2e2' : '#dcfce7',
+                        color: isFullyAllocated ? '#991b1b' : '#166534',
+                        border: `1px solid ${isFullyAllocated ? '#f87171' : '#86efac'}`,
                         fontWeight: '700'
                       }}>
-                        {isLandAllocated ? '🔒 বরাদ্দকৃত / লক' : '🟢 বরাদ্দযোগ্য অনিবন্ধিত জমি '}
+                        {isFullyAllocated ? '🔒 সম্পূর্ণ দাগ বরাদ্দ সম্পন্ন (অবশিষ্ট ০)' : `🟢 বরাদ্দযোগ্য (অবশিষ্ট ${availableArea} শতক)`}
                       </span>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', fontSize: '13px' }}>
+                    {/* Breakdown metrics */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', marginBottom: '14px' }}>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>দাগের মোট জমি:</span>
+                        <strong style={{ color: '#0f172a', fontSize: '14px' }}>{totalDagArea} শতক</strong>
+                      </div>
+                      <div style={{ background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1.5px solid #86efac' }}>
+                        <span style={{ color: '#166534', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '700' }}>অবশিষ্ট বরাদ্দযোগ্য:</span>
+                        <strong style={{ color: '#15803d', fontSize: '15px', fontWeight: '800' }}>{availableArea} শতক</strong>
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>অনুমোদিত মালিকানা:</span>
+                        <strong style={{ color: '#0369a1', fontSize: '14px' }}>{assignedArea} শতক</strong>
+                      </div>
+                      <div style={{ background: '#fffbeb', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                        <span style={{ color: '#b45309', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>রিভিউ অপেক্ষমান:</span>
+                        <strong style={{ color: '#d97706', fontSize: '14px' }}>{pendingArea} শতক</strong>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px' }}>
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
                           <span style={{ color: '#475569', fontSize: '11px', fontWeight: '600' }}>খতিয়ান নং:</span>
@@ -1036,9 +1087,6 @@ export default function RegisterOfficeDashboard() {
                                 {savingKhatian ? '...' : 'সংরক্ষণ'}
                               </button>
                             </div>
-                            <span style={{ fontSize: '10px', color: '#64748b', marginTop: '2px', display: 'block' }}>
-                              সংরক্ষণ বাটনে চাপলে সরাসরি ডাটাবেজে আপডেট হবে
-                            </span>
                           </div>
                         ) : (
                           <strong style={{ color: '#0f172a', fontSize: '13px' }}>
@@ -1051,33 +1099,66 @@ export default function RegisterOfficeDashboard() {
                           </div>
                         )}
                       </div>
+
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
                         <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>জে.এল নং:</span>
-                        <strong style={{ color: '#0f172a' }}>{selectedLand.jl_no}</strong>
+                        <strong style={{ color: '#0f172a' }}>{selectedLand.jl_no || filter.jl_no}</strong>
                       </div>
-                      <div style={{ background: '#f0fdf4', padding: '8px 12px', borderRadius: '8px', border: '1px solid #86efac' }}>
-                        <span style={{ color: '#166534', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>মোট পরিমাণ:</span>
-                        <strong style={{ color: '#15803d', fontSize: '14px' }}>{selectedLand.total_area_decimal} শতক</strong>
-                      </div>
+
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>বর্তমান মালিক:</span>
-                        <strong style={{ color: isLandAllocated ? '#b91c1c' : '#1d4ed8' }}>{displayOwnerName}</strong>
-                      </div>
-                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>মালিকের NID:</span>
-                        <strong style={{ fontFamily: 'monospace', color: '#0f172a' }}>{displayOwnerNid}</strong>
-                      </div>
-                      <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>উপজেলা:</span>
-                        <strong style={{ color: '#0f172a' }}>{selectedLand.upazila || 'শিবগঞ্জ'}</strong>
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>উপজেলা ও জেলা:</span>
+                        <strong style={{ color: '#0f172a' }}>{selectedLand.upazila}, {selectedLand.district}</strong>
                       </div>
                     </div>
+
+                    {/* Existing co-owners in this Dag */}
+                    {plotMeta?.existing_owners && plotMeta.existing_owners.length > 0 && (
+                      <div style={{ marginTop: '12px', background: '#f0fdf4', padding: '10px 14px', borderRadius: '8px', border: '1px solid #86efac' }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#166534', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <CheckCircle size={14} color="#16a34a" /> এই দাগের অনুমোদিত বরাদ্দপ্রাপ্ত মালিকগণ ({plotMeta.existing_owners.length} জন):
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {plotMeta.existing_owners.map((owner, idx) => (
+                            <div key={owner._id || idx} style={{ fontSize: '11.5px', color: '#14532d', display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: idx < plotMeta.existing_owners.length - 1 ? '1px dashed #bbf7d0' : 'none' }}>
+                              <span>
+                                <strong>{idx + 1}. {owner.name}</strong> (NID: <span style={{ fontFamily: 'monospace' }}>{owner.nid}</span>)
+                                {owner.deed_no ? ` [দলিল: ${owner.deed_no}]` : ''}
+                              </span>
+                              <span style={{ fontWeight: '800', color: '#15803d' }}>
+                                {owner.area_decimal} শতক
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Pending requests in this Dag */}
+                    {plotMeta?.pending_requests && plotMeta.pending_requests.length > 0 && (
+                      <div style={{ marginTop: '10px', background: '#fffbeb', padding: '10px 14px', borderRadius: '8px', border: '1px solid #fde68a' }}>
+                        <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#b45309', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={14} color="#d97706" /> এসি ল্যান্ডে রিভিউ অপেক্ষমান বরাদ্দ ({plotMeta.pending_requests.length} টি):
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          {plotMeta.pending_requests.map((r, idx) => (
+                            <div key={r._id || idx} style={{ fontSize: '11.5px', color: '#78350f', display: 'flex', justifyContent: 'space-between', padding: '3px 0', borderBottom: idx < plotMeta.pending_requests.length - 1 ? '1px dashed #fde68a' : 'none' }}>
+                              <span>
+                                <strong>{idx + 1}. {r.name}</strong> (NID: <span style={{ fontFamily: 'monospace' }}>{r.nid}</span>)
+                              </span>
+                              <span style={{ fontWeight: '800', color: '#b45309' }}>
+                                {r.area_decimal} শতক
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
             </div>
 
-            {/* Right: Citizen Search + Volume/Page Fields + Submit to AC Land */}
+                        {/* Right: Citizen Search + Volume/Page Fields + Submit to AC Land */}
             <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <UserCheck size={18} color="#2563eb" /> লক্ষ্য নাগরিক নির্বাচন ও বরাদ্দ ফরম
@@ -1149,6 +1230,87 @@ export default function RegisterOfficeDashboard() {
                 padding: '16px',
                 marginBottom: '20px'
               }}>
+                <div style={{
+                  background: '#f0fdf4',
+                  border: '1.5px solid #86efac',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '12px', color: '#166534', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Layers size={14} /> বরাদ্দকৃত জমির পরিমাণ (শতক) <span style={{ color: '#dc2626' }}>*</span>
+                    </label>
+                    {selectedLand && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        color: (plotMeta?.available_area ?? selectedLand.available_area_decimal ?? 0) > 0 ? '#15803d' : '#dc2626'
+                      }}>
+                        অবশিষ্ট বরাদ্দযোগ্য: {plotMeta?.available_area ?? selectedLand.available_area_decimal ?? 0} শতক
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      max={plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 100}
+                      required
+                      className="input-field"
+                      placeholder="জমির পরিমাণ লিখুন (শতক)"
+                      value={assignArea}
+                      onChange={(e) => setAssignArea(e.target.value)}
+                      style={{
+                        flex: 1,
+                        fontSize: '13px',
+                        color: '#0f172a',
+                        background: '#ffffff',
+                        border: parseFloat(assignArea || 0) > (plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0) ? '2px solid #ef4444' : '1px solid #86efac',
+                        fontWeight: '700'
+                      }}
+                      disabled={!selectedLand || (plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0) <= 0}
+                    />
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#166534' }}>শতক</span>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '6px', fontSize: '11px' }}>
+                    <span style={{ color: '#475569' }}>
+                      আংশিক বা পূর্ণ বরাদ্দ করতে পরিমাণ লিখুন (দাগের মোট জমি: {plotMeta?.total_dag_area ?? selectedLand?.total_area_decimal ?? 0} শতক)
+                    </span>
+                    {(plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0) > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAssignArea(String(plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? ''))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#2563eb',
+                          cursor: 'pointer',
+                          fontWeight: '700',
+                          textDecoration: 'underline'
+                        }}
+                      >
+                        সম্পূর্ণ অবশিষ্ট নিন ({plotMeta?.available_area ?? selectedLand?.available_area_decimal} শতক)
+                      </button>
+                    )}
+                  </div>
+
+                  {parseFloat(assignArea || 0) > (plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0) && (
+                    <div style={{ fontSize: '11px', color: '#dc2626', marginTop: '4px', fontWeight: '700' }}>
+                      ⚠️ বরাদ্দকৃত জমি অবশিষ্ট {plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0} শতকের চেয়ে বেশি হতে পারবে না!
+                    </div>
+                  )}
+
+                  {selectedLand && (plotMeta?.available_area ?? selectedLand?.available_area_decimal ?? 0) <= 0 && (
+                    <div style={{ fontSize: '11px', color: '#991b1b', marginTop: '4px', fontWeight: '700' }}>
+                      🔒 এই দাগের সম্পূর্ণ জমি ইতিমধ্যে বরাদ্দ হয়ে গেছে। নতুন বরাদ্দ করা যাবে না।
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ fontSize: '12px', fontWeight: '700', color: '#1e40af', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <FileText size={14} /> সাব-রেজিস্ট্রি বালাম ও ভলিউম বই সংক্রান্ত তথ্য (বাধ্যতামূলক)
                 </div>

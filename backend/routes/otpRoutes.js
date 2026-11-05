@@ -316,7 +316,7 @@ const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '
 
 router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
   try {
-    const { citizen_nid, citizen_email, dag_no, mouza, land_record_id } = req.body;
+    const { citizen_nid, citizen_email, dag_no, mouza, land_record_id, area_decimal } = req.body;
 
     if (!citizen_nid || !citizen_email || !dag_no) {
       return res.status(400).json({
@@ -378,7 +378,8 @@ router.post('/send-land-assign-otp', verifyToken, requireRole('Register Office',
     const emailResult = await sendOtpEmail(targetEmail, otp, 'LAND_ASSIGNMENT', {
       citizen_name: citizenName,
       dag_no,
-      mouza
+      mouza,
+      area_decimal
     });
 
     const isEmailDelivered = !emailResult.simulated;

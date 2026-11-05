@@ -283,6 +283,7 @@ const sendOtpEmail = async (toEmail, otp, purpose, extraDetails = {}) => {
       if (extraDetails.mouza) details.push({ label: 'মৌজার নাম', value: extraDetails.mouza });
       if (extraDetails.dag_no) details.push({ label: 'দাগ নম্বর', value: extraDetails.dag_no });
       if (extraDetails.khatian_no) details.push({ label: 'খতিয়ান নম্বর', value: extraDetails.khatian_no });
+      if (extraDetails.area_decimal) details.push({ label: 'বরাদ্দকৃত জমি', value: `${extraDetails.area_decimal} শতক` });
     } else if (purpose === 'DEED_REGISTRATION') {
       title = 'সাব-রেজিস্ট্রি দলিল নিবন্ধন সম্মতি ওটিপি';
       badgeText = '⚖️ সাব-রেজিস্ট্রি দলিল সম্পাদন (বাধ্যতামূলক)';

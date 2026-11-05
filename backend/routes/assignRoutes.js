@@ -60,7 +60,8 @@ router.get('/filter-options', verifyToken, async (req, res) => {
 
 // GET /api/assign/search-land
 // Standard Land Identification Parameters: Mouza Number + Dag Number + Khatian Number
-// When UI updates Khatian Number, it is persisted to the database and displayed correctly.
+// Supports partial assignment: Multiple citizens can be assigned portions of the same Dag,
+// preserving the total area sum across all portions and remaining available land.
 router.get('/search-land', verifyToken, async (req, res) => {
   try {
     const { division, district, upazila, mouza, jl_no, khatian_no, dag_no } = req.query;
@@ -74,7 +75,8 @@ router.get('/search-land', verifyToken, async (req, res) => {
       return res.status(200).json({
         success: true,
         count: 0,
-        data: []
+        data: [],
+        meta: null
       });
     }
 
@@ -83,81 +85,56 @@ router.get('/search-land', verifyToken, async (req, res) => {
     const engKhatian = cleanKhatian ? toEnglishDigits(cleanKhatian) : '';
     const bngKhatian = cleanKhatian ? toBengaliDigits(cleanKhatian) : '';
 
-    // Check if this dag is configured in Admin Panel (Dag collection)
+    const dagMatch = {
+      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    };
+
+    // 1. Master Dag Area configured by Super Admin in Dag collection
     const adminDag = await Dag.findOne({
       mouza_name: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
       $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
     });
 
-    // 1. Search if this plot already exists in MongoDB
-    // First priority: Exact match by Mouza + Dag + Khatian (if khatian provided)
-    let record = null;
-    if (cleanKhatian) {
-      record = await LandRecord.findOne({
-        mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
-        $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }],
-        $and: [
-          { $or: [{ khatian_no: cleanKhatian }, { khatian_no: engKhatian }, { khatian_no: bngKhatian }] }
-        ]
-      });
-    }
+    const totalDagArea = adminDag && adminDag.total_area_decimal ? Number(adminDag.total_area_decimal) : 20;
 
-    // Second priority: Match by Mouza + Dag
-    if (!record) {
-      record = await LandRecord.findOne({
-        mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
-        $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
-      });
-    }
+    // 2. Find all approved citizen lands in this Dag
+    const citizenLands = await LandRecord.find({
+      ...dagMatch,
+      owner_nid: { $nin: ['1000000000000', 'GOVT-KHAS-01', 'অনলাইনে রেকর্ড নেই', ''] },
+      owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ },
+      status: { $in: ['Active', 'Pending_Mutation'] }
+    });
 
-    if (record) {
-      let changed = false;
+    const assignedArea = Number(citizenLands.reduce((acc, l) => acc + (Number(l.total_area_decimal) || 0), 0).toFixed(4));
 
-      const isCitizenOwned = record.owner_nid &&
-        record.owner_nid !== '1000000000000' &&
-        record.owner_nid !== 'GOVT-KHAS-01' &&
-        record.owner_nid !== 'অনলাইনে রেকর্ড নেই' &&
-        !record.owner_name?.includes('সরকার') &&
-        !record.owner_name?.includes('অনলাইনে অনিবন্ধিত');
+    // 3. Find all pending assignment requests in this Dag
+    const pendingRequests = await LandAssignRequest.find({
+      ...dagMatch,
+      status: 'Pending_AC_Land_Review'
+    });
 
-      // If user searched for a specific Khatian, but the found record belongs to a citizen under a DIFFERENT khatian,
-      // DO NOT overwrite citizen's record! Treat as unallocated plot for the new khatian.
-      if (cleanKhatian && isCitizenOwned && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
-        record = null; // Will trigger step 2 below to initialize an unallocated record for cleanKhatian
-      } else {
-        // If unassigned or government khas, sync khatian number if specified
-        if (cleanKhatian && !isCitizenOwned && record.khatian_no !== cleanKhatian && record.khatian_no !== engKhatian && record.khatian_no !== bngKhatian) {
-          record.khatian_no = cleanKhatian;
-          record.last_updated = new Date();
-          changed = true;
-        }
+    const pendingArea = Number(pendingRequests.reduce((acc, r) => acc + (Number(r.area_decimal) || 0), 0).toFixed(4));
 
-        // If an existing record had legacy gov owner name/nid, sanitize it to unassigned
-        if (record.owner_nid === '1000000000000' || record.owner_name?.includes('গণপ্রজাতন্ত্রী বাংলাদেশ সরকার')) {
-          record.owner_name = 'অনলাইনে অনিবন্ধিত';
-          record.owner_nid = 'অনলাইনে রেকর্ড নেই';
-          changed = true;
-        }
+    // 4. Calculate available assignable area for this Dag
+    const availableArea = Math.max(0, Number((totalDagArea - assignedArea - pendingArea).toFixed(4)));
 
-        // Sync admin configured area if unallocated
-        if (adminDag && adminDag.total_area_decimal && !isCitizenOwned && record.total_area_decimal !== adminDag.total_area_decimal) {
-          record.total_area_decimal = adminDag.total_area_decimal;
-          record.available_area_decimal = adminDag.total_area_decimal;
-          changed = true;
-        }
+    // 5. Find or create unassigned pool record for this Dag
+    let unassignedRecord = await LandRecord.findOne({
+      ...dagMatch,
+      $or: [
+        { owner_nid: 'অনলাইনে রেকর্ড নেই' },
+        { owner_nid: '1000000000000' },
+        { owner_nid: 'GOVT-KHAS-01' },
+        { owner_name: 'অনলাইনে অনিবন্ধিত' },
+        { owner_name: /গণপ্রজাতন্ত্রী বাংলাদেশ সরকার|খাস/ }
+      ]
+    });
 
-        if (changed) {
-          await record.save();
-        }
-      }
-    }
+    const initialKhatian = cleanKhatian || adminDag?.khatian_no || '১';
 
-    // 2. If it does NOT exist yet, dynamically initialize it as unassigned real-life plot!
-    if (!record) {
-      const variedArea = adminDag && adminDag.total_area_decimal ? Number(adminDag.total_area_decimal) : 20;
-      const initialKhatian = cleanKhatian || (adminDag ? adminDag.khatian_no : '') || '১';
-
-      record = new LandRecord({
+    if (!unassignedRecord) {
+      unassignedRecord = new LandRecord({
         record_id: `rec_${Date.now()}_${engDag}`,
         division: division || 'রাজশাহী',
         district: district || 'বগুড়া',
@@ -170,23 +147,66 @@ router.get('/search-land', verifyToken, async (req, res) => {
         owner_name: 'অনলাইনে অনিবন্ধিত',
         owner_phone: 'N/A',
         owner_email: '',
-        total_area_decimal: variedArea,
-        available_area_decimal: variedArea,
+        total_area_decimal: totalDagArea,
+        available_area_decimal: availableArea,
         volume_book: 'VOL-KHAS-2026',
         page_no: '০১',
         deed_no: `GOV-${engDag}-${Date.now().toString().slice(-4)}`,
         sub_registry_code: 'SR-BOG-SHIB-01',
-        status: 'Active'
+        status: availableArea > 0 ? 'Active' : (pendingArea > 0 ? 'Pending_AC_Land_Review' : 'Sold')
       });
-      await record.save();
+      await unassignedRecord.save();
+    } else {
+      unassignedRecord.total_area_decimal = totalDagArea;
+      unassignedRecord.available_area_decimal = availableArea;
+      if (cleanKhatian && unassignedRecord.khatian_no !== cleanKhatian) {
+        unassignedRecord.khatian_no = cleanKhatian;
+      }
+      if (availableArea > 0) {
+        unassignedRecord.status = 'Active';
+      } else if (pendingArea > 0) {
+        unassignedRecord.status = 'Pending_AC_Land_Review';
+      } else {
+        unassignedRecord.status = 'Sold';
+      }
+      unassignedRecord.last_updated = new Date();
+      await unassignedRecord.save();
     }
+
+    const meta = {
+      total_dag_area: totalDagArea,
+      assigned_area: assignedArea,
+      pending_area: pendingArea,
+      available_area: availableArea,
+      existing_owners: citizenLands.map(l => ({
+        _id: l._id,
+        name: l.owner_name,
+        nid: l.owner_nid,
+        phone: l.owner_phone,
+        area_decimal: l.total_area_decimal,
+        volume_book: l.volume_book,
+        page_no: l.page_no,
+        deed_no: l.deed_no
+      })),
+      pending_requests: pendingRequests.map(r => ({
+        _id: r._id,
+        request_id: r.request_id,
+        name: r.user_name,
+        nid: r.user_nid,
+        area_decimal: r.area_decimal,
+        volume_book: r.volume_book,
+        page_no: r.page_no
+      }))
+    };
 
     return res.status(200).json({
       success: true,
       count: 1,
-      data: [record]
+      data: [unassignedRecord],
+      meta
     });
   } catch (err) {
+    console.error('Assign search-land error:', err);
     return res.status(500).json({ success: false, message: 'জমি খোঁজা ব্যর্থ হয়েছে।' });
   }
 });
@@ -273,9 +293,8 @@ router.get('/search-user', verifyToken, async (req, res) => {
 });
 
 // POST /api/assign/create-request
-// Register Office assigns land to user -> sends to AC Land with status Pending_AC_Land_Review
-// Standard parameter: Mouza + Dag + Khatian Number.
-// REQUIRES Citizen Email OTP verification.
+// Register Office assigns land (full or partial) to user -> sends to AC Land with status Pending_AC_Land_Review
+// Standard parameter: Mouza + Dag + Khatian Number. Supports multiple partial assignments from the same Dag.
 router.post('/create-request', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
   try {
     const {
@@ -285,6 +304,7 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       page_no,
       deed_no,
       khatian_no,
+      assign_area,
       remarks,
       otp
     } = req.body;
@@ -309,27 +329,65 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       return res.status(404).json({ success: false, message: 'জমির রেকর্ড পাওয়া যায়নি।' });
     }
 
-    // Check if land is already pending review or sold
-    if (land.status === 'Pending_AC_Land_Review' || land.status === 'Pending_Mutation' || land.status === 'Sold') {
-      return res.status(400).json({
-        success: false,
-        message: `এই জমিটি বর্তমানে '${land.status}' অবস্থায় রয়েছে। নতুন অ্যাসাইনমেন্ট করা সম্ভব নয়।`
-      });
-    }
-
-    // If an updated khatian_no was supplied in request, ensure land record reflects it
-    if (khatian_no && khatian_no.toString().trim() !== land.khatian_no) {
-      land.khatian_no = khatian_no.toString().trim();
-      await land.save();
-    }
-
-    // Check LegalStatus for Court Case / Stay Order (using Mouza + Dag + Khatian)
-    const LegalStatus = require('../models/LegalStatus');
     const cleanDag = (land.dag_no || '').toString().trim();
     const cleanMouza = (land.mouza || '').toString().trim();
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
 
+    const dagMatch = {
+      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    };
+
+    // Calculate real-time available area
+    const adminDag = await Dag.findOne({
+      mouza_name: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    });
+    const totalDagArea = adminDag && adminDag.total_area_decimal ? Number(adminDag.total_area_decimal) : Number(land.total_area_decimal || 20);
+
+    const citizenLands = await LandRecord.find({
+      ...dagMatch,
+      owner_nid: { $nin: ['1000000000000', 'GOVT-KHAS-01', 'অনলাইনে রেকর্ড নেই', ''] },
+      owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ },
+      status: { $in: ['Active', 'Pending_Mutation'] }
+    });
+    const assignedArea = Number(citizenLands.reduce((acc, l) => acc + (Number(l.total_area_decimal) || 0), 0).toFixed(4));
+
+    const pendingRequests = await LandAssignRequest.find({
+      ...dagMatch,
+      status: 'Pending_AC_Land_Review'
+    });
+    const pendingArea = Number(pendingRequests.reduce((acc, r) => acc + (Number(r.area_decimal) || 0), 0).toFixed(4));
+
+    const availableArea = Math.max(0, Number((totalDagArea - assignedArea - pendingArea).toFixed(4)));
+
+    if (availableArea <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: `⚠️ এই দাগের সম্পূর্ণ জমি (${totalDagArea} শতক) ইতিমধ্যে বরাদ্দ সম্পন্ন বা পেন্ডিং রয়েছে। নতুন বরাদ্দ সম্ভব নয়।`
+      });
+    }
+
+    const rawAssignArea = assign_area ? toEnglishDigits(assign_area.toString()) : availableArea;
+    const requestedArea = parseFloat(rawAssignArea);
+
+    if (isNaN(requestedArea) || requestedArea <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'অনুগ্রহ করে বৈধ বরাদ্দকৃত জমির পরিমাণ (শতক) প্রদান করুন।'
+      });
+    }
+
+    if (requestedArea > availableArea) {
+      return res.status(400).json({
+        success: false,
+        message: `⚠️ অপর্যাপ্ত জমি! এই দাগে অবশিষ্ট বরাদ্দযোগ্য জমি রয়েছে ${availableArea} শতক, কিন্তু বরাদ্দ চাওয়া হয়েছে ${requestedArea} শতক।`
+      });
+    }
+
+    // Check LegalStatus for Court Case / Stay Order
+    const LegalStatus = require('../models/LegalStatus');
     const legalNotice = await LegalStatus.findOne({
       $and: [
         {
@@ -357,15 +415,6 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     const engNid = toEnglishDigits(rawNid);
     const bngNid = toBengaliDigits(rawNid);
 
-    // If land is already owned by another citizen (not unassigned / khas)
-    const isUnassigned = !land.owner_nid || land.owner_nid === '1000000000000' || land.owner_nid === 'অনলাইনে রেকর্ড নেই' || land.owner_name === 'অনলাইনে অনিবন্ধিত' || (land.owner_name && land.owner_name.includes('সরকার'));
-    if (!isUnassigned && land.owner_nid !== rawNid && land.owner_nid !== engNid && land.owner_nid !== bngNid) {
-      return res.status(400).json({
-        success: false,
-        message: `এই জমিটি ইতিমধ্যে '${land.owner_name}' (NID: ${land.owner_nid})-এর নামে রেকর্ডভুক্ত রয়েছে। অন্য কাউকে পুনরায় বরাদ্দ দেওয়া যাবে না!`
-      });
-    }
-
     let citizen = null;
     try {
       citizen = await User.findOne({
@@ -389,7 +438,7 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       return res.status(404).json({ success: false, message: 'প্রদত্ত এনআইডিধারী নাগরিক নিবন্ধিত নয়।' });
     }
 
-    // Verify citizen's email OTP (Resilient: Atlas + disk + memory, supports both English & Bengali digits)
+    // Verify citizen's email OTP
     const cleanOtp = toEnglishDigits((otp || '').toString().trim());
     const otpRecord = await findLatestAssignOtp(citizen.email, citizen.nid);
 
@@ -424,7 +473,7 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    // Mark OTP as verified (keep record until request is fully saved)
+    // Mark OTP as verified
     await updateOtpRecord(otpRecord, { verified: true });
 
     const requestId = 'REQ-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
@@ -432,14 +481,14 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     const newRequest = new LandAssignRequest({
       request_id: requestId,
       land_record_id: land._id,
-      division: land.division || 'ঢাকা',
-      district: land.district || 'ঢাকা',
-      upazila: land.upazila || 'ধানমন্ডি',
+      division: land.division || 'রাজশাহী',
+      district: land.district || 'বগুড়া',
+      upazila: land.upazila || 'শিবগঞ্জ',
       mouza: land.mouza,
       jl_no: land.jl_no,
-      khatian_no: land.khatian_no,
+      khatian_no: khatian_no ? khatian_no.toString().trim() : land.khatian_no,
       dag_no: land.dag_no,
-      area_decimal: land.available_area_decimal || land.total_area_decimal,
+      area_decimal: requestedArea,
       volume_book: volume_book.trim(),
       page_no: page_no.trim(),
       deed_no: deed_no ? deed_no.trim() : `DEED-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -457,32 +506,35 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
 
     await newRequest.save();
 
-    const cleanArea = land.available_area_decimal || land.total_area_decimal;
-    const cleanKhatian = (khatian_no || land.khatian_no || '').toString().trim();
-    const cleanUserNid = citizen.nid;
-
-    logActivity({
-      req,
-      action_type: 'GOVT_LAND_ASSIGNED',
-      module: 'Land_Assignment',
-      description: `সাব-রেজিস্ট্রি অফিসার কর্তৃক নাগরিক ${citizen.name}-এর অনুকূলে জমি বরাদ্দ প্রস্তাব তৈরি (${cleanArea} শতক)`,
-      target_resource: `নাগরিক: ${citizen.name} (NID: ${cleanUserNid}), মৌজা: ${land.mouza}, দাগ: ${land.dag_no}, খতিয়ান: ${cleanKhatian}`,
-      details: { area: cleanArea, khatian: cleanKhatian }
-    });
-
-    // Mark land as Pending_AC_Land_Review
-    land.status = 'Pending_AC_Land_Review';
-    land.volume_book = volume_book;
-    land.page_no = page_no;
-    if (deed_no) land.deed_no = deed_no;
+    // Decrement pool record available area. If still has land, stays Active for other users!
+    const remainingAfterRequest = Math.max(0, Number((availableArea - requestedArea).toFixed(4)));
+    land.available_area_decimal = remainingAfterRequest;
+    if (remainingAfterRequest > 0) {
+      land.status = 'Active';
+    } else {
+      land.status = 'Pending_AC_Land_Review';
+    }
+    land.volume_book = volume_book.trim();
+    land.page_no = page_no.trim();
+    if (deed_no) land.deed_no = deed_no.trim();
+    land.last_updated = new Date();
     await land.save();
 
     // Successfully processed, delete consumed OTP
     await deleteAssignOtps(citizen.email, citizen.nid);
 
+    logActivity({
+      req,
+      action_type: 'GOVT_LAND_ASSIGNED',
+      module: 'Land_Assignment',
+      description: `সাব-রেজিস্ট্রি অফিসার কর্তৃক নাগরিক ${citizen.name}-এর অনুকূলে জমি বরাদ্দ প্রস্তাব তৈরি (${requestedArea} শতক, অবশিষ্ট: ${remainingAfterRequest} শতক)`,
+      target_resource: `নাগরিক: ${citizen.name} (NID: ${citizen.nid}), মৌজা: ${land.mouza}, দাগ: ${land.dag_no}, পরিমাণ: ${requestedArea} শতক`,
+      details: { area: requestedArea, remaining: remainingAfterRequest, total_dag: totalDagArea }
+    });
+
     return res.status(201).json({
       success: true,
-      message: '✅ জমিটি নাগরিককে বরাদ্দ (Assign) করার অনুরোধ সফলভাবে এসি ল্যান্ড (AC Land) অফিসে পাঠানো হয়েছে!',
+      message: `✅ জমিটি (${requestedArea} শতক) নাগরিক ${citizen.name}-কে বরাদ্দের অনুরোধ সফলভাবে এসি ল্যান্ড (AC Land) অফিসে পাঠানো হয়েছে!`,
       data: newRequest
     });
   } catch (err) {
@@ -529,6 +581,22 @@ router.post('/review-request/:id', verifyToken, requireRole('AC Land Office', 'S
 
     const land = await LandRecord.findById(request.land_record_id);
 
+    const cleanDag = (request.dag_no || '').toString().trim();
+    const cleanMouza = (request.mouza || '').toString().trim();
+    const engDag = toEnglishDigits(cleanDag);
+    const bngDag = toBengaliDigits(cleanDag);
+
+    const dagMatch = {
+      mouza: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    };
+
+    const adminDag = await Dag.findOne({
+      mouza_name: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    });
+    const totalDagArea = adminDag && adminDag.total_area_decimal ? Number(adminDag.total_area_decimal) : Number(land?.total_area_decimal || 20);
+
     if (action === 'Approve') {
       request.status = 'Approved';
       request.ac_land_reviewed_by = req.user.name;
@@ -536,24 +604,64 @@ router.post('/review-request/:id', verifyToken, requireRole('AC Land Office', 'S
       if (remarks) request.remarks = remarks;
       await request.save();
 
-      // Transfer land ownership to the assigned citizen officially
+      // Create a dedicated citizen LandRecord for this assigned portion
+      const citizenLand = new LandRecord({
+        record_id: `rec_assign_${Date.now()}_${Math.floor(1000 + Math.random() * 9000)}`,
+        division: request.division,
+        district: request.district,
+        upazila: request.upazila,
+        mouza: request.mouza,
+        jl_no: request.jl_no,
+        khatian_no: request.khatian_no,
+        dag_no: request.dag_no,
+        owner_nid: request.user_nid,
+        owner_name: request.user_name,
+        owner_phone: request.user_phone,
+        owner_email: request.user_email,
+        total_area_decimal: request.area_decimal,
+        available_area_decimal: request.area_decimal,
+        volume_book: request.volume_book,
+        page_no: request.page_no,
+        deed_no: request.deed_no,
+        sub_registry_code: 'SR-OFFICE-01',
+        status: 'Active',
+        parent_record_id: land ? land._id : null
+      });
+      await citizenLand.save();
+
+      // Recalculate remaining pool for this Dag
       if (land) {
-        land.owner_nid = request.user_nid;
-        land.owner_name = request.user_name;
-        land.owner_phone = request.user_phone;
-        land.owner_email = request.user_email;
-        land.status = 'Active';
-        land.volume_book = request.volume_book;
-        land.page_no = request.page_no;
-        land.deed_no = request.deed_no;
-        land.khatian_no = request.khatian_no || land.khatian_no;
+        const allCitizenLands = await LandRecord.find({
+          ...dagMatch,
+          owner_nid: { $nin: ['1000000000000', 'GOVT-KHAS-01', 'অনলাইনে রেকর্ড নেই', ''] },
+          owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ },
+          status: { $in: ['Active', 'Pending_Mutation'] }
+        });
+        const currentAssignedArea = Number(allCitizenLands.reduce((acc, l) => acc + (Number(l.total_area_decimal) || 0), 0).toFixed(4));
+
+        const allPendingReqs = await LandAssignRequest.find({
+          ...dagMatch,
+          status: 'Pending_AC_Land_Review'
+        });
+        const currentPendingArea = Number(allPendingReqs.reduce((acc, r) => acc + (Number(r.area_decimal) || 0), 0).toFixed(4));
+
+        const remainingUnassigned = Math.max(0, Number((totalDagArea - currentAssignedArea - currentPendingArea).toFixed(4)));
+
+        land.available_area_decimal = remainingUnassigned;
+        if (remainingUnassigned > 0) {
+          land.status = 'Active';
+        } else if (currentPendingArea > 0) {
+          land.status = 'Pending_AC_Land_Review';
+        } else {
+          land.status = 'Sold';
+        }
         land.last_updated = new Date();
         await land.save();
       }
 
       return res.status(200).json({
         success: true,
-        message: `🎉 সফল! জমিটি নাগরিক ${request.user_name} (${request.user_nid})-এর নামে সফলভাবে নামজারি ও বরাদ্দ সম্পন্ন হয়েছে। নাগরিক এখন প্রোফাইলে এই জমি দেখতে পাবেন।`,
+        message: `🎉 সফল! জমিটি (${request.area_decimal} শতক) নাগরিক ${request.user_name} (${request.user_nid})-এর নামে সফলভাবে নামজারি ও বরাদ্দ সম্পন্ন হয়েছে।`,
         data: request
       });
     } else if (action === 'Reject' || action === 'Cancel') {
@@ -563,15 +671,33 @@ router.post('/review-request/:id', verifyToken, requireRole('AC Land Office', 'S
       request.rejection_reason = rejection_reason || 'তথ্য বা নথিপত্র অসম্পূর্ণ';
       await request.save();
 
-      // Revert land status to Active
+      // Restore available area to pool
       if (land) {
-        land.status = 'Active';
+        const allCitizenLands = await LandRecord.find({
+          ...dagMatch,
+          owner_nid: { $nin: ['1000000000000', 'GOVT-KHAS-01', 'অনলাইনে রেকর্ড নেই', ''] },
+          owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ },
+          status: { $in: ['Active', 'Pending_Mutation'] }
+        });
+        const currentAssignedArea = Number(allCitizenLands.reduce((acc, l) => acc + (Number(l.total_area_decimal) || 0), 0).toFixed(4));
+
+        const allPendingReqs = await LandAssignRequest.find({
+          ...dagMatch,
+          status: 'Pending_AC_Land_Review'
+        });
+        const currentPendingArea = Number(allPendingReqs.reduce((acc, r) => acc + (Number(r.area_decimal) || 0), 0).toFixed(4));
+
+        const remainingUnassigned = Math.max(0, Number((totalDagArea - currentAssignedArea - currentPendingArea).toFixed(4)));
+
+        land.available_area_decimal = remainingUnassigned;
+        land.status = remainingUnassigned > 0 ? 'Active' : (currentPendingArea > 0 ? 'Pending_AC_Land_Review' : 'Sold');
+        land.last_updated = new Date();
         await land.save();
       }
 
       return res.status(200).json({
         success: true,
-        message: `❌ অনুরোধটি বাতিল/প্রত্যাখ্যাত করা হয়েছে (${request.status})।`,
+        message: `❌ অনুরোধটি বাতিল/প্রত্যাখ্যাত করা হয়েছে (${request.status}) এবং ${request.area_decimal} শতক জমি পুনরায় বরাদ্দযোগ্য হিসেবে অবমুক্ত করা হয়েছে।`,
         data: request
       });
     } else {
