@@ -437,12 +437,15 @@ export default function MinistryAdminDashboard() {
 
   return (
     <DashboardLayout
-      title="ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন (Super Admin)"
-      subtitle={`প্রশাসক: ${user?.name || 'মন্ত্রণালয় এডমিন'} | ইমেইল: ${user?.email || 'admin@evhumi.gov.bd'} | কেন্দ্রীয় জাতীয় পোর্টাল`}
+      title="ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন"
+      subtitle={`প্রশাসক: ${user?.name || 'মন্ত্রণালয় এডমিন'} | ইমেইল: ${user?.email || 'admin@evhumi.gov.bd'} | কেন্দ্রীয় জাতীয় পোর্টাল`}
       badge={{ label: 'Super Admin' }}
       icon={Shield}
       roleTheme="purple"
-      stats={statItems}
+      stats={[]}
+      hideBanner={true}
+      fullHeightSidebar={true}
+      collapsible={true}
       navItems={navItems}
       activeTab={activeTab}
       onTabChange={setActiveTab}

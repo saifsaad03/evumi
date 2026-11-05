@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
-  Menu, X, LogOut, ShieldCheck, ChevronRight,
-  Headphones, Building2, UserCheck, Layers
+  Menu, X, LogOut, ShieldCheck, ChevronRight, ChevronLeft,
+  Headphones, Building2, UserCheck, Layers, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -17,11 +17,15 @@ export default function DashboardLayout({
   activeTab,
   onTabChange,
   headerActions,
+  hideBanner = false,
+  fullHeightSidebar = false,
+  collapsible = true,
   children
 }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSidebarFolded, setIsSidebarFolded] = useState(false);
 
   // Close drawer on ESC key
   useEffect(() => {
@@ -330,95 +334,97 @@ export default function DashboardLayout({
   );
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#e8edf2', color: '#0f172a', paddingBottom: '50px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#e8edf2', color: '#0f172a', paddingBottom: fullHeightSidebar ? 0 : '50px' }}>
       
-      {/* ── Top Role Banner ─────────────────────────────────── */}
-      <div style={{
-        background: '#ffffff',
-        borderBottom: '1.5px solid #cbd5e1',
-        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
-        padding: '16px 24px',
-      }}>
+      {/* ── Top Role Banner (Only shown if hideBanner is false) ── */}
+      {!hideBanner && (
         <div style={{
-          maxWidth: '1440px',
-          margin: '0 auto',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '16px',
+          background: '#ffffff',
+          borderBottom: '1.5px solid #cbd5e1',
+          boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+          padding: '16px 24px',
         }}>
-          {/* Title & Icon */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-            {Icon && (
-              <div style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '14px',
-                background: theme.bannerGradient,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: '#ffffff',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                flexShrink: 0
-              }}>
-                <Icon size={24} />
+          <div style={{
+            maxWidth: '1440px',
+            margin: '0 auto',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}>
+            {/* Title & Icon */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {Icon && (
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '14px',
+                  background: theme.bannerGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+                  flexShrink: 0
+                }}>
+                  <Icon size={24} />
+                </div>
+              )}
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    {title}
+                  </h1>
+                  {badge && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      padding: '2px 10px',
+                      borderRadius: '999px',
+                      background: theme.badgeBg,
+                      color: theme.badgeColor,
+                      border: `1px solid ${theme.badgeBorder}`,
+                    }}>
+                      {badge.label}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontSize: '13px', color: '#475569', margin: '3px 0 0 0', fontWeight: '500' }}>
+                  {subtitle}
+                </p>
               </div>
-            )}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  {title}
-                </h1>
-                {badge && (
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    padding: '2px 10px',
-                    borderRadius: '999px',
-                    background: theme.badgeBg,
-                    color: theme.badgeColor,
-                    border: `1px solid ${theme.badgeBorder}`,
-                  }}>
-                    {badge.label}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '13px', color: '#475569', margin: '3px 0 0 0', fontWeight: '500' }}>
-                {subtitle}
-              </p>
+            </div>
+
+            {/* Quick Header Stats / Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              {stats.map((stat, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    background: '#f8fafc',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '10px',
+                    padding: '8px 16px',
+                    textAlign: 'center',
+                    minWidth: '95px',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                  }}
+                >
+                  <div style={{ fontSize: '18px', fontWeight: '900', color: stat.color || '#0f172a' }}>
+                    {stat.value}
+                  </div>
+                  <div style={{ fontSize: '11px', fontWeight: '700', color: '#475569' }}>
+                    {stat.label}
+                  </div>
+                </div>
+              ))}
+
+              {headerActions}
             </div>
           </div>
-
-          {/* Quick Header Stats / Actions */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-            {stats.map((stat, idx) => (
-              <div
-                key={idx}
-                style={{
-                  background: '#f8fafc',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '10px',
-                  padding: '8px 16px',
-                  textAlign: 'center',
-                  minWidth: '95px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-                }}
-              >
-                <div style={{ fontSize: '18px', fontWeight: '900', color: stat.color || '#0f172a' }}>
-                  {stat.value}
-                </div>
-                <div style={{ fontSize: '11px', fontWeight: '700', color: '#475569' }}>
-                  {stat.label}
-                </div>
-              </div>
-            ))}
-
-            {headerActions}
-          </div>
         </div>
-      </div>
+      )}
 
       {/* ── Mobile Navigation Toggle Bar (< 1024px) ──────────── */}
       <div className="show-on-mobile-flex" style={{
@@ -525,37 +531,241 @@ export default function DashboardLayout({
         </div>
       )}
 
-      {/* ── Main Layout (Desktop: Side by Side) ──────────────── */}
-      <div style={{
-        maxWidth: '1440px',
-        margin: '24px auto 0',
-        padding: '0 20px',
-        display: 'flex',
-        gap: '24px',
-        alignItems: 'flex-start',
-      }}>
-        {/* Desktop Sticky Sidebar (Hidden on mobile) */}
-        <aside className="hide-on-mobile" style={{
-          width: '280px',
-          flexShrink: 0,
-          background: '#ffffff',
-          borderRadius: '16px',
-          border: '1.5px solid #cbd5e1',
-          padding: '20px',
-          boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)',
-          position: 'sticky',
-          top: '80px',
-          maxHeight: 'calc(100vh - 100px)',
-          overflowY: 'auto',
+      {/* ── Main Layout: Full Height Edge-to-Edge Layout or Centered Floating Layout ──── */}
+      {fullHeightSidebar ? (
+        <div style={{
+          display: 'flex',
+          width: '100%',
+          minHeight: 'calc(100vh - 62px)',
+          position: 'relative',
         }}>
-          <SidebarContent />
-        </aside>
+          {/* Desktop Sticky Sidebar (Full Height, Left-Flush, Foldable) */}
+          <aside className="hide-on-mobile" style={{
+            width: isSidebarFolded ? '0px' : '270px',
+            minWidth: isSidebarFolded ? '0px' : '270px',
+            maxWidth: isSidebarFolded ? '0px' : '270px',
+            height: 'calc(100vh - 62px)',
+            position: 'sticky',
+            top: '62px',
+            alignSelf: 'flex-start',
+            background: '#ffffff',
+            borderRight: isSidebarFolded ? 'none' : '1.5px solid #cbd5e1',
+            boxShadow: isSidebarFolded ? 'none' : '2px 0 10px rgba(15, 23, 42, 0.04)',
+            padding: isSidebarFolded ? '0px' : '18px 14px',
+            overflowY: isSidebarFolded ? 'hidden' : 'auto',
+            overflowX: 'hidden',
+            opacity: isSidebarFolded ? 0 : 1,
+            pointerEvents: isSidebarFolded ? 'none' : 'auto',
+            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease, opacity 0.2s ease',
+            zIndex: 40,
+            flexShrink: 0,
+            borderRadius: 0,
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            {/* Sidebar Top Title + Fold Button */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingBottom: '12px',
+              marginBottom: '14px',
+              borderBottom: '1px solid #e2e8f0',
+              flexShrink: 0
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: theme.bannerGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  flexShrink: 0
+                }}>
+                  {Icon ? <Icon size={17} /> : <Layers size={17} />}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    ভূমি প্রশাসন
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700' }}>
+                    {badge?.label || 'Super Admin'}
+                  </div>
+                </div>
+              </div>
 
-        {/* Main Content Area */}
-        <main style={{ flex: 1, minWidth: 0 }}>
-          {children}
-        </main>
-      </div>
+              <button
+                onClick={() => setIsSidebarFolded(true)}
+                title="সাইডবার ফোল্ড করুন (লুকান)"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+              >
+                <ChevronLeft size={16} />
+              </button>
+            </div>
+
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <SidebarContent />
+            </div>
+          </aside>
+
+          {/* Main Content Area */}
+          <main style={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            background: '#e8edf2',
+            minHeight: 'calc(100vh - 62px)',
+            transition: 'all 0.25s ease'
+          }}>
+            {/* Simple Clean Top Bar */}
+            <div style={{
+              height: '56px',
+              background: '#ffffff',
+              borderBottom: '1.5px solid #cbd5e1',
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '16px',
+              position: 'sticky',
+              top: '62px',
+              zIndex: 35,
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
+            }}>
+              {/* Left: Fold Toggle Button & Breadcrumb */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <button
+                  onClick={() => setIsSidebarFolded(p => !p)}
+                  title={isSidebarFolded ? 'সাইডবার খুলুন (Unfold)' : 'সাইডবার ফোল্ড করুন (Fold to Left)'}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '7px',
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    background: isSidebarFolded ? '#ede9fe' : '#f8fafc',
+                    border: isSidebarFolded ? '1.5px solid #a78bfa' : '1.5px solid #cbd5e1',
+                    color: isSidebarFolded ? '#6d28d9' : '#0f172a',
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    transition: 'all 0.18s ease',
+                    boxShadow: isSidebarFolded ? '0 2px 8px rgba(109, 40, 217, 0.15)' : 'none'
+                  }}
+                >
+                  {isSidebarFolded ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                  <span>{isSidebarFolded ? 'মেনু খুলুন' : 'সাইডবার ফোল্ড'}</span>
+                </button>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
+                    {title || 'ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন'}
+                  </span>
+                  {badge && (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      background: theme.badgeBg,
+                      color: theme.badgeColor,
+                      border: `1px solid ${theme.badgeBorder}`,
+                    }}>
+                      {badge.label}
+                    </span>
+                  )}
+                  <span style={{ color: '#94a3b8', fontSize: '13px' }}>/</span>
+                  <span style={{ fontSize: '13px', fontWeight: '700', color: theme.badgeColor }}>
+                    {currentNav?.label || 'ওভারভিউ'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Right: Status and Actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {headerActions}
+
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '5px 12px',
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  color: '#475569',
+                  fontWeight: '600'
+                }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)' }} />
+                  <span>সিস্টেম লাইভ</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Content Body */}
+            <div style={{
+              padding: '24px 28px',
+              width: '100%',
+              maxWidth: '1600px',
+              margin: '0 auto',
+              flex: 1
+            }}>
+              {children}
+            </div>
+          </main>
+        </div>
+      ) : (
+        /* Original Centered Layout (for other dashboards) */
+        <div style={{
+          maxWidth: '1440px',
+          margin: '24px auto 0',
+          padding: '0 20px',
+          display: 'flex',
+          gap: '24px',
+          alignItems: 'flex-start',
+        }}>
+          {/* Desktop Sticky Sidebar (Hidden on mobile) */}
+          <aside className="hide-on-mobile" style={{
+            width: '280px',
+            flexShrink: 0,
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1.5px solid #cbd5e1',
+            padding: '20px',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)',
+            position: 'sticky',
+            top: '80px',
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+          }}>
+            <SidebarContent />
+          </aside>
+
+          {/* Main Content Area */}
+          <main style={{ flex: 1, minWidth: 0 }}>
+            {children}
+          </main>
+        </div>
+      )}
 
     </div>
   );
