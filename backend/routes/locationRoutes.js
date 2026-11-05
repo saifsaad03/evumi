@@ -627,7 +627,7 @@ router.post('/dags', verifyToken, requireRole('Super Admin'), async (req, res) =
       });
     }
 
-    const area = parseFloat(total_area_decimal) || 10;
+    const area = parseFloat(toEnglishDigits(total_area_decimal)) || 10;
     const dag = new Dag({
       khatian_id: khatian._id,
       khatian_no: khatian.khatian_no,
@@ -697,7 +697,7 @@ router.put('/dags/:id', verifyToken, requireRole('Super Admin'), async (req, res
 
     if (dag_no) dag.dag_no = dag_no.toString().trim();
     if (land_type) dag.land_type = land_type.trim();
-    if (total_area_decimal !== undefined) dag.total_area_decimal = parseFloat(total_area_decimal) || dag.total_area_decimal;
+    if (total_area_decimal !== undefined) dag.total_area_decimal = parseFloat(toEnglishDigits(total_area_decimal)) || dag.total_area_decimal;
     if (status) dag.status = status;
     if (remarks !== undefined) dag.remarks = remarks.trim();
 

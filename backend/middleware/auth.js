@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const { findUserByEmail } = require('../utils/dbStore');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'evhumi_super_secure_jwt_secret_key_2026_ministry_of_land';
+const JWT_SECRET = process.env.JWT_SECRET || 'evhumi_jwt_secret_rev2_2026_all_previous_sessions_invalidated';
 
 const verifyToken = async (req, res, next) => {
   try {

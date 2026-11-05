@@ -5,6 +5,13 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
+// Session Epoch: immediately logs out all previously logged in accounts across all clients
+const AUTH_EPOCH = 'evhumi_epoch_v2_all_logout';
+if (typeof window !== 'undefined' && localStorage.getItem('evhumi_auth_epoch') !== AUTH_EPOCH) {
+  localStorage.removeItem('evhumi_token');
+  localStorage.setItem('evhumi_auth_epoch', AUTH_EPOCH);
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('evhumi_token') || null);

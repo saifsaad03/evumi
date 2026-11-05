@@ -60,7 +60,7 @@ function getMinistryPublicKey() {
 // ============================================================================
 // 2. FIELD-LEVEL DATA ENCRYPTION AT REST (AES-256-GCM)
 // ============================================================================
-const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || process.env.JWT_SECRET || 'evumi_national_land_secure_secret_2026';
+const ENCRYPTION_SECRET = process.env.ENCRYPTION_SECRET || 'evhumi_super_secure_jwt_secret_key_2026_ministry_of_land';
 const AES_KEY = crypto.createHash('sha256').update(ENCRYPTION_SECRET).digest();
 
 /**
