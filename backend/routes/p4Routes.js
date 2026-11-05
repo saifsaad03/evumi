@@ -497,11 +497,9 @@ router.post('/approve-mutation', async (req, res) => {
     oldRecord.last_updated = new Date();
     await oldRecord.save();
 
-    // Create new Active LandRecord for buyer(s)
+    // Create new Active LandRecord for buyer(s) - Khatian number remains authentic and identical
     const newQrId = `QR-NAMJARI-${oldRecord.dag_no}-${Date.now()}`;
-    const newKhatianNo = oldRecord.khatian_no.includes('-M') 
-      ? `${oldRecord.khatian_no}-${Date.now().toString().slice(-3)}` 
-      : `${oldRecord.khatian_no}-M`;
+    const newKhatianNo = oldRecord.khatian_no;
 
     const newKhatianCrypto = generateLandCryptoPayload({
       deed_no: oldRecord.deed_no,
@@ -662,11 +660,9 @@ router.post('/complete-payment', async (req, res) => {
     oldRecord.last_updated = new Date();
     await oldRecord.save();
 
-    // Create new Active record for buyer(s)
+    // Create new Active record for buyer(s) - Khatian number remains authentic and identical
     const newQrId = `QR-NAMJARI-${oldRecord.dag_no}-${Date.now()}`;
-    const newKhatianNo = oldRecord.khatian_no.includes('-M') 
-      ? `${oldRecord.khatian_no}-${Date.now().toString().slice(-3)}` 
-      : `${oldRecord.khatian_no}-M`;
+    const newKhatianNo = oldRecord.khatian_no;
 
     const newRecord = new LandRecord({
       record_id: `record_${Date.now()}`,

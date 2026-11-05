@@ -582,7 +582,7 @@ router.post('/approve-application/:id', verifyToken, requireRole('AC Land Office
     for (let idx = 0; idx < app.heirs.length; idx++) {
       const heir = app.heirs[idx];
       const newQrId = `qr_bn_${Date.now()}_${idx}_${Math.floor(100 + Math.random() * 900)}`;
-      const newKhatian = `${origLand.khatian_no}/${idx + 1}`;
+      const newKhatian = origLand.khatian_no;
       const newRecordId = `rec_bn_${Date.now()}_${idx}_${origLand.dag_no}`;
 
       const heirLand = new LandRecord({
