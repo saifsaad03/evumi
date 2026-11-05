@@ -133,15 +133,23 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
     ];
 
     // 1. Strictly find ONLY land records owned by THIS citizen (Active or Deceased_Locked)
+    // Never include government khas or unassigned plots
     const activeLands = await LandRecord.find({
-      $or: nidConditions,
-      status: { $in: ['Active', 'Deceased_Locked'] }
+      $and: [
+        { $or: nidConditions },
+        { owner_nid: { $nin: ['GOVT-KHAS-01', '1000000000000', 'অনলাইনে রেকর্ড নেই', ''] } },
+        { owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ } },
+        { status: { $in: ['Active', 'Deceased_Locked'] } }
+      ]
     }).sort({ updatedAt: -1 });
 
     // 2. Find sold lands history for THIS citizen
     const soldLands = await LandRecord.find({
-      $or: nidConditions,
-      status: 'Sold'
+      $and: [
+        { $or: nidConditions },
+        { owner_nid: { $nin: ['GOVT-KHAS-01', '1000000000000', 'অনলাইনে রেকর্ড নেই', ''] } },
+        { status: 'Sold' }
+      ]
     }).sort({ updatedAt: -1 });
 
     // 3. Find approved assignment history for THIS citizen

@@ -109,14 +109,47 @@ export default function UserDashboard() {
   useEffect(() => {
     fetchAssignedLands();
     fetchMyClaims();
-  }, []);
+  }, [user?.nid]);
 
   const fetchAssignedLands = async () => {
     setLoading(true);
     try {
-      const res = await axios.get('/api/user/assigned-lands');
+      const activeToken = typeof window !== 'undefined' ? localStorage.getItem('evhumi_token') : null;
+      const res = await axios.get('/api/user/assigned-lands', {
+        headers: activeToken ? { Authorization: `Bearer ${activeToken}` } : {}
+      });
       if (res.data.success) {
-        setLandData(res.data.data);
+        const rawData = res.data.data;
+        const currentNid = (user?.nid || '').toString().trim();
+
+        if (currentNid && rawData) {
+          const toEng = (s) => (s || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+          const engCurrentNid = toEng(currentNid);
+
+          const isMatchingRecord = (r) => {
+            if (!r) return false;
+            const rNid = toEng(r.owner_nid);
+            if (rNid && (rNid === engCurrentNid || r.owner_nid === currentNid)) return true;
+            if (Array.isArray(r.co_owners) && r.co_owners.some(co => toEng(co.nid) === engCurrentNid || co.nid === currentNid)) return true;
+            if (Array.isArray(r.buyers) && r.buyers.some(b => toEng(b.nid) === engCurrentNid || b.nid === currentNid)) return true;
+            return false;
+          };
+
+          const isMatchingReq = (req) => {
+            if (!req) return false;
+            const rNid = toEng(req.user_nid);
+            return rNid === engCurrentNid || req.user_nid === currentNid;
+          };
+
+          setLandData({
+            active_lands: (rawData.active_lands || []).filter(isMatchingRecord),
+            sold_lands: (rawData.sold_lands || []).filter(isMatchingRecord),
+            approved_assignments: (rawData.approved_assignments || []).filter(isMatchingReq),
+            pending_assignments: (rawData.pending_assignments || []).filter(isMatchingReq)
+          });
+        } else {
+          setLandData(rawData);
+        }
       }
     } catch (err) {
       console.error('Error fetching user lands:', err);

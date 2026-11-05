@@ -12,12 +12,35 @@ if (typeof window !== 'undefined' && localStorage.getItem('evhumi_auth_epoch') !
   localStorage.setItem('evhumi_auth_epoch', AUTH_EPOCH);
 }
 
+// Ensure Axios Authorization header is immediately set from localStorage on initial script execution
+const initialToken = typeof window !== 'undefined' ? localStorage.getItem('evhumi_token') : null;
+if (initialToken) {
+  axios.defaults.headers.common['Authorization'] = `Bearer ${initialToken}`;
+}
+
+// Axios Request Interceptor: dynamically attaches the freshest token to EVERY outgoing request
+axios.interceptors.request.use(
+  (config) => {
+    const currentToken = typeof window !== 'undefined' ? localStorage.getItem('evhumi_token') : null;
+    if (currentToken) {
+      config.headers = config.headers || {};
+      config.headers['Authorization'] = `Bearer ${currentToken}`;
+    } else {
+      if (config.headers && config.headers['Authorization']) {
+        delete config.headers['Authorization'];
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('evhumi_token') || null);
   const [loading, setLoading] = useState(true);
 
-  // Set axios default authorization header
+  // Keep axios and localStorage in sync whenever token changes
   useEffect(() => {
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -28,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  // Load user profile on initial mount
+  // Load user profile on initial mount or token change
   useEffect(() => {
     const fetchUser = async () => {
       if (token) {
@@ -76,6 +99,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await axios.post('/api/auth/login', { email, password });
     if (res.data.success) {
+      // Synchronously set token in localStorage and axios headers immediately
+      localStorage.setItem('evhumi_token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       setToken(res.data.token);
       setUser(res.data.user);
       return res.data;
@@ -83,10 +109,11 @@ export const AuthProvider = ({ children }) => {
     throw new Error(res.data.message || 'লগইন ব্যর্থ হয়েছে');
   };
 
-
   const register = async (userData) => {
     const res = await axios.post('/api/auth/register', userData);
     if (res.data.success) {
+      localStorage.setItem('evhumi_token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       setToken(res.data.token);
       setUser(res.data.user);
       return res.data;
@@ -97,6 +124,8 @@ export const AuthProvider = ({ children }) => {
   const verifyAndRegister = async (registrationDataWithOtp) => {
     const res = await axios.post('/api/otp/verify-and-register', registrationDataWithOtp);
     if (res.data.success) {
+      localStorage.setItem('evhumi_token', res.data.token);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.token}`;
       setToken(res.data.token);
       setUser(res.data.user);
       return res.data;
@@ -105,10 +134,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    setToken(null);
-    setUser(null);
     localStorage.removeItem('evhumi_token');
     delete axios.defaults.headers.common['Authorization'];
+    setToken(null);
+    setUser(null);
   };
 
   const getDashboardRoute = (userRole) => {
