@@ -1594,3 +1594,22 @@ select option:checked {
     box-shadow: 0 0 0 3px #86efac;
   }
 }
+
+
+/* ============================================================
+   3-Line Hamburger Menu: Strictly hidden on desktop mode (>= 1024px),
+   Visible ONLY on mobile/tablet mode (< 1024px)
+   ============================================================ */
+.show-on-mobile-hamburger {
+  display: none !important;
+}
+
+@media (max-width: 1023px) {
+  .show-on-mobile-hamburger {
+    display: flex !important;
+  }
+}
+
+/* ============================================================
+   Mobile Responsive Overrides
+   ============================================================ */

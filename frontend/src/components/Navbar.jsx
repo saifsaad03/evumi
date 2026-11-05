@@ -18,8 +18,16 @@ import {
   Layers,
   ChevronRight,
   Sparkles,
-  Award
+  Award,
+  Users,
+  Clock,
+  AlertTriangle,
+  FileCheck,
+  User,
+  Building2,
+  ShieldAlert
 } from 'lucide-react';
+import { useDashboardNav } from '../context/DashboardNavContext';
 
 export default function Navbar() {
   const location = useLocation();
@@ -31,6 +39,14 @@ export default function Navbar() {
 
   const navigate = useNavigate();
   const { user, logout, getDashboardRoute } = useAuth();
+  const { dashboardNav } = useDashboardNav();
+
+  // Listen for custom trigger to open off-canvas sidebar from any mobile button
+  useEffect(() => {
+    const handleCustomOpen = () => openSidebar();
+    window.addEventListener('open-evumi-sidebar', handleCustomOpen);
+    return () => window.removeEventListener('open-evumi-sidebar', handleCustomOpen);
+  }, []);
 
   // Right-to-Left IN and Left-to-Right OUT Off-Canvas Sidebar State
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -124,6 +140,60 @@ export default function Navbar() {
   };
 
   const roleBadge = user ? getRoleBadge(user.role) : null;
+
+  // Helper to determine active dashboard items for mobile menu
+  const isCurrentOnDashboard = location.pathname.startsWith('/user') ||
+    location.pathname.startsWith('/register-office') ||
+    location.pathname.startsWith('/ac-land') ||
+    location.pathname.startsWith('/admin');
+
+  const getRoleDefaultNavItems = () => {
+    if (!user) return [];
+    switch (user.role) {
+      case 'User':
+        return [
+          { id: 'lands', label: 'আমার অনুমোদিত জমি', icon: FileText },
+          { id: 'claim_ownership', label: 'মালিকানা দাবি করুন', icon: FileCheck },
+          { id: 'pending', label: 'পর্যালোচনাধীন আবেদন', icon: Clock },
+          { id: 'sold', label: 'বিক্রিত জমির ইতিহাস', icon: AlertTriangle },
+          { id: 'verify', label: 'জমি ও খতিয়ান যাচাই', icon: Search },
+          { id: 'profile', label: 'নাগরিক প্রোফাইল', icon: User },
+        ];
+      case 'Register Office':
+        return [
+          { id: 'assign', label: 'সরকারি জমি বরাদ্দ ও বন্দোবস্ত', icon: Layers },
+          { id: 'deed_registry', label: 'দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং', icon: FileText },
+          { id: 'bonton_nama', label: 'যৌথ ওয়ারিশান বণ্টননামা', icon: Users },
+          { id: 'requests', label: 'প্রেরিত আবেদনের হালনাগাদ', icon: Clock },
+          { id: 'claims', label: 'নাগরিক মালিকানা দাবি ও আপত্তি', icon: ShieldAlert },
+          { id: 'profile', label: 'রেজিস্ট্রার কার্যালয় প্রোফাইল', icon: Building2 },
+        ];
+      case 'AC Land Office':
+        return [
+          { id: 'mutations', label: 'ই-নামজারি ও মিউটেশন আবেদন', icon: FileText },
+          { id: 'bontonnama_abedon', label: 'BONTONNAMA ABEDON (বণ্টননামা)', icon: Users },
+          { id: 'assign_requests', label: 'সরকারি জমি বরাদ্দ আবেদন', icon: Layers },
+          { id: 'profile', label: 'এসি ল্যান্ড অফিস প্রোফাইল', icon: ShieldCheck },
+        ];
+      default:
+        return [];
+    }
+  };
+
+  const displayNavItems = (dashboardNav?.navItems && dashboardNav.navItems.length > 0)
+    ? dashboardNav.navItems
+    : getRoleDefaultNavItems();
+
+  const handleDashboardTabClick = (item) => {
+    closeSidebar();
+    const currentRoleDashboard = getDashboardRoute(user?.role);
+    if (location.pathname === currentRoleDashboard && dashboardNav?.onTabChange) {
+      dashboardNav.onTabChange(item.id);
+    } else {
+      navigate(`${currentRoleDashboard}?tab=${item.id}`);
+    }
+  };
+
 
   return (
     <nav style={{
@@ -340,13 +410,13 @@ export default function Navbar() {
             </div>
           )}
 
-          {/* ── Right-Side Sidebar Toggle Button (Opens off-canvas drawer from right to left) ── */}
+          {/* ── 3-Line Hamburger Menu: Strictly hidden on Desktop (>= 1024px), Visible ONLY on Mobile (< 1024px) ── */}
           <button
             onClick={openSidebar}
             title="সাইডবার মেনু খুলুন"
             aria-label="সাইডবার মেনু"
+            className="show-on-mobile-hamburger"
             style={{
-              display: 'flex',
               alignItems: 'center',
               gap: '6px',
               padding: '7px 12px',
@@ -542,7 +612,99 @@ export default function Navbar() {
                 </div>
               )}
 
-              {/* ── Category 1: Main Page Navigation ── */}
+              {/* ── Category 1: Active Dashboard Menus (Prominently shown on Mobile) ── */}
+              {user && displayNavItems.length > 0 && (
+                <div>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '8px',
+                    paddingLeft: '4px',
+                    paddingRight: '4px'
+                  }}>
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: '800',
+                      color: '#065f46',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <LayoutDashboard size={13} color="#059669" />
+                      <span>{dashboardNav?.title || 'ড্যাশবোর্ড মেনু ও সেকশন তালিকা'}</span>
+                    </div>
+                    {displayNavItems.length > 0 && (
+                      <span style={{ fontSize: '10px', color: '#64748b', fontWeight: '700' }}>
+                        {displayNavItems.length} টি বিভাগ
+                      </span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {displayNavItems.map((item) => {
+                      const ItemIcon = item.icon || Layers;
+                      const isActive = isCurrentOnDashboard && (
+                        dashboardNav?.activeTab ? dashboardNav.activeTab === item.id : false
+                      );
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => handleDashboardTabClick(item)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '11px 12px',
+                            borderRadius: '10px',
+                            background: isActive ? 'linear-gradient(135deg, #065f46, #059669)' : '#ffffff',
+                            border: isActive ? '1.5px solid #059669' : '1px solid #e2e8f0',
+                            color: isActive ? '#ffffff' : '#0f172a',
+                            fontSize: '13px',
+                            fontWeight: isActive ? '800' : '600',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            boxShadow: isActive ? '0 4px 12px rgba(6, 95, 70, 0.25)' : '0 1px 2px rgba(0,0,0,0.02)',
+                            transition: 'all 0.16s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                            <ItemIcon size={16} color={isActive ? '#ffffff' : '#047857'} style={{ flexShrink: 0 }} />
+                            <span style={{
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis'
+                            }}>
+                              {item.label}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                            {item.badge !== undefined && item.badge !== null && (
+                              <span style={{
+                                fontSize: '10.5px',
+                                fontWeight: '800',
+                                padding: '1px 7px',
+                                borderRadius: '999px',
+                                background: isActive ? 'rgba(255,255,255,0.25)' : (item.badgeBg || '#ecfdf5'),
+                                color: isActive ? '#ffffff' : (item.badgeColor || '#065f46'),
+                                border: isActive ? '1px solid rgba(255,255,255,0.4)' : '1px solid #a7f3d0'
+                              }}>
+                                {item.badge}
+                              </span>
+                            )}
+                            <ChevronRight size={14} color={isActive ? '#ffffff' : '#94a3b8'} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Category 2: Public Navigation Links ── */}
               <div>
                 <div style={{
                   fontSize: '11px',
@@ -553,7 +715,7 @@ export default function Navbar() {
                   marginBottom: '8px',
                   paddingLeft: '4px'
                 }}>
-                  প্রধান পেজসমূহ (Pages)
+                  {user ? 'অন্যান্য পাবলিক পেজসমূহ (Pages)' : 'প্রধান পেজসমূহ (Pages)'}
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>

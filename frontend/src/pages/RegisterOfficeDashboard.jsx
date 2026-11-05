@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell } from 'lucide-react';
@@ -15,7 +16,24 @@ import {
 
 export default function RegisterOfficeDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('assign'); // 'assign' | 'deed_registry' | 'requests' | 'claims'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'assign');
+
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newTab);
+      return next;
+    }, { replace: true });
+  };
 
   // Cascade Filter State (Defaulted to Rajshahi > Bogura > Shibganj > গুজিয়া)
   const [filter, setFilter] = useState({
@@ -420,7 +438,7 @@ export default function RegisterOfficeDashboard() {
       stats={stats}
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
     >
       {activeTab === 'assign' && (
         <div>

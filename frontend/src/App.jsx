@@ -1,5 +1,6 @@
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { DashboardNavProvider } from './context/DashboardNavContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 
@@ -25,6 +26,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <DashboardNavProvider>
         <div className="min-h-screen animated-bg grid-bg">
           <Navbar />
           <Routes>
@@ -106,6 +108,7 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
+      </DashboardNavProvider>
       </AuthProvider>
     </Router>
   );

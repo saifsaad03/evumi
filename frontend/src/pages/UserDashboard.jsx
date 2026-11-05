@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -16,7 +17,24 @@ import { SHIBGANJ_MOUZAS } from '../utils/geoData';
 
 export default function UserDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('lands'); // 'lands' | 'claim_ownership' | 'pending' | 'sold' | 'profile' | 'verify'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'lands');
+
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newTab);
+      return next;
+    }, { replace: true });
+  };
   const [landData, setLandData] = useState({
     active_lands: [],
     sold_lands: [],
@@ -239,7 +257,7 @@ export default function UserDashboard() {
       stats={stats}
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
       headerActions={
         <button
           onClick={fetchAssignedLands}

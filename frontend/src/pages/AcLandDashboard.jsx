@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -11,7 +12,24 @@ import BontonNamaAcLandSection from '../components/BontonNamaAcLandSection';
 
 export default function AcLandDashboard() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('mutations'); // 'mutations' | 'assign_requests'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'mutations');
+
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (newTab) => {
+    setActiveTab(newTab);
+    setSearchParams(prev => {
+      const next = new URLSearchParams(prev);
+      next.set('tab', newTab);
+      return next;
+    }, { replace: true });
+  };
 
   // Assignment requests
   const [requests, setRequests] = useState([]);
@@ -112,7 +130,7 @@ export default function AcLandDashboard() {
       stats={stats}
       navItems={navItems}
       activeTab={activeTab}
-      onTabChange={setActiveTab}
+      onTabChange={handleTabChange}
     >
       {/* ── TAB 1: Deed Mutations ─────────────────────────────── */}
       {activeTab === 'mutations' && (

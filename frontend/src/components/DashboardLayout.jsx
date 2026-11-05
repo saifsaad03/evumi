@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useDashboardNav } from '../context/DashboardNavContext';
 import { 
   Menu, X, LogOut, ShieldCheck, ChevronRight, ChevronLeft,
   Headphones, Building2, UserCheck, Layers, PanelLeftClose, PanelLeftOpen
@@ -26,6 +27,27 @@ export default function DashboardLayout({
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isSidebarFolded, setIsSidebarFolded] = useState(false);
+  const { setDashboardNav } = useDashboardNav();
+
+  // Sync dashboard navigation state to global navbar for responsive mobile drawer
+  useEffect(() => {
+    setDashboardNav({
+      title,
+      roleTheme,
+      navItems,
+      activeTab,
+      onTabChange
+    });
+    return () => {
+      setDashboardNav({
+        title: '',
+        roleTheme: 'green',
+        navItems: [],
+        activeTab: '',
+        onTabChange: null
+      });
+    };
+  }, [title, roleTheme, navItems, activeTab, onTabChange, setDashboardNav]);
 
   // Close drawer on ESC key
   useEffect(() => {
@@ -441,7 +463,10 @@ export default function DashboardLayout({
         zIndex: 90,
       }}>
         <button
-          onClick={() => setMobileOpen(true)}
+          onClick={() => {
+            window.dispatchEvent(new Event('open-evumi-sidebar'));
+            setMobileOpen(true);
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
