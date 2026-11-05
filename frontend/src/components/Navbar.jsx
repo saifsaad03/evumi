@@ -105,25 +105,7 @@ export default function Navbar() {
     navigate(path);
   };
 
-  const handleSectionScroll = (sectionId) => {
-    closeSidebar();
-    if (location.pathname === '/') {
-      setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 330);
-    } else {
-      navigate('/#' + sectionId);
-      setTimeout(() => {
-        const el = document.getElementById(sectionId);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 450);
-    }
-  };
+
 
   const getRoleBadge = (role) => {
     switch (role) {
@@ -851,66 +833,6 @@ export default function Navbar() {
                   )}
                 </div>
               </div>
-
-              {/* ── Category 2: Landing Page Sections ── */}
-              {/* Only shown on Home/Landing page (location.pathname === '/'), NOT on login/register pages */}
-              {location.pathname !== '/login' && location.pathname !== '/register' && (
-                <div>
-                  <div style={{
-                    fontSize: '11px',
-                    fontWeight: '800',
-                    color: '#64748b',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    marginBottom: '8px',
-                    paddingLeft: '4px'
-                  }}>
-                    ল্যান্ডিং পেজ সেকশনসমূহ (Sections)
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    {[
-                      { id: 'features', label: 'ক্রিপ্টোগ্রাফিক ও সিস্টেম আপগ্রেড', icon: Sparkles, color: '#047857' },
-                      { id: 'workflow', label: '৬-ধাপের স্বয়ংক্রিয় সেবা পাইপলাইন', icon: Layers, color: '#0284c7' },
-                      { id: 'roles', label: '৪টি স্বতন্ত্র প্রশাসনিক ড্যাশবোর্ড', icon: ShieldCheck, color: '#7c3aed' },
-                      { id: 'security', label: 'কেন e-ভূমি প্ল্যাটফর্ম অনন্য ও সুরক্ষিত', icon: Award, color: '#b45309' },
-                      { id: 'guide', label: 'প্ল্যাটফর্ম ব্যবহারের ভিডিও নির্দেশিকা', icon: FileText, color: '#475569' },
-                      { id: 'helpline', label: 'স্মার্ট ভূমি সেবা হেল্পলাইন (১৬১২২)', icon: PhoneCall, color: '#dc2626' }
-                    ].map((sec) => {
-                      const SecIcon = sec.icon;
-                      return (
-                        <button
-                          key={sec.id}
-                          onClick={() => handleSectionScroll(sec.id)}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '9px 12px',
-                            borderRadius: '8px',
-                            background: '#ffffff',
-                            border: '1px solid #e2e8f0',
-                            color: '#1e293b',
-                            fontSize: '12.5px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s ease'
-                          }}
-                          onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '9px' }}>
-                            <SecIcon size={15} color={sec.color} />
-                            <span>{sec.label}</span>
-                          </div>
-                          <ChevronRight size={14} color="#94a3b8" />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Drawer Bottom Actions: Login/Logout & Hotline */}
