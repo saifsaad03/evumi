@@ -63,7 +63,7 @@ export default function P4RegistryPanel() {
 
   // Mandatory Deed Registration OTP states
   const [deedOtp, setDeedOtp] = useState('');
-  const [otpTarget, setOtpTarget] = useState('seller'); // 'seller' | 'buyer'
+  const [otpTarget, setOtpTarget] = useState('buyer'); // strictly 'buyer'
   const [sendingDeedOtp, setSendingDeedOtp] = useState(false);
   const [deedOtpSentMsg, setDeedOtpSentMsg] = useState(null);
   const [deedOtpError, setDeedOtpError] = useState(null);
@@ -1378,21 +1378,11 @@ export default function P4RegistryPanel() {
                   </span>
                 </div>
                 <p style={{ fontSize: '12px', color: '#475569', margin: '0 0 12px 0' }}>
-                  সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি ভেরিফিকেশন বাধ্যতামূলক। ওটিপি গ্রহণকারী নির্বাচন করুন এবং কোড পাঠান।
+                  সাব-রেজিস্ট্রি অফিসে সকল ধরনের দলিল নিবন্ধনের ক্ষেত্রে ওটিপি ভেরিফিকেশন বাধ্যতামূলক। ক্রেতার ইমেইলে কোড পাঠাতে বাটনে ক্লিক করুন।
                 </p>
 
-                {/* Recipient Selection */}
+                {/* Recipient Selection (Buyer Only) */}
                 <div style={{ display: 'flex', gap: '16px', marginBottom: '12px', fontSize: '12px', background: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', color: '#0f172a' }}>
-                    <input
-                      type="radio"
-                      name="otpTarget"
-                      value="seller"
-                      checked={otpTarget === 'seller'}
-                      onChange={() => setOtpTarget('seller')}
-                    />
-                    মালিক/বিক্রেতার ইমেইলে পাঠান ({landRecord.owner_name})
-                  </label>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: '600', color: '#0f172a' }}>
                     <input
                       type="radio"
