@@ -92,6 +92,14 @@ router.post('/users', async (req, res) => {
       });
     }
 
+    const cleanPhone = toEnglishDigits((phone || '').toString().trim());
+    if (cleanPhone.length !== 11 || !/^\d{11}$/.test(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'মোবাইল নম্বর অবশ্যই ১১ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+      });
+    }
+
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({ success: false, message: 'এই ইমেইল ইতিমধ্যে ব্যবহৃত হচ্ছে।' });

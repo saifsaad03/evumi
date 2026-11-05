@@ -65,6 +65,14 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    const cleanPhone = toEnglishDigits((phone || '').toString().trim());
+    if (cleanPhone.length !== 11 || !/^\d{11}$/.test(cleanPhone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'মোবাইল নম্বর অবশ্যই ১১ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+      });
+    }
+
     // Block registration with the env super admin email
     if (email.trim().toLowerCase() === (process.env.SUPER_ADMIN_EMAIL || '').toLowerCase()) {
       return res.status(400).json({ success: false, message: 'এই ইমেইল ব্যবহার করা সম্ভব নয়।' });

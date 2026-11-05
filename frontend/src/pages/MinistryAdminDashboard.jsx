@@ -263,6 +263,11 @@ export default function MinistryAdminDashboard() {
       alert('জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
       return;
     }
+    const cleanPhone = (newUser.phone || '').toString().trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    if (cleanPhone.length !== 11 || !/^\d{11}$/.test(cleanPhone)) {
+      alert('মোবাইল নম্বর অবশ্যই ১১ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
+      return;
+    }
     try {
       const res = await axios.post('/api/admin/users', newUser);
       if (res.data.success) {
@@ -727,7 +732,7 @@ export default function MinistryAdminDashboard() {
                     </div>
                     <div>
                       <label style={{ fontSize: '12px', color: '#0f172a', fontWeight: '700' }}>ফোন *</label>
-                      <input type="tel" required className="input-field" value={newUser.phone} onChange={(e) => setNewUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
+                      <input type="tel" required maxLength={11} placeholder="017XXXXXXXX (১১ ডিজিট)" className="input-field" value={newUser.phone} onChange={(e) => setNewUser(p => ({ ...p, phone: e.target.value }))} style={{ width: '100%', background: '#ffffff', color: '#0f172a', border: '1.5px solid #cbd5e1', padding: '9px 12px', borderRadius: '8px' }} />
                     </div>
                   </div>
 

@@ -247,8 +247,9 @@ export default function RegisterPage() {
       setError('জাতীয় পরিচয়পত্র (NID) নম্বর অবশ্যই ১০, ১৩ অথবা ১৭ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
       return;
     }
-    if (formData.phone.trim().length < 11) {
-      setError('১১ ডিজিটের সঠিক মোবাইল নম্বর প্রদান করুন।');
+    const cleanPhone = formData.phone.trim().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
+    if (cleanPhone.length !== 11 || !/^\d{11}$/.test(cleanPhone)) {
+      setError('মোবাইল নম্বর অবশ্যই ১১ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।');
       return;
     }
     if (formData.password.length < 6) {
@@ -460,7 +461,8 @@ export default function RegisterPage() {
                   type="tel"
                   name="phone"
                   required
-                  placeholder="017XXXXXXXX"
+                  placeholder="017XXXXXXXX (১১ ডিজিট)"
+                  maxLength={11}
                   value={formData.phone}
                   onChange={handleChange}
                   className="register-input"

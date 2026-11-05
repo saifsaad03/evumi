@@ -32,8 +32,16 @@ router.put('/profile', verifyToken, async (req, res) => {
     const prevDetails = { phone: user.phone, email: user.email };
 
     if (phone && phone !== user.phone) {
-      changedFields.push(`মোবাইল নম্বর (${user.phone} ➔ ${phone})`);
-      user.phone = phone;
+      const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+      const cleanPhone = toEnglishDigits(phone.toString().trim());
+      if (cleanPhone.length !== 11 || !/^\d{11}$/.test(cleanPhone)) {
+        return res.status(400).json({
+          success: false,
+          message: 'মোবাইল নম্বর অবশ্যই ১১ ডিজিটের হতে হবে (এর কম বা বেশি গ্রহণযোগ্য নয়)।'
+        });
+      }
+      changedFields.push(`মোবাইল নম্বর (${user.phone} ➔ ${cleanPhone})`);
+      user.phone = cleanPhone;
     }
 
     if (email && email !== user.email) {
