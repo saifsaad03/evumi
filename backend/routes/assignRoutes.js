@@ -3,6 +3,8 @@ const router = express.Router();
 const LandRecord = require('../models/LandRecord');
 const User = require('../models/User');
 const LandAssignRequest = require('../models/LandAssignRequest');
+const Dag = require('../models/Dag');
+const Khatian = require('../models/Khatian');
 const { logActivity } = require('../utils/auditLogger');
 const OtpVerification = require('../models/OtpVerification');
 const { verifyToken, requireRole } = require('../middleware/auth');
@@ -63,15 +65,29 @@ router.get('/search-land', verifyToken, async (req, res) => {
   try {
     const { division, district, upazila, mouza, jl_no, khatian_no, dag_no } = req.query;
 
-    const cleanDag = (dag_no || '101').toString().trim();
-    const cleanMouza = (mouza || 'গুজিয়া').toString().trim();
+    const cleanDag = (dag_no || '').toString().trim();
+    const cleanMouza = (mouza || '').toString().trim();
     const cleanKhatian = (khatian_no || '').toString().trim();
-    const cleanJl = (jl_no || '1').toString().trim();
+    const cleanJl = (jl_no || '').toString().trim();
+
+    if (!cleanDag || !cleanMouza) {
+      return res.status(200).json({
+        success: true,
+        count: 0,
+        data: []
+      });
+    }
 
     const engDag = toEnglishDigits(cleanDag);
     const bngDag = toBengaliDigits(cleanDag);
     const engKhatian = cleanKhatian ? toEnglishDigits(cleanKhatian) : '';
     const bngKhatian = cleanKhatian ? toBengaliDigits(cleanKhatian) : '';
+
+    // Check if this dag is configured in Admin Panel (Dag collection)
+    const adminDag = await Dag.findOne({
+      mouza_name: { $regex: new RegExp(`^${cleanMouza}$`, 'i') },
+      $or: [{ dag_no: cleanDag }, { dag_no: engDag }, { dag_no: bngDag }]
+    });
 
     // 1. Search if this plot already exists in MongoDB
     // First priority: Exact match by Mouza + Dag + Khatian (if khatian provided)
@@ -123,11 +139,10 @@ router.get('/search-land', verifyToken, async (req, res) => {
           changed = true;
         }
 
-        if (record.total_area_decimal === 20 && (record.owner_name === 'অনলাইনে অনিবন্ধিত' || !record.owner_nid || record.owner_nid === 'অনলাইনে রেকর্ড নেই')) {
-          const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
-          const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
-          record.total_area_decimal = variedArea;
-          record.available_area_decimal = variedArea;
+        // Sync admin configured area if unallocated
+        if (adminDag && adminDag.total_area_decimal && !isCitizenOwned && record.total_area_decimal !== adminDag.total_area_decimal) {
+          record.total_area_decimal = adminDag.total_area_decimal;
+          record.available_area_decimal = adminDag.total_area_decimal;
           changed = true;
         }
 
@@ -139,16 +154,13 @@ router.get('/search-land', verifyToken, async (req, res) => {
 
     // 2. If it does NOT exist yet, dynamically initialize it as unassigned real-life plot!
     if (!record) {
-      const numPart = parseInt(engDag.replace(/\D/g, ''), 10) || (Math.floor(Math.random() * 30) + 1);
-      const variedArea = Number(((numPart * 7.3) % 36 + 8.5).toFixed(1));
-
-      // Uses cleanKhatian if provided, without forcing default '১' when specified
-      const initialKhatian = cleanKhatian || '১';
+      const variedArea = adminDag && adminDag.total_area_decimal ? Number(adminDag.total_area_decimal) : 20;
+      const initialKhatian = cleanKhatian || (adminDag ? adminDag.khatian_no : '') || '১';
 
       record = new LandRecord({
         record_id: `rec_${Date.now()}_${engDag}`,
         division: division || 'রাজশাহী',
-        district: district || 'বগুড়া',
+        district: district || 'বগুড়া',
         upazila: upazila || 'শিবগঞ্জ',
         mouza: cleanMouza,
         jl_no: cleanJl,

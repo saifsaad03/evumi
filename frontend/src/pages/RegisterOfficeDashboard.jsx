@@ -6,13 +6,7 @@ import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTri
 import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
 import BontonNamaRegistrySection from '../components/BontonNamaRegistrySection';
-import {
-  BANGLADESH_DIVISIONS,
-  getDistrictsForDivision,
-  getUpazilasForDistrict,
-  getMouzasForUpazila,
-  getJlNoForMouza
-} from '../utils/geoData';
+
 
 export default function RegisterOfficeDashboard() {
   const { user } = useAuth();
@@ -35,85 +29,387 @@ export default function RegisterOfficeDashboard() {
     }, { replace: true });
   };
 
-  // Cascade Filter State (Defaulted to Rajshahi > Bogura > Shibganj > গুজিয়া)
+  // Dynamic Location Lists (exclusively from Admin Panel /api/locations/*)
+  const [divisionsList, setDivisionsList] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [upazilasList, setUpazilasList] = useState([]);
+  const [mouzasList, setMouzasList] = useState([]);
+  const [khatiansList, setKhatiansList] = useState([]);
+  const [dagsList, setDagsList] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  // Selected Location IDs (for cascading dropdown selection)
+  const [selectedDivId, setSelectedDivId] = useState('');
+  const [selectedDistId, setSelectedDistId] = useState('');
+  const [selectedUpzId, setSelectedUpzId] = useState('');
+  const [selectedMouzaId, setSelectedMouzaId] = useState('');
+  const [selectedKhatianId, setSelectedKhatianId] = useState('');
+  const [selectedDagId, setSelectedDagId] = useState('');
+
+  // Cascade Filter State (Matches selected location names/numbers)
   const [filter, setFilter] = useState({
-    division: 'রাজশাহী',
-    district: 'বগুড়া',
-    upazila: 'শিবগঞ্জ',
-    mouza: 'গুজিয়া',
-    jl_no: '1',
+    division: '',
+    district: '',
+    upazila: '',
+    mouza: '',
+    jl_no: '',
     khatian_no: '',
     dag_no: ''
   });
 
-  // Dynamic Options
-  const [divisionsList] = useState(BANGLADESH_DIVISIONS);
-  const [districtsList, setDistrictsList] = useState(getDistrictsForDivision('রাজশাহী'));
-  const [upazilasList, setUpazilasList] = useState(getUpazilasForDistrict('বগুড়া'));
-  const [mouzasList, setMouzasList] = useState(getMouzasForUpazila('শিবগঞ্জ'));
-
-  // Cascade change handlers
-  const handleDivisionChange = (div) => {
-    const districts = getDistrictsForDivision(div);
-    const defaultDist = districts[0] || 'বগুড়া';
-    const upazilas = getUpazilasForDistrict(defaultDist);
-    const defaultUpazila = upazilas[0] || 'শিবগঞ্জ';
-    const mouzas = getMouzasForUpazila(defaultUpazila);
-    const defaultMouza = mouzas[0]?.mouza || 'গুজিয়া';
-    const jl = mouzas[0]?.jl_no || '1';
-
-    setDistrictsList(districts);
-    setUpazilasList(upazilas);
-    setMouzasList(mouzas);
-    setFilter(prev => ({
-      ...prev,
-      division: div,
-      district: defaultDist,
-      upazila: defaultUpazila,
-      mouza: defaultMouza,
-      jl_no: jl
-    }));
+  // ── Cascading Fetch Functions (Admin-created dynamic hierarchy) ──
+  const fetchDagsForKhatian = async (khatianId, khatianNo, currentFilter) => {
+    try {
+      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}`);
+      const dags = res.data?.data || [];
+      setDagsList(dags);
+      if (dags.length > 0) {
+        const firstDag = dags[0];
+        setSelectedDagId(firstDag._id);
+        const updatedFilter = {
+          ...currentFilter,
+          khatian_no: khatianNo,
+          dag_no: firstDag.dag_no
+        };
+        setFilter(updatedFilter);
+        handleSearchLandWithParams(updatedFilter);
+      } else {
+        setSelectedDagId('');
+        const updatedFilter = {
+          ...currentFilter,
+          khatian_no: khatianNo,
+          dag_no: ''
+        };
+        setFilter(updatedFilter);
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Error fetching dags:', err);
+      setDagsList([]);
+      setSelectedDagId('');
+      setSelectedLand(null);
+    }
   };
 
-  const handleDistrictChange = (dist) => {
-    const upazilas = getUpazilasForDistrict(dist);
-    const defaultUpazila = upazilas[0] || 'শিবগঞ্জ';
-    const mouzas = getMouzasForUpazila(defaultUpazila);
-    const defaultMouza = mouzas[0]?.mouza || 'গুজিয়া';
-    const jl = mouzas[0]?.jl_no || '1';
-
-    setUpazilasList(upazilas);
-    setMouzasList(mouzas);
-    setFilter(prev => ({
-      ...prev,
-      district: dist,
-      upazila: defaultUpazila,
-      mouza: defaultMouza,
-      jl_no: jl
-    }));
+  const fetchKhatiansForMouza = async (mouzaId, mouzaName, jlNo, currentFilter) => {
+    try {
+      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}`);
+      const khatians = res.data?.data || [];
+      setKhatiansList(khatians);
+      if (khatians.length > 0) {
+        const firstKh = khatians[0];
+        setSelectedKhatianId(firstKh._id);
+        const updatedFilter = {
+          ...currentFilter,
+          mouza: mouzaName,
+          jl_no: jlNo || '',
+          khatian_no: firstKh.khatian_no
+        };
+        setFilter(updatedFilter);
+        await fetchDagsForKhatian(firstKh._id, firstKh.khatian_no, updatedFilter);
+      } else {
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        const updatedFilter = {
+          ...currentFilter,
+          mouza: mouzaName,
+          jl_no: jlNo || '',
+          khatian_no: '',
+          dag_no: ''
+        };
+        setFilter(updatedFilter);
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Error fetching khatians:', err);
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+      setDagsList([]);
+      setSelectedDagId('');
+      setSelectedLand(null);
+    }
   };
 
-  const handleUpazilaChange = (upz) => {
-    const mouzas = getMouzasForUpazila(upz);
-    const defaultMouza = mouzas[0]?.mouza || 'গুজিয়া';
-    const jl = mouzas[0]?.jl_no || '1';
-
-    setMouzasList(mouzas);
-    setFilter(prev => ({
-      ...prev,
-      upazila: upz,
-      mouza: defaultMouza,
-      jl_no: jl
-    }));
+  const fetchMouzasForUpazila = async (upzId, upzName, currentFilter) => {
+    try {
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      const mouzas = res.data?.data || [];
+      setMouzasList(mouzas);
+      if (mouzas.length > 0) {
+        const firstMouza = mouzas[0];
+        setSelectedMouzaId(firstMouza._id);
+        const updatedFilter = {
+          ...currentFilter,
+          upazila: upzName,
+          mouza: firstMouza.name,
+          jl_no: firstMouza.jl_no || ''
+        };
+        setFilter(updatedFilter);
+        await fetchKhatiansForMouza(firstMouza._id, firstMouza.name, firstMouza.jl_no, updatedFilter);
+      } else {
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        const updatedFilter = {
+          ...currentFilter,
+          upazila: upzName,
+          mouza: '',
+          jl_no: '',
+          khatian_no: '',
+          dag_no: ''
+        };
+        setFilter(updatedFilter);
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Error fetching mouzas:', err);
+      setMouzasList([]);
+      setSelectedMouzaId('');
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+      setDagsList([]);
+      setSelectedDagId('');
+      setSelectedLand(null);
+    }
   };
 
-  const handleMouzaChange = (mouzaName) => {
-    const jl = getJlNoForMouza(mouzaName);
-    setFilter(prev => ({
-      ...prev,
-      mouza: mouzaName,
-      jl_no: jl
-    }));
+  const fetchUpazilasForDistrict = async (distId, distName, currentFilter) => {
+    try {
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      const upazilas = res.data?.data || [];
+      setUpazilasList(upazilas);
+      if (upazilas.length > 0) {
+        const firstUpz = upazilas[0];
+        setSelectedUpzId(firstUpz._id);
+        const updatedFilter = {
+          ...currentFilter,
+          district: distName,
+          upazila: firstUpz.name
+        };
+        setFilter(updatedFilter);
+        await fetchMouzasForUpazila(firstUpz._id, firstUpz.name, updatedFilter);
+      } else {
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        const updatedFilter = {
+          ...currentFilter,
+          district: distName,
+          upazila: '',
+          mouza: '',
+          jl_no: '',
+          khatian_no: '',
+          dag_no: ''
+        };
+        setFilter(updatedFilter);
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Error fetching upazilas:', err);
+      setUpazilasList([]);
+      setSelectedUpzId('');
+      setMouzasList([]);
+      setSelectedMouzaId('');
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+      setDagsList([]);
+      setSelectedDagId('');
+      setSelectedLand(null);
+    }
+  };
+
+  const fetchDistrictsForDivision = async (divId, divName, currentFilter) => {
+    try {
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      const districts = res.data?.data || [];
+      setDistrictsList(districts);
+      if (districts.length > 0) {
+        const firstDist = districts[0];
+        setSelectedDistId(firstDist._id);
+        const updatedFilter = {
+          ...currentFilter,
+          division: divName,
+          district: firstDist.name
+        };
+        setFilter(updatedFilter);
+        await fetchUpazilasForDistrict(firstDist._id, firstDist.name, updatedFilter);
+      } else {
+        setSelectedDistId('');
+        setUpazilasList([]);
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        const updatedFilter = {
+          ...currentFilter,
+          division: divName,
+          district: '',
+          upazila: '',
+          mouza: '',
+          jl_no: '',
+          khatian_no: '',
+          dag_no: ''
+        };
+        setFilter(updatedFilter);
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Error fetching districts:', err);
+      setDistrictsList([]);
+      setSelectedDistId('');
+      setUpazilasList([]);
+      setSelectedUpzId('');
+      setMouzasList([]);
+      setSelectedMouzaId('');
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+      setDagsList([]);
+      setSelectedDagId('');
+      setSelectedLand(null);
+    }
+  };
+
+  const loadInitialHierarchy = async () => {
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get('/api/locations/divisions');
+      const divisions = res.data?.data || [];
+      setDivisionsList(divisions);
+      if (divisions.length > 0) {
+        const firstDiv = divisions[0];
+        setSelectedDivId(firstDiv._id);
+        const initialFilter = {
+          division: firstDiv.name,
+          district: '',
+          upazila: '',
+          mouza: '',
+          jl_no: '',
+          khatian_no: '',
+          dag_no: ''
+        };
+        setFilter(initialFilter);
+        await fetchDistrictsForDivision(firstDiv._id, firstDiv.name, initialFilter);
+      } else {
+        setSelectedDivId('');
+        setDistrictsList([]);
+        setSelectedDistId('');
+        setUpazilasList([]);
+        setSelectedUpzId('');
+        setMouzasList([]);
+        setSelectedMouzaId('');
+        setKhatiansList([]);
+        setSelectedKhatianId('');
+        setDagsList([]);
+        setSelectedDagId('');
+        setSelectedLand(null);
+      }
+    } catch (err) {
+      console.error('Failed to load initial hierarchy:', err);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  // Cascade selection change handlers
+  const handleDivisionChange = async (divId) => {
+    const div = divisionsList.find(d => d._id === divId);
+    if (!div) return;
+    setSelectedDivId(div._id);
+    const updatedFilter = {
+      ...filter,
+      division: div.name,
+      district: '',
+      upazila: '',
+      mouza: '',
+      jl_no: '',
+      khatian_no: '',
+      dag_no: ''
+    };
+    setFilter(updatedFilter);
+    await fetchDistrictsForDivision(div._id, div.name, updatedFilter);
+  };
+
+  const handleDistrictChange = async (distId) => {
+    const dist = districtsList.find(d => d._id === distId);
+    if (!dist) return;
+    setSelectedDistId(dist._id);
+    const updatedFilter = {
+      ...filter,
+      district: dist.name,
+      upazila: '',
+      mouza: '',
+      jl_no: '',
+      khatian_no: '',
+      dag_no: ''
+    };
+    setFilter(updatedFilter);
+    await fetchUpazilasForDistrict(dist._id, dist.name, updatedFilter);
+  };
+
+  const handleUpazilaChange = async (upzId) => {
+    const upz = upazilasList.find(u => u._id === upzId);
+    if (!upz) return;
+    setSelectedUpzId(upz._id);
+    const updatedFilter = {
+      ...filter,
+      upazila: upz.name,
+      mouza: '',
+      jl_no: '',
+      khatian_no: '',
+      dag_no: ''
+    };
+    setFilter(updatedFilter);
+    await fetchMouzasForUpazila(upz._id, upz.name, updatedFilter);
+  };
+
+  const handleMouzaChange = async (mouzaId) => {
+    const mouza = mouzasList.find(m => m._id === mouzaId);
+    if (!mouza) return;
+    setSelectedMouzaId(mouza._id);
+    const updatedFilter = {
+      ...filter,
+      mouza: mouza.name,
+      jl_no: mouza.jl_no || '',
+      khatian_no: '',
+      dag_no: ''
+    };
+    setFilter(updatedFilter);
+    await fetchKhatiansForMouza(mouza._id, mouza.name, mouza.jl_no, updatedFilter);
+  };
+
+  const handleKhatianChange = async (khatianId) => {
+    const kh = khatiansList.find(k => k._id === khatianId);
+    if (!kh) return;
+    setSelectedKhatianId(kh._id);
+    const updatedFilter = {
+      ...filter,
+      khatian_no: kh.khatian_no,
+      dag_no: ''
+    };
+    setFilter(updatedFilter);
+    await fetchDagsForKhatian(kh._id, kh.khatian_no, updatedFilter);
+  };
+
+  const handleDagChange = (dagId) => {
+    const dag = dagsList.find(d => d._id === dagId);
+    if (!dag) return;
+    setSelectedDagId(dag._id);
+    const updatedFilter = {
+      ...filter,
+      dag_no: dag.dag_no
+    };
+    setFilter(updatedFilter);
+    handleSearchLandWithParams(updatedFilter);
   };
 
   // Selected land & found user
@@ -175,7 +471,7 @@ export default function RegisterOfficeDashboard() {
   useEffect(() => {
     fetchSentRequests();
     fetchClaimNotifications();
-    handleSearchLand();
+    loadInitialHierarchy();
     handleSearchUser();
   }, []);
 
@@ -226,25 +522,31 @@ export default function RegisterOfficeDashboard() {
     }
   };
 
-  const handleSearchLand = async () => {
+  const handleSearchLandWithParams = async (searchFilter = null) => {
+    const current = searchFilter && typeof searchFilter === 'object' && searchFilter.mouza ? searchFilter : filter;
+    if (!current?.division || !current?.district || !current?.upazila || !current?.mouza || !current?.dag_no) {
+      setSelectedLand(null);
+      return;
+    }
     setSearchingLand(true);
     setAssignSuccess(null);
     try {
       const res = await axios.get('/api/assign/search-land', {
         params: {
-          division: filter.division,
-          district: filter.district,
-          upazila: filter.upazila,
-          mouza: filter.mouza,
-          dag_no: filter.dag_no,
-          khatian_no: filter.khatian_no
+          division: current.division,
+          district: current.district,
+          upazila: current.upazila,
+          mouza: current.mouza,
+          jl_no: current.jl_no,
+          dag_no: current.dag_no,
+          khatian_no: current.khatian_no
         }
       });
-      if (res.data.success && res.data.data.length > 0) {
+      if (res.data.success && res.data.data?.length > 0) {
         const land = res.data.data[0];
         setSelectedLand(land);
-        setCustomKhatianInput(land.khatian_no || filter.khatian_no || '');
-        if (land.khatian_no && land.khatian_no !== filter.khatian_no) {
+        setCustomKhatianInput(land.khatian_no || current.khatian_no || '');
+        if (land.khatian_no && land.khatian_no !== current.khatian_no) {
           setFilter(prev => ({ ...prev, khatian_no: land.khatian_no }));
         }
       } else {
@@ -252,9 +554,14 @@ export default function RegisterOfficeDashboard() {
       }
     } catch (err) {
       console.error('Land search error:', err);
+      setSelectedLand(null);
     } finally {
       setSearchingLand(false);
     }
+  };
+
+  const handleSearchLand = () => {
+    handleSearchLandWithParams(filter);
   };
 
   const handleSaveKhatianToDb = async () => {
@@ -479,21 +786,61 @@ export default function RegisterOfficeDashboard() {
                   border: '1px solid #bfdbfe',
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  fontWeight: '700'
+                  fontWeight: '700',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px'
                 }}>
-                  বিভাগ ➔ জেলা ➔ উপজেলা/সার্কেল ➔ মৌজা ➔ জেল নম্বর ➔ খতিয়ান ➔ দাগ নম্বর
+                  <span>বিভাগ ➔ জেলা ➔ উপজেলা/সার্কেল ➔ মৌজা ➔ জেল নম্বর ➔ খতিয়ান ➔ দাগ নম্বর</span>
+                  <button
+                    type="button"
+                    onClick={loadInitialHierarchy}
+                    disabled={loadingLocations}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#2563eb',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: '700'
+                    }}
+                    title="অ্যাডমিন প্যানেলের নতুন তথ্য রিফ্রেশ করুন"
+                  >
+                    <RefreshCw size={12} className={loadingLocations ? 'animate-spin' : ''} />
+                    রিফ্রেশ
+                  </button>
                 </div>
+
+                {divisionsList.length === 0 && !loadingLocations && (
+                  <div style={{
+                    padding: '12px 14px',
+                    background: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: '#991b1b',
+                    marginBottom: '16px'
+                  }}>
+                    ⚠️ অ্যাডমিন প্যানেল থেকে কোনো লোকেশন এখনো যোগ করা হয়নি। সুপার অ্যাডমিন প্যানেল থেকে লোকেশন ও খতিয়ান/দাগ যোগ করুন।
+                  </div>
+                )}
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '16px' }}>
                   <div>
                     <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>১. বিভাগ (Division)</label>
                     <select
                       className="input-field"
-                      value={filter.division}
+                      value={selectedDivId}
                       onChange={(e) => handleDivisionChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
+                      disabled={loadingLocations || divisionsList.length === 0}
                     >
-                      {divisionsList.map(d => <option key={d} value={d}>{d}</option>)}
+                      {divisionsList.length === 0 && <option value="">বিভাগ নেই</option>}
+                      {divisionsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
                     </select>
                   </div>
 
@@ -501,11 +848,13 @@ export default function RegisterOfficeDashboard() {
                     <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>২. জেলা (District)</label>
                     <select
                       className="input-field"
-                      value={filter.district}
+                      value={selectedDistId}
                       onChange={(e) => handleDistrictChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
+                      disabled={loadingLocations || districtsList.length === 0}
                     >
-                      {districtsList.map(d => <option key={d} value={d}>{d}</option>)}
+                      {districtsList.length === 0 && <option value="">জেলা নেই</option>}
+                      {districtsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
                     </select>
                   </div>
 
@@ -513,25 +862,29 @@ export default function RegisterOfficeDashboard() {
                     <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৩. উপজেলা (Upazila)</label>
                     <select
                       className="input-field"
-                      value={filter.upazila}
+                      value={selectedUpzId}
                       onChange={(e) => handleUpazilaChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
+                      disabled={loadingLocations || upazilasList.length === 0}
                     >
-                      {upazilasList.map(u => <option key={u} value={u}>{u}</option>)}
+                      {upazilasList.length === 0 && <option value="">উপজেলা নেই</option>}
+                      {upazilasList.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
                     </select>
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৪. মৌজা (মৌজা ও জে.এল)</label>
+                    <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৪. মৌজা (Mouza)</label>
                     <select
                       className="input-field"
-                      value={filter.mouza}
+                      value={selectedMouzaId}
                       onChange={(e) => handleMouzaChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
+                      disabled={loadingLocations || mouzasList.length === 0}
                     >
+                      {mouzasList.length === 0 && <option value="">মৌজা নেই</option>}
                       {mouzasList.map(m => (
-                        <option key={m.jl_no + m.mouza} value={m.mouza}>
-                          {m.mouza} (জে.এল {m.jl_no})
+                        <option key={m._id} value={m._id}>
+                          {m.name} {m.jl_no ? `(জে.এল ${m.jl_no})` : ''}
                         </option>
                       ))}
                     </select>
@@ -543,33 +896,46 @@ export default function RegisterOfficeDashboard() {
                       type="text"
                       readOnly
                       className="input-field"
-                      value={filter.jl_no}
+                      value={filter.jl_no || '-'}
+                      placeholder="জে.এল নং"
                       style={{ width: '100%', fontSize: '12px', background: '#f8fafc', color: '#166534', fontWeight: '700', border: '1.5px solid #cbd5e1' }}
                     />
                   </div>
 
                   <div>
                     <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৬. খতিয়ান নং</label>
-                    <input
-                      type="text"
+                    <select
                       className="input-field"
-                      placeholder="খতিয়ান নং লিখুন"
-                      value={filter.khatian_no}
-                      onChange={(e) => setFilter(prev => ({ ...prev, khatian_no: e.target.value }))}
+                      value={selectedKhatianId}
+                      onChange={(e) => handleKhatianChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                    />
+                      disabled={loadingLocations || khatiansList.length === 0}
+                    >
+                      {khatiansList.length === 0 && <option value="">খতিয়ান নেই</option>}
+                      {khatiansList.map(k => (
+                        <option key={k._id} value={k._id}>
+                          {k.khatian_no} {k.khatian_type ? `(${k.khatian_type})` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
 
                   <div>
                     <label style={{ fontSize: '12px', color: '#1e293b', fontWeight: '700', display: 'block', marginBottom: '4px' }}>৭. দাগ নং (প্লট)</label>
-                    <input
-                      type="text"
+                    <select
                       className="input-field"
-                      placeholder="দাগ নং লিখুন"
-                      value={filter.dag_no}
-                      onChange={(e) => setFilter(prev => ({ ...prev, dag_no: e.target.value }))}
+                      value={selectedDagId}
+                      onChange={(e) => handleDagChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                    />
+                      disabled={loadingLocations || dagsList.length === 0}
+                    >
+                      {dagsList.length === 0 && <option value="">দাগ নেই</option>}
+                      {dagsList.map(d => (
+                        <option key={d._id} value={d._id}>
+                          দাগ {d.dag_no} {d.total_area_decimal ? `(${d.total_area_decimal} শতক)` : ''}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
