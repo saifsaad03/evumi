@@ -89,14 +89,12 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGODB_URI;
 
 const startServer = (dbStatus) => {
-  if (!process.env.VERCEL) {
-    app.listen(PORT, () => {
-      console.log(`🚀 e-Vhumi backend running on port ${PORT}`);
-      console.log(`📡 API: http://localhost:${PORT}`);
-      console.log(`🗄️  Database: ${dbStatus}`);
-      console.log(`📧 Email Service: ${process.env.EMAIL_USER && process.env.EMAIL_USER !== 'your_email@gmail.com' ? 'Configured (' + process.env.EMAIL_USER + ')' : 'Simulated (Fallback Mode)'}`);
-    });
-  }
+  app.listen(PORT, () => {
+    console.log(`🚀 e-Vhumi backend running on port ${PORT}`);
+    console.log(`📡 API: http://localhost:${PORT}`);
+    console.log(`🗄️  Database: ${dbStatus}`);
+    console.log(`📧 Email Service: ${process.env.EMAIL_USER && process.env.EMAIL_USER !== 'your_email@gmail.com' ? 'Configured (' + process.env.EMAIL_USER + ')' : 'Simulated (Fallback Mode)'}`);
+  });
 };
 
 if (MONGO_URI && !MONGO_URI.includes('xxxxx')) {
