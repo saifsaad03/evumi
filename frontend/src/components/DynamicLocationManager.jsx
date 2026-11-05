@@ -33,6 +33,7 @@ export default function DynamicLocationManager() {
   const [selectedDistId, setSelectedDistId] = useState('');
   const [selectedUpzId, setSelectedUpzId] = useState('');
   const [selectedMouzaId, setSelectedMouzaId] = useState('');
+  const [selectedKhatianId, setSelectedKhatianId] = useState('');
   const [selectedDagId, setSelectedDagId] = useState('');
 
   // Creation forms state
@@ -40,11 +41,19 @@ export default function DynamicLocationManager() {
   const [distForm, setDistForm] = useState({ division_id: '', name: '', code: '', description: '' });
   const [upzForm, setUpzForm] = useState({ district_id: '', name: '', code: '', description: '' });
   const [mouzaForm, setMouzaForm] = useState({ upazila_id: '', name: '', jl_no: '', remarks: '' });
-  const [dagForm, setDagForm] = useState({ mouza_id: '', dag_no: '', land_type: 'নাল / কৃষি জমি', total_area_decimal: 10, remarks: '' });
   const [khatianForm, setKhatianForm] = useState({
-    dag_id: '',
+    mouza_id: '',
     khatian_no: '',
     khatian_type: 'বিএস (BS)',
+    owner_name: 'বাংলাদেশ সরকার (১নং খাস খতিয়ান)',
+    owner_nid: '',
+    remarks: ''
+  });
+  const [dagForm, setDagForm] = useState({
+    khatian_id: '',
+    dag_no: '',
+    land_type: 'নাল / কৃষি জমি',
+    total_area_decimal: 10,
     remarks: ''
   });
 
@@ -55,6 +64,40 @@ export default function DynamicLocationManager() {
 
   // Edit modal state
   const [editingItem, setEditingItem] = useState(null); // { type, data }
+
+  // Celebration state for creation animation (Division, District, Upazila, Mouza, Dag, Khatian)
+  const [celebration, setCelebration] = useState(null);
+  const [recentlyCreatedId, setRecentlyCreatedId] = useState(null);
+  const celebrationTimerRef = React.useRef(null);
+
+  const triggerCelebration = ({ level, name, code, parentName, icon, nextStep, nextStepName }) => {
+    if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+    setCelebration({
+      level,
+      name,
+      code,
+      parentName,
+      icon: icon || '✨',
+      nextStep,
+      nextStepName
+    });
+    // Auto-dismiss celebration modal after 7 seconds
+    celebrationTimerRef.current = setTimeout(() => {
+      setCelebration(null);
+    }, 7000);
+  };
+
+  const closeCelebration = () => {
+    if (celebrationTimerRef.current) clearTimeout(celebrationTimerRef.current);
+    setCelebration(null);
+  };
+
+  const proceedToNextStep = (step) => {
+    closeCelebration();
+    if (step) {
+      setActiveStep(step);
+    }
+  };
 
   const showFeedback = (msg, isError = false) => {
     if (isError) {
@@ -104,26 +147,27 @@ export default function DynamicLocationManager() {
     }
   }, [selectedUpzId]);
 
-  // When selected mouza changes, load dags
+  // When selected mouza changes, load khatians
   useEffect(() => {
     if (selectedMouzaId) {
-      fetchDags(selectedMouzaId);
-      setDagForm(p => ({ ...p, mouza_id: selectedMouzaId }));
+      fetchKhatians(selectedMouzaId);
+      setKhatianForm(p => ({ ...p, mouza_id: selectedMouzaId }));
+    } else {
+      setKhatians([]);
+      setSelectedKhatianId('');
+    }
+  }, [selectedMouzaId]);
+
+  // When selected khatian changes, load dags
+  useEffect(() => {
+    if (selectedKhatianId) {
+      fetchDags(selectedKhatianId);
+      setDagForm(p => ({ ...p, khatian_id: selectedKhatianId }));
     } else {
       setDags([]);
       setSelectedDagId('');
     }
-  }, [selectedMouzaId]);
-
-  // When selected dag changes, load khatians
-  useEffect(() => {
-    if (selectedDagId) {
-      fetchKhatians(selectedDagId);
-      setKhatianForm(p => ({ ...p, dag_id: selectedDagId }));
-    } else {
-      setKhatians([]);
-    }
-  }, [selectedDagId]);
+  }, [selectedKhatianId]);
 
   // ─────────────────────────────────────────────────────────────
   // Fetch Functions
@@ -199,15 +243,15 @@ export default function DynamicLocationManager() {
     }
   };
 
-  const fetchDags = async (mouzaId) => {
+  const fetchKhatians = async (mouzaId) => {
     try {
-      const res = await axios.get(`/api/locations/dags?mouza_id=${mouzaId}&includeInactive=true`);
+      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}&includeInactive=true`);
       if (res.data.success) {
-        setDags(res.data.data);
+        setKhatians(res.data.data);
         if (res.data.data.length > 0) {
-          setSelectedDagId(res.data.data[0]._id);
+          setSelectedKhatianId(res.data.data[0]._id);
         } else {
-          setSelectedDagId('');
+          setSelectedKhatianId('');
         }
       }
     } catch (err) {
@@ -215,11 +259,16 @@ export default function DynamicLocationManager() {
     }
   };
 
-  const fetchKhatians = async (dagId) => {
+  const fetchDags = async (khatianId) => {
     try {
-      const res = await axios.get(`/api/locations/khatians?dag_id=${dagId}&includeInactive=true`);
+      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}&includeInactive=true`);
       if (res.data.success) {
-        setKhatians(res.data.data);
+        setDags(res.data.data);
+        if (res.data.data.length > 0) {
+          setSelectedDagId(res.data.data[0]._id);
+        } else {
+          setSelectedDagId('');
+        }
       }
     } catch (err) {
       console.error(err);
@@ -236,10 +285,26 @@ export default function DynamicLocationManager() {
     try {
       const res = await axios.post('/api/locations/divisions', divForm);
       if (res.data.success) {
+        const created = res.data.data;
+        const createdName = created?.name || divForm.name.trim();
+        const createdCode = created?.code || divForm.code;
         showFeedback(res.data.message);
         setDivForm({ name: '', code: '', bn_name: '', description: '' });
         fetchDivisions();
         fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'বিভাগ',
+          name: createdName,
+          code: createdCode ? `কোড: ${createdCode}` : null,
+          parentName: 'গণপ্রজাতন্ত্রী বাংলাদেশ (জাতীয় স্তর)',
+          icon: '🏛️',
+          nextStep: 'step2',
+          nextStepName: 'জেলা তৈরিতে এগিয়ে যান'
+        });
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || 'বিভাগ তৈরি ব্যর্থ হয়েছে', true);
@@ -256,10 +321,27 @@ export default function DynamicLocationManager() {
     try {
       const res = await axios.post('/api/locations/districts', distForm);
       if (res.data.success) {
+        const created = res.data.data;
+        const createdName = created?.name || distForm.name.trim();
+        const createdCode = created?.code || distForm.code;
+        const parentDiv = divisions.find(d => d._id === distForm.division_id)?.name || 'নির্বাচিত বিভাগ';
         showFeedback(res.data.message);
         setDistForm(p => ({ ...p, name: '', code: '', description: '' }));
         fetchDistricts(distForm.division_id);
         fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'জেলা',
+          name: createdName,
+          code: createdCode ? `কোড: ${createdCode}` : null,
+          parentName: `বিভাগ: ${parentDiv}`,
+          icon: '🏢',
+          nextStep: 'step3',
+          nextStepName: 'উপজেলা তৈরিতে এগিয়ে যান'
+        });
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || 'জেলা তৈরি ব্যর্থ হয়েছে', true);
@@ -276,10 +358,27 @@ export default function DynamicLocationManager() {
     try {
       const res = await axios.post('/api/locations/upazilas', upzForm);
       if (res.data.success) {
+        const created = res.data.data;
+        const createdName = created?.name || upzForm.name.trim();
+        const createdCode = created?.code || upzForm.code;
+        const parentDist = districts.find(d => d._id === upzForm.district_id)?.name || 'নির্বাচিত জেলা';
         showFeedback(res.data.message);
         setUpzForm(p => ({ ...p, name: '', code: '', description: '' }));
         fetchUpazilas(upzForm.district_id);
         fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'উপজেলা',
+          name: createdName,
+          code: createdCode ? `কোড: ${createdCode}` : null,
+          parentName: `জেলা: ${parentDist}`,
+          icon: '🏬',
+          nextStep: 'step4',
+          nextStepName: 'মৌজা তৈরিতে এগিয়ে যান'
+        });
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || 'উপজেলা তৈরি ব্যর্থ হয়েছে', true);
@@ -296,10 +395,27 @@ export default function DynamicLocationManager() {
     try {
       const res = await axios.post('/api/locations/mouzas', mouzaForm);
       if (res.data.success) {
+        const created = res.data.data;
+        const createdName = created?.name || mouzaForm.name.trim();
+        const createdJl = created?.jl_no || mouzaForm.jl_no.trim();
+        const parentUpz = upazilas.find(u => u._id === mouzaForm.upazila_id)?.name || 'নির্বাচিত উপজেলা';
         showFeedback(res.data.message);
         setMouzaForm(p => ({ ...p, name: '', jl_no: '', remarks: '' }));
         fetchMouzas(mouzaForm.upazila_id);
         fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'মৌজা',
+          name: createdName,
+          code: `জে.এল নম্বর: ${createdJl}`,
+          parentName: `উপজেলা: ${parentUpz}`,
+          icon: '🗺️',
+          nextStep: 'step5',
+          nextStepName: 'খতিয়ান তৈরিতে এগিয়ে যান'
+        });
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || 'মৌজা তৈরি ব্যর্থ হয়েছে', true);
@@ -308,50 +424,79 @@ export default function DynamicLocationManager() {
     }
   };
 
-  const handleCreateDag = async (e) => {
-    e.preventDefault();
-    if (!dagForm.mouza_id) return showFeedback('মৌজা নির্বাচন করুন', true);
-    if (!dagForm.dag_no.trim()) return showFeedback('দাগ নম্বর প্রদান করুন', true);
-    setLoading(true);
-    try {
-      const res = await axios.post('/api/locations/dags', dagForm);
-      if (res.data.success) {
-        showFeedback(res.data.message);
-        setDagForm(p => ({ ...p, dag_no: '', total_area_decimal: 10, remarks: '' }));
-        fetchDags(dagForm.mouza_id);
-        fetchSummary();
-      }
-    } catch (err) {
-      showFeedback(err.response?.data?.message || 'দাগ তৈরি ব্যর্থ হয়েছে', true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreateKhatian = async (e) => {
     e.preventDefault();
-    if (!khatianForm.dag_id) return showFeedback('দাগ নম্বর নির্বাচন করুন', true);
+    if (!khatianForm.mouza_id) return showFeedback('মৌজা নির্বাচন করুন', true);
     if (!khatianForm.khatian_no.trim()) return showFeedback('খতিয়ান নম্বর প্রদান করুন', true);
     setLoading(true);
     try {
-      const res = await axios.post('/api/locations/khatians', {
-        dag_id: khatianForm.dag_id,
-        khatian_no: khatianForm.khatian_no.trim(),
-        khatian_type: khatianForm.khatian_type,
-        remarks: khatianForm.remarks
-      });
+      const res = await axios.post('/api/locations/khatians', khatianForm);
       if (res.data.success) {
+        const created = res.data.data;
+        const createdKhatian = created?.khatian_no || khatianForm.khatian_no.trim();
+        const khType = created?.khatian_type || khatianForm.khatian_type;
+        const parentMouza = mouzas.find(m => m._id === khatianForm.mouza_id)?.name || 'নির্বাচিত মৌজা';
         showFeedback(res.data.message);
         setKhatianForm(p => ({
           ...p,
           khatian_no: '',
           remarks: ''
         }));
-        fetchKhatians(khatianForm.dag_id);
+        fetchKhatians(khatianForm.mouza_id);
         fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'খতিয়ান',
+          name: `খতিয়ান নং ${createdKhatian}`,
+          code: `ধরন: ${khType}`,
+          parentName: `মৌজা: ${parentMouza}`,
+          icon: '📜',
+          nextStep: 'step6',
+          nextStepName: 'দাগ নম্বর তৈরিতে এগিয়ে যান'
+        });
       }
     } catch (err) {
       showFeedback(err.response?.data?.message || 'খতিয়ান তৈরি ব্যর্থ হয়েছে', true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateDag = async (e) => {
+    e.preventDefault();
+    if (!dagForm.khatian_id) return showFeedback('খতিয়ান নির্বাচন করুন', true);
+    if (!dagForm.dag_no.trim()) return showFeedback('দাগ নম্বর প্রদান করুন', true);
+    setLoading(true);
+    try {
+      const res = await axios.post('/api/locations/dags', dagForm);
+      if (res.data.success) {
+        const created = res.data.data;
+        const createdDagNo = created?.dag_no || dagForm.dag_no.trim();
+        const totalArea = created?.total_area_decimal || dagForm.total_area_decimal;
+        const parentKh = khatians.find(k => k._id === dagForm.khatian_id)?.khatian_no || 'নির্বাচিত খতিয়ান';
+        showFeedback(res.data.message);
+        setDagForm(p => ({ ...p, dag_no: '', total_area_decimal: 10, remarks: '' }));
+        fetchDags(dagForm.khatian_id);
+        fetchSummary();
+        if (created?._id) {
+          setRecentlyCreatedId(created._id);
+          setTimeout(() => setRecentlyCreatedId(null), 5000);
+        }
+        triggerCelebration({
+          level: 'দাগ নম্বর',
+          name: `দাগ নং ${createdDagNo}`,
+          code: totalArea ? `মোট পরিমাণ: ${totalArea} শতক` : null,
+          parentName: `খতিয়ান নং: ${parentKh}`,
+          icon: '📐',
+          nextStep: 'step6',
+          nextStepName: 'আরও দাগ নম্বর যোগ করুন'
+        });
+      }
+    } catch (err) {
+      showFeedback(err.response?.data?.message || 'দাগ তৈরি ব্যর্থ হয়েছে', true);
     } finally {
       setLoading(false);
     }
@@ -379,8 +524,8 @@ export default function DynamicLocationManager() {
     { id: 'step2', title: 'Step 2: District', label: '২. জেলা তৈরি', count: summary.districts, color: '#059669' },
     { id: 'step3', title: 'Step 3: Upazila', label: '৩. উপজেলা তৈরি', count: summary.upazilas, color: '#d97706' },
     { id: 'step4', title: 'Step 4: Mouza', label: '৪. মৌজা ও JL তৈরি', count: summary.mouzas, color: '#7c3aed' },
-    { id: 'step5', title: 'Step 5: Dag Number', label: '৫. দাগ নম্বর তৈরি', count: summary.dags, color: '#dc2626' },
-    { id: 'step6', title: 'Step 6: Khatian Number', label: '৬. খতিয়ান নম্বর তৈরি', count: summary.khatians, color: '#0d9488' }
+    { id: 'step5', title: 'Step 5: Khatian Number', label: '৫. খতিয়ান তৈরি', count: summary.khatians, color: '#0d9488' },
+    { id: 'step6', title: 'Step 6: Dag Number', label: '৬. দাগ নম্বর তৈরি', count: summary.dags, color: '#dc2626' }
   ];
 
   return (
@@ -1143,26 +1288,26 @@ export default function DynamicLocationManager() {
       )}
 
       {/* ─────────────────────────────────────────────────────────────
-          STEP 5: DAG NUMBER CREATE & MANAGE (Parent: Mouza)
+          STEP 5: KHATIAN NUMBER CREATE & MANAGE (Parent: Mouza)
           ───────────────────────────────────────────────────────────── */}
       {activeStep === 'step5' && (
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.4fr)', gap: '24px' }}>
           {/* Creation Form */}
           <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Plus size={18} color="#dc2626" /> ধাপ ৫: নতুন দাগ নম্বর তৈরি করুন (Create Dag Number)
+              <Plus size={18} color="#0d9488" /> ধাপ ৫: নতুন খতিয়ান তৈরি করুন (Create Khatian Number)
             </h3>
 
-            <form onSubmit={handleCreateDag} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <form onSubmit={handleCreateKhatian} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>
                   ১. মৌজা নির্বাচন করুন (Mouza Selection Dropdown) <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <select
-                  value={dagForm.mouza_id || selectedMouzaId}
+                  value={khatianForm.mouza_id || selectedMouzaId}
                   onChange={(e) => {
                     setSelectedMouzaId(e.target.value);
-                    setDagForm(p => ({ ...p, mouza_id: e.target.value }));
+                    setKhatianForm(p => ({ ...p, mouza_id: e.target.value }));
                   }}
                   required
                   style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontWeight: '700' }}
@@ -1170,6 +1315,211 @@ export default function DynamicLocationManager() {
                   <option value="">-- মৌজা বেছে নিন --</option>
                   {mouzas.map(m => (
                     <option key={m._id} value={m._id}>{m.name} (জে.এল: {m.jl_no})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                    ২. খতিয়ান নম্বর <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="যেমন: ১, ১২, ১০৫..."
+                    value={khatianForm.khatian_no}
+                    onChange={(e) => setKhatianForm(p => ({ ...p, khatian_no: e.target.value }))}
+                    required
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                    খতিয়ানের ধরন
+                  </label>
+                  <select
+                    value={khatianForm.khatian_type}
+                    onChange={(e) => setKhatianForm(p => ({ ...p, khatian_type: e.target.value }))}
+                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
+                  >
+                    <option value="বিএস (BS)">বিএস (BS)</option>
+                    <option value="সিএস (CS)">সিএস (CS)</option>
+                    <option value="এসএ (SA)">এসএ (SA)</option>
+                    <option value="আরএস (RS)">আরএস (RS)</option>
+                    <option value="সিটি জরিপ">সিটি জরিপ</option>
+                    <option value="ই-নামজারি">ই-নামজারি (Mutation)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                  ৩. খতিয়ানের প্রাথমিক মালিকানা বিবরণ
+                </label>
+                <input
+                  type="text"
+                  placeholder="ডিফল্ট: বাংলাদেশ সরকার (১নং খাস খতিয়ান)"
+                  value={khatianForm.owner_name}
+                  onChange={(e) => setKhatianForm(p => ({ ...p, owner_name: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                  ৪. জাতীয় পরিচয়পত্র (ঐচ্ছিক)
+                </label>
+                <input
+                  type="text"
+                  placeholder="মালিকের NID নম্বর"
+                  value={khatianForm.owner_nid}
+                  onChange={(e) => setKhatianForm(p => ({ ...p, owner_nid: e.target.value }))}
+                  style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
+                />
+              </div>
+
+              <div style={{ background: '#f0fdf4', border: '1px dashed #86efac', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', color: '#166534' }}>
+                💡 <strong>খতিয়ান তৈরি:</strong> একটি খতিয়ান তৈরির পর আপনি এই খতিয়ানের অধীনে একাধিক দাগ নম্বর যুক্ত করতে পারবেন।
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: '10px 16px',
+                  background: 'linear-gradient(135deg, #0d9488, #0f766e)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: '800',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Plus size={16} /> খতিয়ান সংরক্ষণ করুন
+              </button>
+            </form>
+          </div>
+
+          {/* List of Khatians */}
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                  খতিয়ানের তালিকা ({khatians.length})
+                </h3>
+                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                  মৌজা: <strong>{mouzas.find(m => m._id === selectedMouzaId)?.name || 'মৌজা নির্বাচন করুন'}</strong>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setActiveStep('step6')}
+                disabled={khatians.length === 0}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 12px',
+                  background: '#f1f5f9',
+                  color: '#0d9488',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  cursor: khatians.length === 0 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                পরবর্তী ধাপ (দাগ তৈরি) <ArrowRight size={13} />
+              </button>
+            </div>
+
+            {khatians.length === 0 ? (
+              <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '8px' }}>
+                <Layers size={32} style={{ margin: '0 auto 8px auto', color: '#94a3b8' }} />
+                <div style={{ fontWeight: '700' }}>এই মৌজায় কোনো খতিয়ান তৈরি করা নেই</div>
+                <div style={{ fontSize: '12px', marginTop: '4px' }}>বামে নির্দিষ্ট মৌজার অধীনে নতুন খতিয়ান যুক্ত করুন।</div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
+                {khatians.map((k) => (
+                  <div
+                    key={k._id}
+                    style={{
+                      padding: '12px 16px',
+                      background: selectedKhatianId === k._id ? '#f0fdfa' : '#f8fafc',
+                      border: selectedKhatianId === k._id ? '1.5px solid #0d9488' : '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      animation: recentlyCreatedId === k._id ? 'newItemFlash 2s ease-in-out' : 'none'
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px' }}>
+                        খতিয়ান নং: {k.khatian_no} <span style={{ fontSize: '11px', color: '#0d9488', fontWeight: '800' }}>({k.khatian_type})</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                        মৌজা: {k.mouza_name} | মালিক: {k.owner_name}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        onClick={() => { setSelectedKhatianId(k._id); setActiveStep('step6'); }}
+                        style={{ padding: '5px 10px', background: '#0d9488', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
+                      >
+                        দাগ যুক্ত করুন
+                      </button>
+                      <button
+                        onClick={() => handleDelete('khatians', k._id, () => fetchKhatians(selectedMouzaId))}
+                        style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          STEP 6: DAG NUMBER CREATE & MANAGE (Parent: Khatian)
+          ───────────────────────────────────────────────────────────── */}
+      {activeStep === 'step6' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.4fr)', gap: '24px' }}>
+          {/* Creation Form */}
+          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Plus size={18} color="#dc2626" /> ধাপ ৬: খতিয়ানের অধীনে নতুন দাগ নম্বর তৈরি করুন (Create Dag under Khatian)
+            </h3>
+
+            <form onSubmit={handleCreateDag} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>
+                  ১. খতিয়ান নির্বাচন করুন (Khatian Selection Dropdown) <span style={{ color: '#dc2626' }}>*</span>
+                </label>
+                <select
+                  value={dagForm.khatian_id || selectedKhatianId}
+                  onChange={(e) => {
+                    setSelectedKhatianId(e.target.value);
+                    setDagForm(p => ({ ...p, khatian_id: e.target.value }));
+                  }}
+                  required
+                  style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontWeight: '700' }}
+                >
+                  <option value="">-- খতিয়ান বেছে নিন --</option>
+                  {khatians.map(k => (
+                    <option key={k._id} value={k._id}>খতিয়ান নং: {k.khatian_no} ({k.khatian_type}, মৌজা: {k.mouza_name})</option>
                   ))}
                 </select>
               </div>
@@ -1220,6 +1570,10 @@ export default function DynamicLocationManager() {
                 />
               </div>
 
+              <div style={{ background: '#ecfdf5', border: '1px dashed #6ee7b7', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', color: '#065f46' }}>
+                🏛️ <strong>বহুবিধ দাগ সমর্থন:</strong> একটি খতিয়ানের অধীনে একাধিক দাগ নম্বর যুক্ত করা যাবে। এই দাগের জমি সাব-রেজিস্ট্রি অফিসে স্বয়ংক্রিয়ভাবে দলিল সম্পাদনের জন্য বরাদ্দযোগ্য হবে।
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -1243,44 +1597,28 @@ export default function DynamicLocationManager() {
             </form>
           </div>
 
-          {/* List of Dags */}
+          {/* List of Dags under selected Khatian */}
           <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div>
                 <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  দাগ নম্বরের তালিকা ({dags.length})
+                  খতিয়ানের দাগ নম্বরসমূহের তালিকা ({dags.length})
                 </h3>
                 <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                  মৌজা: <strong>{mouzas.find(m => m._id === selectedMouzaId)?.name || 'নির্বাচন করুন'}</strong>
+                  খতিয়ান নং: <strong>{khatians.find(k => k._id === selectedKhatianId)?.khatian_no || 'খতিয়ান নির্বাচন করুন'}</strong> ({khatians.find(k => k._id === selectedKhatianId)?.khatian_type || ''})
                 </div>
               </div>
 
-              <button
-                onClick={() => setActiveStep('step6')}
-                disabled={dags.length === 0}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  padding: '6px 12px',
-                  background: '#f1f5f9',
-                  color: '#dc2626',
-                  border: '1px solid #cbd5e1',
-                  borderRadius: '6px',
-                  fontSize: '12px',
-                  fontWeight: '700',
-                  cursor: dags.length === 0 ? 'not-allowed' : 'pointer'
-                }}
-              >
-                পরবর্তী ধাপ (খতিয়ান তৈরি) <ArrowRight size={13} />
-              </button>
+              <span style={{ fontSize: '12px', background: '#dcfce7', color: '#166534', padding: '4px 10px', borderRadius: '6px', fontWeight: '700' }}>
+                একাধিক দাগ অনুমোদিত
+              </span>
             </div>
 
             {dags.length === 0 ? (
               <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '8px' }}>
                 <MapPin size={32} style={{ margin: '0 auto 8px auto', color: '#94a3b8' }} />
-                <div style={{ fontWeight: '700' }}>এই মৌজায় কোনো দাগ নম্বর তৈরি করা নেই</div>
-                <div style={{ fontSize: '12px', marginTop: '4px' }}>বামে নির্দিষ্ট মৌজার অধীনে দাগ নম্বর যুক্ত করুন।</div>
+                <div style={{ fontWeight: '700' }}>এই খতিয়ানের অধীনে কোনো দাগ নম্বর তৈরি করা নেই</div>
+                <div style={{ fontSize: '12px', marginTop: '4px' }}>বামের ফর্ম ব্যবহার করে এই খতিয়ানের অধীনে এক বা একাধিক দাগ নম্বর যুক্ত করুন।</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
@@ -1294,7 +1632,8 @@ export default function DynamicLocationManager() {
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'space-between'
+                      justifyContent: 'space-between',
+                      animation: recentlyCreatedId === dg._id ? 'newItemFlash 2s ease-in-out' : 'none'
                     }}
                   >
                     <div>
@@ -1302,189 +1641,7 @@ export default function DynamicLocationManager() {
                         দাগ নং: {dg.dag_no} <span style={{ fontSize: '11px', color: '#047857', fontWeight: '800' }}>({dg.total_area_decimal} শতক)</span>
                       </div>
                       <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                        ধরন: {dg.land_type} | মৌজা: {dg.mouza_name}
-                      </div>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        onClick={() => { setSelectedDagId(dg._id); setActiveStep('step6'); }}
-                        style={{ padding: '5px 10px', background: '#dc2626', color: '#ffffff', border: 'none', borderRadius: '6px', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}
-                      >
-                        খতিয়ান যুক্ত করুন
-                      </button>
-                      <button
-                        onClick={() => handleDelete('dags', dg._id, () => fetchDags(selectedMouzaId))}
-                        style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', cursor: 'pointer' }}
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ─────────────────────────────────────────────────────────────
-          STEP 6: KHATIAN NUMBER CREATE & MANAGE (Parent: Dag)
-          ───────────────────────────────────────────────────────────── */}
-      {activeStep === 'step6' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(360px, 1.4fr)', gap: '24px' }}>
-          {/* Creation Form */}
-          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Plus size={18} color="#0d9488" /> ধাপ ৬: নতুন খতিয়ান তৈরি করুন (Create Khatian Number)
-            </h3>
-
-            <form onSubmit={handleCreateKhatian} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '800', color: '#1e293b', marginBottom: '4px' }}>
-                  ১. দাগ নম্বর নির্বাচন করুন (Dag Selection Dropdown) <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <select
-                  value={khatianForm.dag_id || selectedDagId}
-                  onChange={(e) => {
-                    setSelectedDagId(e.target.value);
-                    setKhatianForm(p => ({ ...p, dag_id: e.target.value }));
-                  }}
-                  required
-                  style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontWeight: '700' }}
-                >
-                  <option value="">-- দাগ নম্বর বেছে নিন --</option>
-                  {dags.map(d => (
-                    <option key={d._id} value={d._id}>দাগ নং: {d.dag_no} (মৌজা: {d.mouza_name}, {d.total_area_decimal} শতক)</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                    ২. খতিয়ান নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="যেমন: ১, ১২, ১০৫..."
-                    value={khatianForm.khatian_no}
-                    onChange={(e) => setKhatianForm(p => ({ ...p, khatian_no: e.target.value }))}
-                    required
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                    খতিয়ানের ধরন
-                  </label>
-                  <select
-                    value={khatianForm.khatian_type}
-                    onChange={(e) => setKhatianForm(p => ({ ...p, khatian_type: e.target.value }))}
-                    style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
-                  >
-                    <option value="বিএস (BS)">বিএস (BS)</option>
-                    <option value="সিএস (CS)">সিএস (CS)</option>
-                    <option value="এসএ (SA)">এসএ (SA)</option>
-                    <option value="আরএস (RS)">আরএস (RS)</option>
-                    <option value="ই-নামজারি">ই-নামজারি (Mutation)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
-                  ৩. অতিরিক্ত বিবরণ / মন্তব্য (ঐচ্ছিক)
-                </label>
-                <input
-                  type="text"
-                  placeholder="যেমন: হাল রেকর্ডীয় খতিয়ান, সরকারি রেকর্ড ইত্যাদি"
-                  value={khatianForm.remarks}
-                  onChange={(e) => setKhatianForm(p => ({ ...p, remarks: e.target.value }))}
-                  style={{ width: '100%', padding: '9px 12px', fontSize: '13px', border: '1.5px solid #cbd5e1', borderRadius: '8px' }}
-                />
-              </div>
-
-              {/* Informative Note regarding Sub-Registry Office Land Assignment */}
-              <div style={{
-                padding: '12px 14px',
-                background: '#f0fdfa',
-                border: '1.5px dashed #0d9488',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: '10px'
-              }}>
-                <Sparkles size={20} color="#0d9488" style={{ marginTop: '2px', flexShrink: 0 }} />
-                <div style={{ fontSize: '12px', color: '#134e4a', lineHeight: '1.5' }}>
-                  <strong>খতিয়ানে জমি বরাদ্দ নীতি:</strong> সুপার এডমিন শুধুমাত্র দাগের অধীনে খতিয়ান নম্বর ও এর ধরন প্রস্তুত করবেন। এই খতিয়ানের জমি নির্দিষ্ট কোনো নাগরিকের নামে বরাদ্দ (Assign), রেজিস্ট্রেশন এবং দলিল সম্পাদন কার্যক্রম <strong>সাব-রেজিস্ট্রি অফিস (Register Office)</strong> থেকে সম্পন্ন হবে।
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  padding: '10px 16px',
-                  background: 'linear-gradient(135deg, #0d9488, #14b8a6)',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: '800',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <Plus size={16} /> খতিয়ান নম্বর সংরক্ষণ করুন
-              </button>
-            </form>
-          </div>
-
-          {/* List of Khatians */}
-          <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  খতিয়ান নম্বরের তালিকা ({khatians.length})
-                </h3>
-                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                  দাগ নং: <strong>{dags.find(d => d._id === selectedDagId)?.dag_no || 'নির্বাচন করুন'}</strong>
-                </div>
-              </div>
-            </div>
-
-            {khatians.length === 0 ? (
-              <div style={{ padding: '36px', textAlign: 'center', color: '#64748b', background: '#f8fafc', borderRadius: '8px' }}>
-                <MapPin size={32} style={{ margin: '0 auto 8px auto', color: '#94a3b8' }} />
-                <div style={{ fontWeight: '700' }}>এই দাগে কোনো খতিয়ান নম্বর তৈরি করা নেই</div>
-                <div style={{ fontSize: '12px', marginTop: '4px' }}>বামে নির্দিষ্ট দাগের অধীনে খতিয়ান নম্বর যুক্ত করুন।</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
-                {khatians.map((k) => (
-                  <div
-                    key={k._id}
-                    style={{
-                      padding: '12px 16px',
-                      background: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}
-                  >
-                    <div>
-                      <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '14px' }}>
-                        খতিয়ান নং: {k.khatian_no} <span style={{ fontSize: '11px', color: '#0d9488', fontWeight: '800' }}>({k.khatian_type})</span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
-                        মৌজা: {k.mouza_name} | দাগ: {k.dag_no} {k.area_decimal ? `| দাগের মোট পরিমাণ: ${k.area_decimal} শতক` : ''}
+                        ধরন: {dg.land_type} | খতিয়ান: {dg.khatian_no} | মৌজা: {dg.mouza_name}
                       </div>
                       <div style={{ marginTop: '4px' }}>
                         <span style={{ fontSize: '11px', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '12px', fontWeight: '700' }}>
@@ -1495,7 +1652,7 @@ export default function DynamicLocationManager() {
 
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
-                        onClick={() => handleDelete('khatians', k._id, () => fetchKhatians(selectedDagId))}
+                        onClick={() => handleDelete('dags', dg._id, () => fetchDags(selectedKhatianId))}
                         style={{ padding: '5px 8px', background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: '6px', cursor: 'pointer' }}
                       >
                         <Trash2 size={13} />
@@ -1508,7 +1665,256 @@ export default function DynamicLocationManager() {
           </div>
         </div>
       )}
+{/* ─────────────────────────────────────────────────────────────
+          🎉 Interactive Location Creation Celebration Modal
+         ───────────────────────────────────────────────────────────── */}
+      {celebration && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'rgba(15, 23, 42, 0.72)',
+            backdropFilter: 'blur(8px)',
+            padding: '16px'
+          }}
+          onClick={closeCelebration}
+        >
+          {/* Confetti / Sparkle Particle Layer */}
+          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+            {[
+              { x: '18%', y: '22%', c: '#10b981', s: '12px', d: '0s' },
+              { x: '82%', y: '18%', c: '#f59e0b', s: '14px', d: '0.15s' },
+              { x: '12%', y: '68%', c: '#3b82f6', s: '10px', d: '0.3s' },
+              { x: '88%', y: '65%', c: '#ec4899', s: '13px', d: '0.2s' },
+              { x: '24%', y: '45%', c: '#8b5cf6', s: '11px', d: '0.4s' },
+              { x: '76%', y: '42%', c: '#10b981', s: '12px', d: '0.25s' },
+              { x: '35%', y: '14%', c: '#fbbf24', s: '10px', d: '0.1s' },
+              { x: '65%', y: '16%', c: '#06b6d4', s: '12px', d: '0.35s' },
+              { x: '28%', y: '84%', c: '#10b981', s: '11px', d: '0.45s' },
+              { x: '72%', y: '82%', c: '#f97316', s: '13px', d: '0.18s' },
+              { x: '50%', y: '8%', c: '#e11d48', s: '14px', d: '0.05s' },
+              { x: '50%', y: '92%', c: '#14b8a6', s: '10px', d: '0.32s' }
+            ].map((p, i) => (
+              <span
+                key={i}
+                style={{
+                  position: 'absolute',
+                  left: p.x,
+                  top: p.y,
+                  width: p.s,
+                  height: p.s,
+                  borderRadius: i % 2 === 0 ? '50%' : '3px',
+                  backgroundColor: p.c,
+                  boxShadow: `0 0 14px ${p.c}`,
+                  animation: 'particleBurst 1.8s cubic-bezier(0.2, 0.8, 0.2, 1) infinite',
+                  animationDelay: p.d,
+                  transform: i % 2 === 0 ? 'rotate(45deg)' : 'none'
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Modal Content Box */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '470px',
+              backgroundColor: '#ffffff',
+              borderRadius: '24px',
+              padding: '34px 28px 24px',
+              textAlign: 'center',
+              boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(16, 185, 129, 0.2)',
+              animation: 'celebrationBounce 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both',
+              overflow: 'hidden'
+            }}
+          >
+            {/* Top gradient trim */}
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '6px',
+                background: 'linear-gradient(90deg, #10b981, #059669, #b8912f, #10b981)'
+              }}
+            />
+
+            {/* Close Button */}
+            <button
+              onClick={closeCelebration}
+              style={{
+                position: 'absolute',
+                top: '16px',
+                right: '16px',
+                backgroundColor: '#f1f5f9',
+                border: 'none',
+                borderRadius: '50%',
+                width: '32px',
+                height: '32px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                color: '#64748b',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e2e8f0'; e.currentTarget.style.color = '#0f172a'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; e.currentTarget.style.color = '#64748b'; }}
+              aria-label="বন্ধ করুন"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Pulsing Success Ring + Icon */}
+            <div style={{ position: 'relative', width: '86px', height: '86px', margin: '0 auto 16px' }}>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #10b981 0%, #047857 100%)',
+                  animation: 'celebrationRing 2s infinite ease-in-out',
+                  opacity: 0.85
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: '6px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #10b981, #059669)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#ffffff',
+                  boxShadow: '0 10px 20px rgba(16, 185, 129, 0.4)',
+                  animation: 'celebrationIconPop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both'
+                }}
+              >
+                <span style={{ fontSize: '36px', lineHeight: 1 }}>{celebration.icon}</span>
+              </div>
+            </div>
+
+            {/* Sparkle Badge Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Sparkles size={16} color="#d97706" />
+              <span style={{ fontSize: '13px', fontWeight: '800', letterSpacing: '0.06em', textTransform: 'uppercase', color: '#059669' }}>
+                সফলভাবে তৈরি সম্পন্ন!
+              </span>
+              <Sparkles size={16} color="#d97706" />
+            </div>
+
+            <h3 style={{ margin: '0 0 12px', fontSize: '22px', fontWeight: '800', color: '#0f172a' }}>
+              নতুন {celebration.level} সংযুক্ত হয়েছে
+            </h3>
+
+            {/* Card Information Badge */}
+            <div
+              style={{
+                background: 'linear-gradient(180deg, #f0fdf4 0%, #f8fafc 100%)',
+                border: '1.5px solid #86efac',
+                borderRadius: '16px',
+                padding: '14px 18px',
+                margin: '0 auto 16px',
+                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.08)'
+              }}
+            >
+              <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '4px', fontWeight: '600' }}>
+                {celebration.level}-এর বিবরণ:
+              </div>
+              <div style={{ fontSize: '20px', fontWeight: '800', color: '#065f46' }}>
+                {celebration.name}
+              </div>
+              {celebration.code && (
+                <div style={{ fontSize: '12px', color: '#059669', fontWeight: '700', marginTop: '2px' }}>
+                  {celebration.code}
+                </div>
+              )}
+              {celebration.parentName && (
+                <div style={{ marginTop: '8px', fontSize: '12px', color: '#475569', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <span style={{ color: '#94a3b8' }}>শ্রেণিবিন্যাস:</span>
+                  <span style={{ fontWeight: '700', color: '#0f172a', backgroundColor: '#e2e8f0', padding: '2px 8px', borderRadius: '6px' }}>
+                    {celebration.parentName}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#64748b', lineHeight: 1.5 }}>
+              জাতীয় ভূ-স্থানিক শ্রেণিবিন্যাস (GIS Hierarchy) ও ডেটাবেজে তথ্যটি সফলভাবে সংরক্ষিত ও লাইভ হয়েছে।
+            </p>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                onClick={closeCelebration}
+                style={{
+                  flex: 1,
+                  padding: '10px 14px',
+                  backgroundColor: '#f1f5f9',
+                  color: '#475569',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#e2e8f0'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = '#f1f5f9'; }}
+              >
+                এখানেই থাকুন
+              </button>
+
+              {celebration.nextStep && (
+                <button
+                  onClick={() => proceedToNextStep(celebration.nextStep)}
+                  style={{
+                    flex: 1.4,
+                    padding: '10px 16px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px',
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.45)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.35)'; }}
+                >
+                  <span>{celebration.nextStepName || 'পরবর্তী ধাপ'}</span>
+                  <ArrowRight size={16} />
+                </button>
+              )}
+            </div>
+
+            {/* Auto dismiss countdown bar */}
+            <div style={{ height: '3px', backgroundColor: '#e2e8f0', borderRadius: '3px', marginTop: '16px', overflow: 'hidden' }}>
+              <div
+                style={{
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #10b981, #059669)',
+                  animation: 'progressCountdown 7s linear forwards'
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-

@@ -185,26 +185,29 @@ export const fetchDynamicMouzas = async (upazilaName) => {
   return getMouzasForUpazila(upazilaName);
 };
 
-export const fetchDynamicDags = async (mouzaName) => {
+export const fetchDynamicKhatians = async (mouzaName) => {
   try {
-    const res = await axios.get('/api/locations/dags?mouza_name=' + encodeURIComponent(mouzaName || ''));
-    if (res.data.success) {
-      return res.data.data;
-    }
-  } catch (err) {
-    console.warn('Dynamic dags fallback:', err.message);
-  }
-  return [];
-};
-
-export const fetchDynamicKhatians = async (dagNo) => {
-  try {
-    const res = await axios.get('/api/locations/khatians?dag_no=' + encodeURIComponent(dagNo || ''));
+    const res = await axios.get('/api/locations/khatians?mouza_name=' + encodeURIComponent(mouzaName || ''));
     if (res.data.success) {
       return res.data.data;
     }
   } catch (err) {
     console.warn('Dynamic khatians fallback:', err.message);
+  }
+  return [];
+};
+
+export const fetchDynamicDags = async (khatianNo, mouzaName) => {
+  try {
+    let url = '/api/locations/dags?';
+    if (khatianNo) url += 'khatian_no=' + encodeURIComponent(khatianNo);
+    else if (mouzaName) url += 'mouza_name=' + encodeURIComponent(mouzaName);
+    const res = await axios.get(url);
+    if (res.data.success) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn('Dynamic dags fallback:', err.message);
   }
   return [];
 };

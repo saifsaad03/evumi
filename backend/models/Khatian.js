@@ -1,26 +1,16 @@
 const mongoose = require('mongoose');
 
 const KhatianSchema = new mongoose.Schema({
-  dag_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Dag',
-    required: [true, 'দাগ নম্বর নির্বাচন আবশ্যক'],
-    index: true
-  },
-  dag_no: {
-    type: String,
-    required: true,
-    trim: true
-  },
   mouza_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Mouza',
+    required: [true, 'মৌজা নির্বাচন আবশ্যক'],
     index: true
   },
   mouza_name: {
     type: String,
-    trim: true,
-    default: ''
+    required: true,
+    trim: true
   },
   khatian_no: {
     type: String,
@@ -42,10 +32,6 @@ const KhatianSchema = new mongoose.Schema({
     trim: true,
     default: ''
   },
-  area_decimal: {
-    type: Number,
-    default: 10
-  },
   status: {
     type: String,
     enum: ['Active', 'Inactive'],
@@ -60,8 +46,7 @@ const KhatianSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Prevent duplicate khatian number under same dag
-KhatianSchema.index({ dag_id: 1, khatian_no: 1 }, { unique: true });
+// Prevent duplicate khatian number under the same mouza
+KhatianSchema.index({ mouza_id: 1, khatian_no: 1 }, { unique: true });
 
 module.exports = mongoose.model('Khatian', KhatianSchema);
-

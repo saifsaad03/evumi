@@ -1521,3 +1521,76 @@ select option:checked {
     grid-column: span 2 !important;
   }
 }
+
+/* ============================================================
+   Location & Dag Creation Celebration Animations
+   ============================================================ */
+@keyframes celebrationBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.65) translateY(40px);
+  }
+  65% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes particleBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--tx, 30px), var(--ty, -50px)) scale(0.1) rotate(220deg);
+  }
+}
+
+@keyframes celebrationIconPop {
+  0% {
+    transform: scale(0.4) rotate(-30deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.22) rotate(10deg);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes celebrationRing {
+  0% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  60% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 16px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.9);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes progressCountdown {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+@keyframes newItemFlash {
+  0%, 100% {
+    background-color: transparent;
+  }
+  50% {
+    background-color: #dcfce7;
+    box-shadow: 0 0 0 3px #86efac;
+  }
+}

@@ -1,16 +1,26 @@
 const mongoose = require('mongoose');
 
 const DagSchema = new mongoose.Schema({
+  khatian_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Khatian',
+    required: [true, 'খতিয়ান নির্বাচন আবশ্যক'],
+    index: true
+  },
+  khatian_no: {
+    type: String,
+    required: true,
+    trim: true
+  },
   mouza_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Mouza',
-    required: [true, 'মৌজা নির্বাচন আবশ্যক'],
     index: true
   },
   mouza_name: {
     type: String,
-    required: true,
-    trim: true
+    trim: true,
+    default: ''
   },
   dag_no: {
     type: String,
@@ -41,8 +51,7 @@ const DagSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Prevent duplicate dag number under same mouza
-DagSchema.index({ mouza_id: 1, dag_no: 1 }, { unique: true });
+// A single khatian can contain multiple dags. Prevent duplicate dag_no under the same khatian.
+DagSchema.index({ khatian_id: 1, dag_no: 1 }, { unique: true });
 
 module.exports = mongoose.model('Dag', DagSchema);
-
