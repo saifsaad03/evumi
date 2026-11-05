@@ -6,7 +6,7 @@ import {
   User, MapPin, FileText, CheckCircle, Clock, 
   AlertTriangle, Search, Shield, Phone, Mail, Award,
   RefreshCw, Check, ArrowRight, Download, Printer, X, Eye, QrCode,
-  FileCheck, Send, Info
+  FileCheck, Send, Info, Lock
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -317,10 +317,30 @@ export default function UserDashboard() {
                 এসি ল্যান্ড কর্তৃক অনুমোদিত ও মিউটেটেড জমি ({landData.active_lands.length}টি)
               </h2>
               <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>
-                এই জমিগুলোর বৈধ খতিয়ান আপনার নামে নিবন্ধিত রয়েছে এবং আপনি বিক্রয় বা হস্তান্তর করতে পারবেন।
+                এই জমিগুলোর বৈধ খতিয়ান আপনার নামে নিবন্ধিত রয়েছে।
               </p>
             </div>
           </div>
+
+          {/* Locked Lands Warning Banner */}
+          {(landData.active_lands || []).some(l => l.is_deceased_locked || l.status === 'Deceased_Locked' || l.bonton_status === 'Locked') && (
+            <div style={{
+              background: '#fef2f2',
+              border: '1.5px solid #ef4444',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              marginBottom: '18px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              color: '#991b1b'
+            }}>
+              <Lock size={20} color="#dc2626" style={{ flexShrink: 0 }} />
+              <div style={{ fontSize: '13px', lineHeight: 1.5 }}>
+                <strong>সতর্কতা:</strong> মূল মালিকের মৃত্যু সনদ নিবন্ধিত থাকায় আপনার মালিকানাধীন জমি বর্তমানে <strong>লক (Locked)</strong> অবস্থায় আছে। ওয়ারিশ বণ্টননামা ও এসি ল্যান্ড নামজারি সম্পন্ন না হওয়া পর্যন্ত উক্ত জমি হস্তান্তর বা বিক্রয় করা যাবে না।
+              </div>
+            </div>
+          )}
 
           {loading ? (
             <div className="glass-card" style={{ padding: '60px', textAlign: 'center', color: '#475569' }}>
@@ -339,35 +359,76 @@ export default function UserDashboard() {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
-              {landData.active_lands.map((land) => (
+              {landData.active_lands.map((land) => {
+                const isLocked = land.is_deceased_locked || land.status === 'Deceased_Locked' || land.bonton_status === 'Locked';
+                return (
                 <div
                   key={land._id}
                   className="glass-card"
                   style={{
                     padding: '24px',
-                    borderTop: '4px solid #059669',
-                    background: '#ffffff',
-                    border: '1.5px solid #cbd5e1',
+                    borderTop: isLocked ? '4px solid #ef4444' : '4px solid #059669',
+                    background: isLocked ? '#fffbfb' : '#ffffff',
+                    border: isLocked ? '1.5px solid #fca5a5' : '1.5px solid #cbd5e1',
                     borderRadius: '14px',
-                    boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)'
+                    boxShadow: isLocked ? '0 4px 16px rgba(239, 68, 68, 0.08)' : '0 4px 16px rgba(15, 23, 42, 0.05)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '3px 10px',
-                      borderRadius: '999px',
-                      background: '#dcfce7',
-                      color: '#047857',
-                      border: '1px solid #86efac',
-                      fontWeight: '800'
-                    }}>
-                      ✅ অনুমোদিত ও সক্রিয় (Active)
-                    </span>
+                    {isLocked ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#fee2e2',
+                        color: '#991b1b',
+                        border: '1px solid #fca5a5',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Lock size={12} color="#dc2626" />
+                        🔒 লককৃত (মালিকের মৃত্যুজনিত স্থগিতাদেশ)
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#dcfce7',
+                        color: '#047857',
+                        border: '1px solid #86efac',
+                        fontWeight: '800'
+                      }}>
+                        ✅ অনুমোদিত ও সক্রিয় (Active)
+                      </span>
+                    )}
                     <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace', fontWeight: '600' }}>
                       রেকর্ড ID: {land.record_id}
                     </span>
                   </div>
+
+                  {isLocked && (
+                    <div style={{
+                      background: '#fef2f2',
+                      border: '1px solid #f87171',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#991b1b',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <Lock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#dc2626' }} />
+                      <div>
+                        <strong style={{ color: '#7f1d1d' }}>জমি সাময়িকভাবে লককৃত:</strong> মূল মালিক মৃত্যুবরণ করায় সরকারি নিয়ম অনুযায়ী জমিটির সকল প্রকার বিক্রয় ও হস্তান্তর কার্যক্রম স্থগিত রাখা হয়েছে। ওয়ারিশ বণ্টননামা (Bonton Nama) সম্পন্ন হলে ওয়ারিশদের নামে নতুন স্বত্ব সক্রিয় হবে।
+                      </div>
+                    </div>
+                  )}
 
                   <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '14px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                     <span>মৌজা: <span style={{ color: '#047857' }}>{land.mouza}</span></span>
@@ -530,7 +591,8 @@ export default function UserDashboard() {
                     </button>
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </div>
@@ -1406,6 +1468,26 @@ export default function UserDashboard() {
               </button>
             </div>
           </div>
+
+          {(selectedLandForPdf.is_deceased_locked || selectedLandForPdf.status === 'Deceased_Locked' || selectedLandForPdf.bonton_status === 'Locked') && (
+            <div style={{
+              width: '100%',
+              maxWidth: '820px',
+              background: '#fee2e2',
+              border: '1.5px solid #ef4444',
+              borderTop: 'none',
+              padding: '10px 18px',
+              color: '#991b1b',
+              fontSize: '12.5px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Lock size={16} color="#dc2626" />
+              <span>⚠️ সতর্কতা: মূল জমির মালিকের মৃত্যুজনিত কারণে এই খতিয়ানটি বর্তমানে লক (Locked) রয়েছে। ওয়ারিশ বণ্টননামা ব্যতিরেকে এটি হস্তান্তরযোগ্য নয়।</span>
+            </div>
+          )}
 
           {/* Printable A4 Certificate Page */}
           <div

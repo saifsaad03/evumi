@@ -111,10 +111,14 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
     };
     const userNidQuery = { $or: [{ user_nid: rawNid }, { user_nid: engNid }, { user_nid: bngNid }] };
 
-    // 1. Find all active land records currently owned by this citizen
+    // 1. Find all active land records currently owned by this citizen (including deceased-locked lands so they remain visible as locked)
     const activeLands = await LandRecord.find({
       ...nidQuery,
-      status: 'Active'
+      $or: [
+        { status: 'Active' },
+        { status: 'Deceased_Locked' },
+        { is_deceased_locked: true, status: { $ne: 'Sold' } }
+      ]
     }).sort({ updatedAt: -1 });
 
     // 2. Find sold lands history for transparency

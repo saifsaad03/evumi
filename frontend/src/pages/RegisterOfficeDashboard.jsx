@@ -829,27 +829,7 @@ export default function RegisterOfficeDashboard() {
                 }}>
                   <span>বিভাগ ➔ জেলা ➔ উপজেলা/সার্কেল ➔ মৌজা ➔ জেল নম্বর ➔ খতিয়ান ➔ দাগ নম্বর</span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => handleTabChange('create_land')}
-                      style={{
-                        background: '#dcfce7',
-                        border: '1px solid #86efac',
-                        color: '#166534',
-                        cursor: 'pointer',
-                        padding: '3px 8px',
-                        borderRadius: '6px',
-                        fontSize: '11px',
-                        fontWeight: '700',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      title="নতুন জমি, খতিয়ান বা দাগ এন্ট্রি করুন"
-                    >
-                      <Plus size={12} />
-                      নতুন জমি তৈরি
-                    </button>
+                    
                     <button
                       type="button"
                       onClick={loadInitialHierarchy}
