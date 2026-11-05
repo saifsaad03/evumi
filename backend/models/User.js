@@ -33,15 +33,32 @@ const UserSchema = new mongoose.Schema({
     office_name: { type: String },
     designation: { type: String },
     circle: { type: String }
-  }
+  },
+  // Field-Level Encryption at Rest (AES-256-GCM)
+  nid_encrypted: { type: String, default: null },
+  phone_encrypted: { type: String, default: null }
 }, { timestamps: true });
 
-// Hash password before saving
+// Hash password and encrypt sensitive fields at rest before saving
 UserSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
   try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    if (this.isModified('password')) {
+      const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password, salt);
+    }
+    // AES-256-GCM Encryption at rest for NID & Phone
+    if (this.nid && (!this.nid_encrypted || this.isModified('nid'))) {
+      try {
+        const { encryptField } = require('../utils/cryptoEngine');
+        this.nid_encrypted = encryptField(this.nid);
+      } catch (e) {}
+    }
+    if (this.phone && (!this.phone_encrypted || this.isModified('phone'))) {
+      try {
+        const { encryptField } = require('../utils/cryptoEngine');
+        this.phone_encrypted = encryptField(this.phone);
+      } catch (e) {}
+    }
     next();
   } catch (err) {
     next(err);

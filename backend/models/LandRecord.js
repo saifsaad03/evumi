@@ -37,6 +37,19 @@ const LandRecordSchema = new mongoose.Schema({
   sub_registry_code: { type: String },
   deed_hash: { type: String }, // SHA-256
   qr_code_id: { type: String },
+  // Enterprise Cryptography & Blockchain Ledger
+  previous_hash: { type: String, default: 'GENESIS_E_VUMI_00000000000000000000000000000000000000000000' },
+  chain_sequence: { type: Number, default: 1 },
+  digital_signature: { type: String, default: null }, // RSA-2048 PKI signature
+  signed_by_role: { type: String, default: 'Ministry Land Authority' },
+  signer_public_key: { type: String, default: null },
+  crypto_metadata: {
+    algorithm: { type: String, default: 'RSA-SHA256' },
+    pki_certificate_serial: { type: String, default: null },
+    signed_at: { type: Date, default: null },
+    canonical_payload: { type: String, default: null },
+    data_digest: { type: mongoose.Schema.Types.Mixed, default: {} }
+  },
   buyer_nid: { type: String },
   buyer_name: { type: String },
   buyer_phone: { type: String },

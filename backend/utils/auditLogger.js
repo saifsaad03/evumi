@@ -1,4 +1,5 @@
 const SystemLog = require('../models/SystemLog');
+const { hashChainedLogEntry } = require('./cryptoEngine');
 const fs = require('fs');
 const path = require('path');
 
@@ -101,6 +102,17 @@ const logActivity = async (options = {}) => {
       status,
       timestamp: new Date()
     };
+
+    // Calculate Cryptographic Hash Chain for Audit Log (Immutable Ledger)
+    try {
+      const prevLog = (global._memorySystemLogs && global._memorySystemLogs.length > 0) ? global._memorySystemLogs[0] : null;
+      const chainData = hashChainedLogEntry(logEntry, prevLog);
+      logEntry.log_hash = chainData.log_hash;
+      logEntry.previous_log_hash = chainData.previous_log_hash;
+      logEntry.sequence_number = chainData.sequence_number;
+    } catch (chainErr) {
+      console.warn('Log hash chaining warning:', chainErr.message);
+    }
 
     // Save to resilient memory ring buffer first
     global._memorySystemLogs.unshift({

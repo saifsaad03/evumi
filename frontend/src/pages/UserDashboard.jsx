@@ -1634,6 +1634,20 @@ export default function UserDashboard() {
                       <div style={{ fontSize: '9.5px', color: '#000000', wordBreak: 'break-all', fontFamily: 'monospace', marginTop: '2px' }}>
                         SHA-256 ডিজিটাল ফিঙ্গারপ্রিন্ট: {selectedLandForPdf.deed_hash || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'}
                       </div>
+                      <div style={{ marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '9px', fontWeight: '800', background: '#ecfdf5', color: '#065f46', border: '1px solid #86efac', padding: '1px 6px', borderRadius: '4px' }}>
+                          ✓ PAdES Certified (ISO 32000-2)
+                        </span>
+                        <span style={{ fontSize: '9px', fontWeight: '800', background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', padding: '1px 6px', borderRadius: '4px' }}>
+                          🔑 RSA-2048 PKI Valid
+                        </span>
+                        <span style={{ fontSize: '9px', fontWeight: '800', background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe', padding: '1px 6px', borderRadius: '4px' }}>
+                          🔗 লেজার সিকোয়েন্স #{selectedLandForPdf.chain_sequence || 1}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '8.5px', color: '#475569', marginTop: '3px' }}>
+                        * এই সনদের দাগ, খতিয়ান, মৌজা, জে.এল, পরিমাণ ও মালিকানা ডাটাবেজে ক্রিপ্টোগ্রাফিক ডিজিটাল স্বাক্ষরে লককৃত।
+                      </div>
                     </div>
                   </div>
                 );

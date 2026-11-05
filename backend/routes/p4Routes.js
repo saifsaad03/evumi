@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const crypto = require('crypto');
+const { generateLandCryptoPayload } = require('../utils/cryptoEngine');
 const LandRecord = require('../models/LandRecord');
 const User = require('../models/User');
 const { logActivity } = require('../utils/auditLogger');
@@ -292,10 +293,39 @@ router.post('/grant-deed', async (req, res) => {
     const allBuyerNames = verifiedBuyers.map(b => b.name).join(', ');
     const allBuyerNids = verifiedBuyers.map(b => b.nid).join(', ');
 
-    // Generate SHA-256 hash (including all joint buyer NIDs)
-    const buyerHashKey = verifiedBuyers.map(b => b.nid).join('-');
-    const hashData = `${deed_no}-${deed_year}-${record.dag_no}-${record.owner_nid}-${buyerHashKey}-${Date.now()}`;
-    const deedHash = crypto.createHash('sha256').update(hashData).digest('hex');
+    // Generate Enterprise Asymmetric PKI Digital Signature (RSA-2048) & Chained SHA-256 Hash with ALL essential land data!
+    let prevDeed = null;
+    try {
+      prevDeed = await LandRecord.findOne({
+        dag_no: record.dag_no,
+        mouza: record.mouza,
+        deed_hash: { $exists: true, $ne: null }
+      }).sort({ createdAt: -1 });
+    } catch (e) {}
+
+    const cryptoPayload = generateLandCryptoPayload({
+      deed_no,
+      deed_year,
+      sub_registry_code,
+      volume_book: record.volume_book || '',
+      page_no: record.page_no || '',
+      dag_no: record.dag_no,
+      khatian_no: record.khatian_no,
+      jl_no: record.jl_no,
+      mouza: record.mouza,
+      upazila: record.upazila,
+      district: record.district,
+      division: record.division,
+      owner_nid: record.owner_nid,
+      owner_name: record.owner_name,
+      buyer_nid: isJoint ? allBuyerNids : primaryBuyer.nid,
+      buyer_name: isJoint ? allBuyerNames : primaryBuyer.name,
+      buyers: verifiedBuyers,
+      total_area_decimal: record.total_area_decimal,
+      sold_area: actualSoldArea
+    }, prevDeed);
+
+    const deedHash = cryptoPayload.deed_hash;
     const qrCodeId = `QR-${deed_no}-${deed_year}-${record.dag_no}`;
 
     // Decrement seller's active record balance. Seller stays ACTIVE with remaining land!
@@ -326,6 +356,12 @@ router.post('/grant-deed', async (req, res) => {
       deed_year,
       sub_registry_code,
       deed_hash: deedHash,
+      previous_hash: cryptoPayload.previous_hash,
+      chain_sequence: cryptoPayload.chain_sequence,
+      digital_signature: cryptoPayload.digital_signature,
+      signed_by_role: 'Register Office',
+      signer_public_key: cryptoPayload.signer_public_key,
+      crypto_metadata: cryptoPayload.crypto_metadata,
       qr_code_id: qrCodeId,
       buyer_nid: isJoint ? allBuyerNids : primaryBuyer.nid,
       buyer_name: isJoint ? allBuyerNames : primaryBuyer.name,
@@ -555,6 +591,28 @@ router.post('/approve-mutation', async (req, res) => {
       ? `${oldRecord.khatian_no}-${Date.now().toString().slice(-3)}` 
       : `${oldRecord.khatian_no}-M`;
 
+    const newKhatianCrypto = generateLandCryptoPayload({
+      deed_no: oldRecord.deed_no,
+      deed_year: oldRecord.deed_year,
+      sub_registry_code: oldRecord.sub_registry_code,
+      volume_book: oldRecord.volume_book || '',
+      page_no: oldRecord.page_no || '',
+      dag_no: oldRecord.dag_no,
+      khatian_no: newKhatianNo,
+      jl_no: oldRecord.jl_no,
+      mouza: oldRecord.mouza,
+      upazila: oldRecord.upazila,
+      district: oldRecord.district,
+      division: oldRecord.division,
+      owner_nid: oldRecord.buyer_nid || 'N/A',
+      owner_name: oldRecord.buyer_name || 'নতুন মালিক',
+      buyer_nid: oldRecord.buyer_nid || 'N/A',
+      buyer_name: oldRecord.buyer_name || 'নতুন মালিক',
+      buyers: buyerList,
+      total_area_decimal: soldArea,
+      sold_area: soldArea
+    }, oldRecord);
+
     const newRecord = new LandRecord({
       record_id: `record_${Date.now()}`,
       division: oldRecord.division || 'ঢাকা',
@@ -575,7 +633,13 @@ router.post('/approve-mutation', async (req, res) => {
       deed_no: oldRecord.deed_no,
       deed_year: oldRecord.deed_year,
       sub_registry_code: oldRecord.sub_registry_code,
-      deed_hash: oldRecord.deed_hash,
+      deed_hash: newKhatianCrypto.deed_hash,
+      previous_hash: newKhatianCrypto.previous_hash,
+      chain_sequence: newKhatianCrypto.chain_sequence,
+      digital_signature: newKhatianCrypto.digital_signature,
+      signed_by_role: 'AC Land Office',
+      signer_public_key: newKhatianCrypto.signer_public_key,
+      crypto_metadata: newKhatianCrypto.crypto_metadata,
       is_joint_ownership: isJoint,
       co_owners: buyerList,
       buyers: buyerList,

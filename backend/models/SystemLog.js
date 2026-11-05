@@ -73,6 +73,21 @@ const SystemLogSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
     index: true
+  },
+  // Cryptographic Chained Audit Trail (Immutable Ledger)
+  log_hash: {
+    type: String,
+    default: null,
+    index: true
+  },
+  previous_log_hash: {
+    type: String,
+    default: null
+  },
+  sequence_number: {
+    type: Number,
+    default: 1,
+    index: true
   }
 }, {
   timestamps: true

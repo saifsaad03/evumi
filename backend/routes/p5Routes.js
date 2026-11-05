@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { verifyDeedCryptographicIntegrity } = require('../utils/cryptoEngine');
 const LandRecord = require('../models/LandRecord');
 const LegalStatus = require('../models/LegalStatus');
 
@@ -217,6 +218,11 @@ router.get('/verify-by-qr/:qr_code_id', async (req, res) => {
         deed_no: record.deed_no,
         status: record.status,
         deed_hash: record.deed_hash,
+        previous_hash: record.previous_hash || 'GENESIS_E_VUMI_00000000000000000000000000000000000000000000',
+        chain_sequence: record.chain_sequence || 1,
+        digital_signature: record.digital_signature || null,
+        signed_by_role: record.signed_by_role || 'Ministry Land Authority',
+        crypto_proof: verifyDeedCryptographicIntegrity(record),
         qr_code_id: record.qr_code_id || rawCode,
         is_joint_ownership: record.is_joint_ownership || false,
         co_owners: record.co_owners || record.buyers || [],
