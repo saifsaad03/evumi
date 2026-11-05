@@ -377,8 +377,8 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       return res.status(404).json({ success: false, message: 'প্রদত্ত এনআইডিধারী নাগরিক নিবন্ধিত নয়।' });
     }
 
-    // Verify citizen's email OTP (Resilient: Atlas + disk + memory)
-    const cleanOtp = otp.toString().trim();
+    // Verify citizen's email OTP (Resilient: Atlas + disk + memory, supports both English & Bengali digits)
+    const cleanOtp = toEnglishDigits((otp || '').toString().trim());
     const otpRecord = await findLatestAssignOtp(citizen.email, citizen.nid);
 
     if (!otpRecord) {
@@ -402,7 +402,8 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    if (otpRecord.otp !== cleanOtp) {
+    const savedOtp = toEnglishDigits((otpRecord.otp || '').toString().trim());
+    if (savedOtp !== cleanOtp) {
       const newAttempts = (otpRecord.attempts || 0) + 1;
       await updateOtpRecord(otpRecord, { attempts: newAttempts });
       return res.status(400).json({
@@ -411,9 +412,8 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
       });
     }
 
-    // Mark OTP as verified and clean up
+    // Mark OTP as verified (keep record until request is fully saved)
     await updateOtpRecord(otpRecord, { verified: true });
-    await deleteAssignOtps(citizen.email, citizen.nid);
 
     const requestId = 'REQ-' + Date.now().toString(36).toUpperCase() + '-' + Math.floor(Math.random() * 1000);
 
@@ -445,12 +445,16 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
 
     await newRequest.save();
 
+    const cleanArea = land.available_area_decimal || land.total_area_decimal;
+    const cleanKhatian = (khatian_no || land.khatian_no || '').toString().trim();
+    const cleanUserNid = citizen.nid;
+
     logActivity({
       req,
       action_type: 'GOVT_LAND_ASSIGNED',
       module: 'Land_Assignment',
-      description: `সাব-রেজিস্ট্রি অফিসার কর্তৃক নাগরিক ${targetUser.name}-এর অনুকূলে জমি বরাদ্দ প্রস্তাব তৈরি (${cleanArea} শতক)`,
-      target_resource: `নাগরিক: ${targetUser.name} (NID: ${cleanUserNid}), মৌজা: ${cleanMouza}, দাগ: ${cleanDag}, খতিয়ান: ${cleanKhatian}`,
+      description: `সাব-রেজিস্ট্রি অফিসার কর্তৃক নাগরিক ${citizen.name}-এর অনুকূলে জমি বরাদ্দ প্রস্তাব তৈরি (${cleanArea} শতক)`,
+      target_resource: `নাগরিক: ${citizen.name} (NID: ${cleanUserNid}), মৌজা: ${land.mouza}, দাগ: ${land.dag_no}, খতিয়ান: ${cleanKhatian}`,
       details: { area: cleanArea, khatian: cleanKhatian }
     });
 
@@ -460,6 +464,9 @@ router.post('/create-request', verifyToken, requireRole('Register Office', 'Supe
     land.page_no = page_no;
     if (deed_no) land.deed_no = deed_no;
     await land.save();
+
+    // Successfully processed, delete consumed OTP
+    await deleteAssignOtps(citizen.email, citizen.nid);
 
     return res.status(201).json({
       success: true,
