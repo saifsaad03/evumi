@@ -5,6 +5,11 @@ import { Search, Home, LogIn, LogOut, UserPlus, LayoutDashboard, Menu, X, Shield
 
 export default function Navbar() {
   const location = useLocation();
+
+  // Hide the global public navbar on admin dashboard to allow the dedicated admin top bar
+  if (location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin')) {
+    return null;
+  }
   const navigate = useNavigate();
   const { user, logout, getDashboardRoute } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -81,21 +86,25 @@ export default function Navbar() {
 
         {/* Desktop Navigation Links */}
         <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <NavLink
-            to="/"
-            className={location.pathname === '/' ? 'nav-link active' : 'nav-link'}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
-          >
-            <Home size={15} /> <span>হোম</span>
-          </NavLink>
+          {user?.role !== 'Super Admin' && (
+            <>
+              <NavLink
+                to="/"
+                className={location.pathname === '/' ? 'nav-link active' : 'nav-link'}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
+              >
+                <Home size={15} /> <span>হোম</span>
+              </NavLink>
 
-          <NavLink
-            to="/verify"
-            className={location.pathname === '/verify' ? 'nav-link active' : 'nav-link'}
-            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
-          >
-            <Search size={15} /> <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
-          </NavLink>
+              <NavLink
+                to="/verify"
+                className={location.pathname === '/verify' ? 'nav-link active' : 'nav-link'}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '600' }}
+              >
+                <Search size={15} /> <span>জমি যাচাই ও অ্যান্টি-ডাবল সেলিং</span>
+              </NavLink>
+            </>
+          )}
 
           {user?.role === 'Register Office' && (
             <NavLink

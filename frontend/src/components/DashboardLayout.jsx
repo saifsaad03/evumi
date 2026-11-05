@@ -113,77 +113,79 @@ export default function DashboardLayout({
   // Sidebar content component (rendered both in desktop sticky and mobile drawer)
   const SidebarContent = () => (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '16px' }}>
-      {/* User Mini Profile Card */}
-      <div style={{
-        padding: '18px 16px',
-        borderRadius: '14px',
-        background: '#f8fafc',
-        border: '1.5px solid #e2e8f0',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-      }}>
+      {/* User Mini Profile Card (only shown when not fullHeightSidebar, as fullHeightSidebar displays it in the top bar) */}
+      {!fullHeightSidebar && (
         <div style={{
-          width: '46px',
-          height: '46px',
-          borderRadius: '12px',
-          background: theme.avatarBg,
+          padding: '18px 16px',
+          borderRadius: '14px',
+          background: '#f8fafc',
+          border: '1.5px solid #e2e8f0',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          color: '#ffffff',
-          fontWeight: '900',
-          fontSize: '18px',
-          flexShrink: 0,
-          boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+          gap: '12px',
         }}>
-          {user?.name ? user.name.charAt(0) : 'U'}
-        </div>
-        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{
-            fontSize: '14px',
-            fontWeight: '800',
-            color: '#0f172a',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            lineHeight: 1.2
+            width: '46px',
+            height: '46px',
+            borderRadius: '12px',
+            background: theme.avatarBg,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            fontWeight: '900',
+            fontSize: '18px',
+            flexShrink: 0,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
           }}>
-            {user?.name || 'ব্যবহারকারী'}
+            {user?.name ? user.name.charAt(0) : 'U'}
           </div>
-          <div style={{
-            display: 'inline-block',
-            fontSize: '10px',
-            fontWeight: '800',
-            background: theme.badgeBg,
-            color: theme.badgeColor,
-            border: `1px solid ${theme.badgeBorder}`,
-            padding: '2px 8px',
-            borderRadius: '999px',
-            marginTop: '4px'
-          }}>
-            {badge?.label || user?.role || 'নাগরিক'}
-          </div>
-          {user?.nid && (
-            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', fontWeight: '500' }}>
-              NID: {user.nid}
-            </div>
-          )}
-          {user?.office_details?.office_name && (
+          <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{
-              fontSize: '11px',
-              color: '#64748b',
-              marginTop: '2px',
-              fontWeight: '500',
+              fontSize: '14px',
+              fontWeight: '800',
+              color: '#0f172a',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
+              whiteSpace: 'nowrap',
+              lineHeight: 1.2
             }}>
-              {user.office_details.office_name}
+              {user?.name || 'ব্যবহারকারী'}
             </div>
-          )}
+            <div style={{
+              display: 'inline-block',
+              fontSize: '10px',
+              fontWeight: '800',
+              background: theme.badgeBg,
+              color: theme.badgeColor,
+              border: `1px solid ${theme.badgeBorder}`,
+              padding: '2px 8px',
+              borderRadius: '999px',
+              marginTop: '4px'
+            }}>
+              {badge?.label || user?.role || 'নাগরিক'}
+            </div>
+            {user?.nid && (
+              <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', fontWeight: '500' }}>
+                NID: {user.nid}
+              </div>
+            )}
+            {user?.office_details?.office_name && (
+              <div style={{
+                fontSize: '11px',
+                color: '#64748b',
+                marginTop: '2px',
+                fontWeight: '500',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                {user.office_details.office_name}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Navigation Section */}
       <div style={{ flex: 1 }}>
@@ -533,205 +535,287 @@ export default function DashboardLayout({
 
       {/* ── Main Layout: Full Height Edge-to-Edge Layout or Centered Floating Layout ──── */}
       {fullHeightSidebar ? (
-        <div style={{
-          display: 'flex',
-          width: '100%',
-          minHeight: 'calc(100vh - 62px)',
-          position: 'relative',
-        }}>
-          {/* Desktop Sticky Sidebar (Full Height, Left-Flush, Foldable) */}
-          <aside className="hide-on-mobile" style={{
-            width: isSidebarFolded ? '0px' : '270px',
-            minWidth: isSidebarFolded ? '0px' : '270px',
-            maxWidth: isSidebarFolded ? '0px' : '270px',
-            height: 'calc(100vh - 62px)',
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
+          {/* ── Top Bar: Logo, Sidebar Fold, Title, and User Profile Card ── */}
+          <header style={{
             position: 'sticky',
-            top: '62px',
-            alignSelf: 'flex-start',
+            top: 0,
+            height: '64px',
+            width: '100%',
             background: '#ffffff',
-            borderRight: isSidebarFolded ? 'none' : '1.5px solid #cbd5e1',
-            boxShadow: isSidebarFolded ? 'none' : '2px 0 10px rgba(15, 23, 42, 0.04)',
-            padding: isSidebarFolded ? '0px' : '18px 14px',
-            overflowY: isSidebarFolded ? 'hidden' : 'auto',
-            overflowX: 'hidden',
-            opacity: isSidebarFolded ? 0 : 1,
-            pointerEvents: isSidebarFolded ? 'none' : 'auto',
-            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease, opacity 0.2s ease',
-            zIndex: 40,
-            flexShrink: 0,
-            borderRadius: 0,
+            borderBottom: '1.5px solid #cbd5e1',
+            boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+            zIndex: 1000,
             display: 'flex',
-            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 20px',
+            gap: '16px'
           }}>
-            {/* Sidebar Top Title + Fold Button */}
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingBottom: '12px',
-              marginBottom: '14px',
-              borderBottom: '1px solid #e2e8f0',
-              flexShrink: 0
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
+            {/* Left: Logo + Divider + Sidebar Fold Button + Breadcrumb */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+              {/* Bangladesh Land Seal / e-ভূমি Logo */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                <img 
+                  src="/images/logo.png" 
+                  alt="e-ভূমি লোগো" 
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    objectFit: 'contain',
+                    flexShrink: 0
+                  }}
+                />
+                <div className="hide-on-mobile">
+                  <div style={{ fontSize: '17px', fontWeight: '900', color: '#065f46', lineHeight: 1.1 }}>
+                    e-ভূমি
+                  </div>
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>
+                    ডিজিটাল ভূমি প্রশাসন
+                  </div>
+                </div>
+              </div>
+
+              <div className="hide-on-mobile" style={{ width: '1px', height: '26px', background: '#e2e8f0', margin: '0 4px', flexShrink: 0 }} />
+
+              {/* Sidebar Folding Toggle Button */}
+              <button
+                onClick={() => setIsSidebarFolded(p => !p)}
+                title={isSidebarFolded ? 'সাইডবার খুলুন (Unfold)' : 'সাইডবার ফোল্ড করুন (Fold to Left)'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '7px',
+                  padding: '7px 12px',
                   borderRadius: '8px',
-                  background: theme.bannerGradient,
+                  background: isSidebarFolded ? '#ede9fe' : '#f8fafc',
+                  border: isSidebarFolded ? '1.5px solid #a78bfa' : '1.5px solid #cbd5e1',
+                  color: isSidebarFolded ? '#6d28d9' : '#0f172a',
+                  fontSize: '12.5px',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease',
+                  flexShrink: 0,
+                  boxShadow: isSidebarFolded ? '0 2px 8px rgba(109, 40, 217, 0.15)' : 'none'
+                }}
+              >
+                {isSidebarFolded ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+                <span className="hide-on-mobile">{isSidebarFolded ? 'মেনু খুলুন' : 'সাইডবার ফোল্ড'}</span>
+              </button>
+
+              {/* Title & Active Tab Breadcrumb */}
+              <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                  {title || 'ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন'}
+                </span>
+                <span style={{ color: '#94a3b8', fontSize: '13px' }}>/</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: theme.badgeColor, whiteSpace: 'nowrap' }}>
+                  {currentNav?.label || 'ওভারভিউ'}
+                </span>
+              </div>
+            </div>
+
+            {/* Right: Feedback alert + User Profile Card + Logout */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              {headerActions}
+
+              {/* User Mini Profile Card (from user screenshot) */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                padding: '5px 12px',
+                borderRadius: '12px',
+                background: '#ffffff',
+                border: '1.5px solid #e2e8f0',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+              }}>
+                {/* Purple Avatar Box with Bengali "ম" */}
+                <div style={{
+                  width: '38px',
+                  height: '38px',
+                  borderRadius: '10px',
+                  background: theme.avatarBg || 'linear-gradient(135deg, #6d28d9, #a855f7)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
-                  flexShrink: 0
+                  fontWeight: '900',
+                  fontSize: '17px',
+                  flexShrink: 0,
+                  boxShadow: '0 2px 6px rgba(109, 40, 217, 0.25)'
                 }}>
-                  {Icon ? <Icon size={17} /> : <Layers size={17} />}
+                  {user?.name ? user.name.charAt(0) : 'ম'}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                    ভূমি প্রশাসন
+
+                {/* Profile Info */}
+                <div className="hide-on-mobile" style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                      {user?.name || 'মন্ত্রণালয় প্রধান এডমিন'}
+                    </span>
+                    <span style={{
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      background: '#f5f3ff',
+                      color: '#6d28d9',
+                      border: '1px solid #ddd6fe',
+                      padding: '1px 8px',
+                      borderRadius: '999px',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {badge?.label || user?.role || 'Super Admin'}
+                    </span>
                   </div>
-                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '700' }}>
-                    {badge?.label || 'Super Admin'}
+
+                  <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>NID: {user?.nid || '000000000000'}</span>
+                    <span>•</span>
+                    <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user?.office_details?.office_name || 'ভূমি মন্ত্রণালয়, বাংলাদেশ সচিবালয়'}
+                    </span>
                   </div>
                 </div>
               </div>
 
+              {/* Logout Button */}
               <button
-                onClick={() => setIsSidebarFolded(true)}
-                title="সাইডবার ফোল্ড করুন (লুকান)"
+                onClick={handleLogout}
+                title="লগআউট করুন"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '6px',
-                  border: '1px solid #cbd5e1',
-                  background: '#f8fafc',
-                  color: '#475569',
+                  gap: '6px',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
+                  background: '#fee2e2',
+                  border: '1.5px solid #fecaca',
+                  color: '#b91c1c',
+                  fontWeight: '700',
+                  fontSize: '12px',
                   cursor: 'pointer',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.18s ease'
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#fecaca'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fee2e2'; }}
               >
-                <ChevronLeft size={16} />
+                <LogOut size={14} />
+                <span className="hide-on-mobile">লগআউট</span>
               </button>
             </div>
+          </header>
 
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <SidebarContent />
-            </div>
-          </aside>
-
-          {/* Main Content Area */}
-          <main style={{
-            flex: 1,
-            minWidth: 0,
+          {/* ── Body: Sticky Left-Flush Sidebar + Content ── */}
+          <div style={{
             display: 'flex',
-            flexDirection: 'column',
-            background: '#e8edf2',
-            minHeight: 'calc(100vh - 62px)',
-            transition: 'all 0.25s ease'
+            width: '100%',
+            minHeight: 'calc(100vh - 64px)',
+            position: 'relative',
           }}>
-            {/* Simple Clean Top Bar */}
-            <div style={{
-              height: '56px',
-              background: '#ffffff',
-              borderBottom: '1.5px solid #cbd5e1',
-              padding: '0 24px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '16px',
+            {/* Desktop Sticky Sidebar (Full Height, Left-Flush, Foldable) */}
+            <aside className="hide-on-mobile" style={{
+              width: isSidebarFolded ? '0px' : '260px',
+              minWidth: isSidebarFolded ? '0px' : '260px',
+              maxWidth: isSidebarFolded ? '0px' : '260px',
+              height: 'calc(100vh - 64px)',
               position: 'sticky',
-              top: '62px',
-              zIndex: 35,
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)'
+              top: '64px',
+              alignSelf: 'flex-start',
+              background: '#ffffff',
+              borderRight: isSidebarFolded ? 'none' : '1.5px solid #cbd5e1',
+              boxShadow: isSidebarFolded ? 'none' : '2px 0 10px rgba(15, 23, 42, 0.04)',
+              padding: isSidebarFolded ? '0px' : '16px 12px',
+              overflowY: isSidebarFolded ? 'hidden' : 'auto',
+              overflowX: 'hidden',
+              opacity: isSidebarFolded ? 0 : 1,
+              pointerEvents: isSidebarFolded ? 'none' : 'auto',
+              transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s ease, opacity 0.2s ease',
+              zIndex: 40,
+              flexShrink: 0,
+              borderRadius: 0,
+              display: 'flex',
+              flexDirection: 'column',
             }}>
-              {/* Left: Fold Toggle Button & Breadcrumb */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              {/* Sidebar Header Title + Fold Button */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingBottom: '12px',
+                marginBottom: '12px',
+                borderBottom: '1px solid #e2e8f0',
+                flexShrink: 0
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <div style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '8px',
+                    background: theme.bannerGradient,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#ffffff',
+                    flexShrink: 0
+                  }}>
+                    {Icon ? <Icon size={16} /> : <Layers size={16} />}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                      ড্যাশবোর্ড মেনু
+                    </div>
+                  </div>
+                </div>
+
                 <button
-                  onClick={() => setIsSidebarFolded(p => !p)}
-                  title={isSidebarFolded ? 'সাইডবার খুলুন (Unfold)' : 'সাইডবার ফোল্ড করুন (Fold to Left)'}
+                  onClick={() => setIsSidebarFolded(true)}
+                  title="সাইডবার ফোল্ড করুন (লুকান)"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '7px',
-                    padding: '6px 12px',
-                    borderRadius: '8px',
-                    background: isSidebarFolded ? '#ede9fe' : '#f8fafc',
-                    border: isSidebarFolded ? '1.5px solid #a78bfa' : '1.5px solid #cbd5e1',
-                    color: isSidebarFolded ? '#6d28d9' : '#0f172a',
-                    fontSize: '13px',
-                    fontWeight: '700',
+                    justifyContent: 'center',
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '6px',
+                    border: '1px solid #cbd5e1',
+                    background: '#f8fafc',
+                    color: '#475569',
                     cursor: 'pointer',
-                    transition: 'all 0.18s ease',
-                    boxShadow: isSidebarFolded ? '0 2px 8px rgba(109, 40, 217, 0.15)' : 'none'
+                    transition: 'all 0.15s ease'
                   }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#e2e8f0'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; }}
                 >
-                  {isSidebarFolded ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-                  <span>{isSidebarFolded ? 'মেনু খুলুন' : 'সাইডবার ফোল্ড'}</span>
+                  <ChevronLeft size={15} />
                 </button>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>
-                    {title || 'ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন'}
-                  </span>
-                  {badge && (
-                    <span style={{
-                      fontSize: '11px',
-                      fontWeight: '800',
-                      padding: '2px 8px',
-                      borderRadius: '999px',
-                      background: theme.badgeBg,
-                      color: theme.badgeColor,
-                      border: `1px solid ${theme.badgeBorder}`,
-                    }}>
-                      {badge.label}
-                    </span>
-                  )}
-                  <span style={{ color: '#94a3b8', fontSize: '13px' }}>/</span>
-                  <span style={{ fontSize: '13px', fontWeight: '700', color: theme.badgeColor }}>
-                    {currentNav?.label || 'ওভারভিউ'}
-                  </span>
-                </div>
               </div>
 
-              {/* Right: Status and Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {headerActions}
-
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '5px 12px',
-                  background: '#f8fafc',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#475569',
-                  fontWeight: '600'
-                }}>
-                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 2px rgba(16, 185, 129, 0.2)' }} />
-                  <span>সিস্টেম লাইভ</span>
-                </div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <SidebarContent />
               </div>
-            </div>
+            </aside>
 
-            {/* Content Body */}
-            <div style={{
-              padding: '24px 28px',
-              width: '100%',
-              maxWidth: '1600px',
-              margin: '0 auto',
-              flex: 1
+            {/* Main Content Area */}
+            <main style={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              background: '#e8edf2',
+              minHeight: 'calc(100vh - 64px)',
+              transition: 'all 0.25s ease'
             }}>
-              {children}
-            </div>
-          </main>
+              <div style={{
+                padding: '24px 28px',
+                width: '100%',
+                maxWidth: '1600px',
+                margin: '0 auto',
+                flex: 1
+              }}>
+                {children}
+              </div>
+            </main>
+          </div>
         </div>
       ) : (
         /* Original Centered Layout (for other dashboards) */
