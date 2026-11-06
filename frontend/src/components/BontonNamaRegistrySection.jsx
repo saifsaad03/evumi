@@ -382,7 +382,7 @@ export default function BontonNamaRegistrySection() {
       });
 
       if (res.data.success) {
-        setBontonSuccessMsg(res.data.message);
+        setBontonSuccessMsg('আবেদন পাঠানো সম্পন্ন হলো ।');
         setBontonOtp('');
         setOtpSentMsg(null);
         fetchApplications();
@@ -1307,8 +1307,9 @@ export default function BontonNamaRegistrySection() {
                 </button>
 
                 {bontonSuccessMsg && (
-                  <div style={{ marginTop: '12px', padding: '12px', background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '12px', fontWeight: '700' }}>
-                    {bontonSuccessMsg}
+                  <div style={{ marginTop: '12px', padding: '14px 18px', background: '#dcfce7', border: '1.5px solid #86efac', borderRadius: '10px', color: '#166534', fontSize: '14px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckCircle size={18} color="#166534" />
+                    <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
                   </div>
                 )}
               </div>

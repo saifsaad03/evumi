@@ -143,7 +143,7 @@ export default function Navbar() {
         ];
       case 'Register Office':
         return [
-          { id: 'assign', label: 'সরকারি জমি বরাদ্দ ও বন্দোবস্ত', icon: Layers },
+          { id: 'assign', label: 'জমি অনলাইন প্রস্তাব', icon: Layers },
           { id: 'deed_registry', label: 'দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং', icon: FileText },
           { id: 'bonton_nama', label: 'যৌথ ওয়ারিশান বণ্টননামা', icon: Users },
           { id: 'requests', label: 'প্রেরিত আবেদনের হালনাগাদ', icon: Clock },

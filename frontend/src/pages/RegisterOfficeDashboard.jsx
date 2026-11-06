@@ -607,7 +607,7 @@ export default function RegisterOfficeDashboard() {
       });
 
       if (res.data.success) {
-        setAssignSuccess(res.data.message);
+        setAssignSuccess('আবেদন পাঠানো সম্পন্ন হলো ।');
         setCitizenOtp('');
         setOtpSentMessage(null);
         fetchSentRequests();
@@ -623,7 +623,7 @@ export default function RegisterOfficeDashboard() {
   const navItems = [
     {
       id: 'assign',
-      label: 'সরকারি জমি বরাদ্দ ও প্রস্তাব',
+      label: 'জমি অনলাইন প্রস্তাব',
       icon: Layers,
     },
     {
@@ -1340,16 +1340,20 @@ export default function RegisterOfficeDashboard() {
               {/* Status messages */}
               {assignSuccess && (
                 <div style={{
-                  padding: '12px',
+                  padding: '14px 18px',
                   background: '#dcfce7',
                   border: '1.5px solid #86efac',
-                  borderRadius: '8px',
+                  borderRadius: '10px',
                   color: '#166534',
-                  fontSize: '13px',
+                  fontSize: '15px',
                   marginBottom: '16px',
-                  fontWeight: '600'
+                  fontWeight: '800',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
                 }}>
-                  {assignSuccess}
+                  <CheckCircle size={20} color="#166534" />
+                  <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
                 </div>
               )}
 

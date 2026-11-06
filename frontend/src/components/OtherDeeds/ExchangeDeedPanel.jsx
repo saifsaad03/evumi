@@ -177,7 +177,7 @@ export default function ExchangeDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmissionSuccess(res.data.message || 'বিনিময় দলিল সফলভাবে অনুমোদনের জন্য এসি ল্যান্ডে প্রেরিত হয়েছে।');
+        setSubmissionSuccess('আবেদন পাঠানো সম্পন্ন হলো ।');
         setP1Land(null);
         setP2Land(null);
         setP1User(null);
@@ -246,15 +246,15 @@ export default function ExchangeDeedPanel() {
           borderRadius: '12px',
           padding: '16px 20px',
           color: '#166534',
-          fontSize: '14px',
-          fontWeight: '700',
+          fontSize: '15px',
+          fontWeight: '800',
           marginBottom: '20px',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
-          <CheckCircle size={20} color="#166534" />
-          <span>{submissionSuccess}</span>
+          <CheckCircle size={22} color="#166534" />
+          <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
         </div>
       )}
 

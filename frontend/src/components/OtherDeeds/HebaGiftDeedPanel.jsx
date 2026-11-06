@@ -217,7 +217,7 @@ export default function HebaGiftDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmissionSuccess(res.data.message || 'হেবা দলিল সফলভাবে অনুমোদনের জন্য এসি ল্যান্ড কার্যালয়ে পাঠানো হয়েছে।');
+        setSubmissionSuccess('আবেদন পাঠানো সম্পন্ন হলো ।');
         setSearchResult(null);
         setRecipientData(null);
         setDonorOtp('');
@@ -283,15 +283,15 @@ export default function HebaGiftDeedPanel() {
           borderRadius: '12px',
           padding: '16px 20px',
           color: '#166534',
-          fontSize: '14px',
-          fontWeight: '700',
+          fontSize: '15px',
+          fontWeight: '800',
           marginBottom: '20px',
           display: 'flex',
           alignItems: 'center',
           gap: '10px'
         }}>
-          <CheckCircle size={20} color="#166534" />
-          <span>{submissionSuccess}</span>
+          <CheckCircle size={22} color="#166534" />
+          <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
         </div>
       )}
 

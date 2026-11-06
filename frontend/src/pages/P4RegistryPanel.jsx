@@ -1627,10 +1627,10 @@ export default function P4RegistryPanel() {
                 <CheckCircle size={24} color={grantResult.success ? '#16a34a' : '#dc2626'} />
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: '800', color: grantResult.success ? '#166534' : '#991b1b' }}>
-                    {grantResult.message || 'Deed Granted! দলিল অনুমোদিত হয়েছে'}
+                    {grantResult.success ? 'আবেদন পাঠানো সম্পন্ন হলো ।' : (grantResult.message || 'দলিল অনুমোদন ব্যর্থ হয়েছে।')}
                   </div>
-                  <div style={{ fontSize: '12px', color: grantResult.success ? '#15803d' : '#b91c1c', marginTop: '2px', fontWeight: '500' }}>
-                    জমি Pending_Mutation লক · এসি ল্যান্ড অফিস ড্যাশবোর্ডে আবেদন পৌঁছেছে
+                  <div style={{ fontSize: '12px', color: grantResult.success ? '#15803d' : '#b91c1c', marginTop: '2px', fontWeight: '600' }}>
+                    দলিল সম্পাদন সম্পন্ন · জমি Pending_Mutation লক · এসি ল্যান্ড কার্যালয়ে আবেদন সফলভাবে পৌঁছেছে
                   </div>
                 </div>
               </div>
