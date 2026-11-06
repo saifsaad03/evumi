@@ -13,12 +13,13 @@ import {
   RefreshCw,
   UserCheck,
   Calendar,
-  DollarSign
+  DollarSign,
+  Clock
 } from 'lucide-react';
 import CascadingLandSelector from './CascadingLandSelector';
 
 export default function BaynaDeedPanel() {
-  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' or 'unlock'
+  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'unlock' | 'tracking'
 
   // Creation form states
   const [sellerNid, setSellerNid] = useState('');
@@ -65,9 +66,7 @@ export default function BaynaDeedPanel() {
   const [unlockError, setUnlockError] = useState(null);
 
   useEffect(() => {
-    if (activeSubTab === 'unlock') {
-      fetchLockedLands();
-    }
+    fetchLockedLands();
   }, [activeSubTab]);
 
   const fetchLockedLands = async () => {
@@ -345,8 +344,8 @@ export default function BaynaDeedPanel() {
         </div>
       </div>
 
-      {/* Sub-Tabs: Create vs Unlock */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+      {/* Sub-Tabs: Create vs Unlock vs Tracking */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={() => setActiveSubTab('create')}
@@ -356,12 +355,13 @@ export default function BaynaDeedPanel() {
             gap: '8px',
             padding: '10px 22px',
             borderRadius: '10px',
-            border: 'none',
+            border: activeSubTab === 'create' ? '1.5px solid #c2410c' : '1.5px solid #cbd5e1',
             fontSize: '13.5px',
             fontWeight: '800',
             cursor: 'pointer',
-            background: activeSubTab === 'create' ? '#c2410c' : '#f1f5f9',
-            color: activeSubTab === 'create' ? '#ffffff' : '#475569',
+            background: activeSubTab === 'create' ? '#c2410c' : '#f8fafc',
+            color: activeSubTab === 'create' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'create' ? '0 4px 12px rgba(194, 65, 12, 0.25)' : 'none',
             transition: 'all 0.2s'
           }}
         >
@@ -378,17 +378,51 @@ export default function BaynaDeedPanel() {
             gap: '8px',
             padding: '10px 22px',
             borderRadius: '10px',
-            border: 'none',
+            border: activeSubTab === 'unlock' ? '1.5px solid #c2410c' : '1.5px solid #cbd5e1',
             fontSize: '13.5px',
             fontWeight: '800',
             cursor: 'pointer',
-            background: activeSubTab === 'unlock' ? '#c2410c' : '#f1f5f9',
-            color: activeSubTab === 'unlock' ? '#ffffff' : '#475569',
+            background: activeSubTab === 'unlock' ? '#c2410c' : '#f8fafc',
+            color: activeSubTab === 'unlock' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'unlock' ? '0 4px 12px rgba(194, 65, 12, 0.25)' : 'none',
             transition: 'all 0.2s'
           }}
         >
           <Unlock size={16} />
-          <span>২. বায়নাপত্র দায়মুক্তি / আনলক ({lockedLands.length})</span>
+          <span>২. বায়নাপত্র দায়মুক্তি / আনলক</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveSubTab('tracking'); fetchLockedLands(); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: activeSubTab === 'tracking' ? '1.5px solid #c2410c' : '1.5px solid #cbd5e1',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeSubTab === 'tracking' ? '#c2410c' : '#f8fafc',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'tracking' ? '0 4px 12px rgba(194, 65, 12, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Clock size={16} />
+          <span>৩. প্রেরিত বায়নাকৃত দলিলের স্থিতি ও ট্র্যাকিং</span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '999px',
+            background: activeSubTab === 'tracking' ? 'rgba(255,255,255,0.3)' : '#e2e8f0',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#475569',
+            fontWeight: '800'
+          }}>
+            {lockedLands.length}
+          </span>
         </button>
       </div>
 
@@ -954,6 +988,130 @@ export default function BaynaDeedPanel() {
                   <span>{unlocking ? 'আনলক হচ্ছে...' : 'বায়না দায়মুক্তি অনুমোদন ও জমি আনলক করুন'}</span>
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: Dedicated Bayna Tracking Table */}
+      {activeSubTab === 'tracking' && (
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={20} color="#c2410c" />
+                প্রেরিত বায়নাকৃত দলিলের স্থিতি ও জমি ট্র্যাকিং
+              </h3>
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+                সম্পত্তি বিক্রয় চুক্তির আওতায় বায়নাবদ্ধ সকল জমির বর্তমান আইনগত ও দায় সংক্রান্ত স্থিতি
+              </p>
+            </div>
+            <button
+              onClick={fetchLockedLands}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 16px',
+                fontSize: '13px',
+                background: '#f1f5f9',
+                border: '1.5px solid #94a3b8',
+                borderRadius: '8px',
+                color: '#0f172a',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={14} className={loadingLocked ? 'animate-spin' : ''} />
+              <span>রিফ্রেশ</span>
+            </button>
+          </div>
+
+          {loadingLocked ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+              <div>তথ্য লোড হচ্ছে...</div>
+            </div>
+          ) : lockedLands.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>📝</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>বর্তমানে কোনো বায়নাবদ্ধ জমি নেই</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>নতুন বায়নাপত্র দলিল সম্পাদন করা হলে তা এখানে প্রদর্শিত হবে</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
+                    <th style={{ padding: '12px 14px' }}>বায়না দলিল নং</th>
+                    <th style={{ padding: '12px 14px' }}>মূল মালিক (বিক্রেতা)</th>
+                    <th style={{ padding: '12px 14px' }}>জমির বিবরণ</th>
+                    <th style={{ padding: '12px 14px' }}>বায়না গ্রহীতা (ক্রেতা)</th>
+                    <th style={{ padding: '12px 14px' }}>বায়না ও মোট মূল্য</th>
+                    <th style={{ padding: '12px 14px' }}>মেয়াদ ও স্ট্যাটাস</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lockedLands.map((land) => {
+                    const b = land.bayna_details || {};
+                    return (
+                      <tr key={land._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontFamily: 'monospace', color: '#c2410c', fontWeight: '800' }}>
+                            {b.bayna_deed_no || `BAYNA-${land.dag_no}`}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '700', color: '#0f172a' }}>{land.owner_name}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {land.owner_nid}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ color: '#0f172a' }}>দাগ: <strong>{land.dag_no}</strong> | খতিয়ান: {land.khatian_no}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            মৌজা: {land.mouza} ({land.available_area_decimal} শতক)
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '700', color: '#0f172a' }}>{b.bayna_buyer_name || 'বায়না ক্রেতা'}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {b.bayna_buyer_nid || '-'}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '800', color: '#c2410c' }}>
+                            বায়না: ৳ {Number(b.bayna_amount_bdt || 0).toLocaleString('bn-BD')}
+                          </div>
+                          {b.total_price_bdt && (
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                              মোট: ৳ {Number(b.total_price_bdt).toLocaleString('bn-BD')}
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            background: '#ffedd5',
+                            color: '#9a3412',
+                            border: '1px solid #fdba74'
+                          }}>
+                            <Lock size={12} />
+                            <span>বায়নাকৃত লক (Bayna Locked)</span>
+                          </span>
+                          {b.expiry_date && (
+                            <div style={{ fontSize: '11px', color: '#64748b', marginTop: '3px' }}>
+                              মেয়াদ: {b.expiry_date}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

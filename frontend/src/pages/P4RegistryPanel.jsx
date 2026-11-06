@@ -20,6 +20,28 @@ export default function P4RegistryPanel() {
     dag_no: '', 
     requested_area: '' 
   });
+  const [panelTab, setPanelTab] = useState('register'); // 'register' | 'tracking'
+  const [pendingMutations, setPendingMutations] = useState([]);
+  const [loadingMutations, setLoadingMutations] = useState(false);
+
+  const fetchPendingMutations = async () => {
+    setLoadingMutations(true);
+    try {
+      const res = await axios.get('/api/p4/pending-mutations');
+      if (res.data?.success) {
+        setPendingMutations(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load pending mutations:', err);
+    } finally {
+      setLoadingMutations(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPendingMutations();
+  }, []);
+
   const [searchLoading, setSearchLoading] = useState(false);
   const [landRecord, setLandRecord] = useState(null);
   const [searchError, setSearchError] = useState('');
@@ -708,15 +730,80 @@ export default function P4RegistryPanel() {
             🏛️ সাব-রেজিস্ট্রি কোড: <strong style={{ color: '#1d4ed8' }}>SR-BOG-SHIB-01</strong>
           </div>
         </div>
+      </div>
 
-        {/* 4 Step Process Tracker */}
+      {/* Sub-tab Switcher: New Deed Registration vs Tracking (Dedicated Separate Space) */}
+      <div style={{
+        display: 'flex',
+        gap: '10px',
+        marginBottom: '20px',
+        background: '#ffffff',
+        padding: '8px 12px',
+        borderRadius: '12px',
+        border: '1.5px solid #cbd5e1',
+        width: 'fit-content',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+      }}>
+        <button
+          type="button"
+          onClick={() => setPanelTab('register')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            background: panelTab === 'register' ? '#2563eb' : '#f1f5f9',
+            color: panelTab === 'register' ? '#ffffff' : '#334155'
+          }}
+        >
+          <FileText size={15} />
+          <span>নতুন সাফ-কবলা দলিল সম্পাদন</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setPanelTab('tracking');
+            fetchPendingMutations();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            background: panelTab === 'tracking' ? '#2563eb' : '#f1f5f9',
+            color: panelTab === 'tracking' ? '#ffffff' : '#334155'
+          }}
+        >
+          <Clock size={15} />
+          <span>প্রেরিত সাফ-কবলা দলিলের স্থিতি ও ট্র্যাকিং ({pendingMutations.length}টি)</span>
+        </button>
+      </div>
+
+      {panelTab === 'register' && (
+      <div>
+        {/* 4 Step Process Tracker Banner Box */}
+        <div style={{
+          background: '#ffffff',
+          border: '1.5px solid #cbd5e1',
+          borderRadius: '16px',
+          padding: '20px 24px',
+          marginBottom: '24px',
+          boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)'
+        }}>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '12px',
-          marginTop: '22px',
-          paddingTop: '20px',
-          borderTop: '1.5px solid #e2e8f0'
+          gap: '12px'
         }}>
           {steps.map((st) => {
             const isCompleted = currentStep > st.num || (st.num === 4 && grantResult?.success);
@@ -1759,6 +1846,107 @@ export default function P4RegistryPanel() {
           )}
         </div>
       </div>
+      </div>
+      )}
+
+      {/* Dedicated Tracking Space for Sent Sale Mutation Deeds */}
+      {panelTab === 'tracking' && (
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={18} color="#2563eb" />
+              প্রেরিত সাফ-কবলা দলিলের স্থিতি ও নামজারি ট্র্যাকিং ({pendingMutations.length}টি)
+            </h3>
+            <button
+              onClick={fetchPendingMutations}
+              className="btn-secondary"
+              style={{ padding: '6px 14px', fontSize: '12px', background: '#f1f5f9', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <RefreshCw size={13} className={loadingMutations ? 'animate-spin' : ''} />
+              রিফ্রেশ
+            </button>
+          </div>
+
+          {loadingMutations ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>তথ্য লোড হচ্ছে...</div>
+          ) : pendingMutations.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '14px', background: '#f8fafc', borderRadius: '12px', border: '1.5px dashed #cbd5e1' }}>
+              বর্তমানে পর্যালোচনায় অপেক্ষমান কোনো সাফ-কবলা দলিল নেই।
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
+                    <th style={{ padding: '10px 12px' }}>দলিল নং</th>
+                    <th style={{ padding: '10px 12px' }}>বিক্রেতার তথ্য</th>
+                    <th style={{ padding: '10px 12px' }}>ক্রেতার তথ্য</th>
+                    <th style={{ padding: '10px 12px' }}>জমির বিবরণ</th>
+                    <th style={{ padding: '10px 12px' }}>পরিমাণ (শতক)</th>
+                    <th style={{ padding: '10px 12px' }}>বর্তমান স্থিতি</th>
+                    <th style={{ padding: '10px 12px' }}>সম্পাদনের তারিখ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingMutations.map((item) => {
+                    const primaryBuyer = Array.isArray(item.buyers) && item.buyers.length > 0 ? item.buyers[0] : null;
+                    const buyerName = primaryBuyer ? primaryBuyer.name : (item.buyer_name || 'N/A');
+                    const buyerNid = primaryBuyer ? primaryBuyer.nid : (item.buyer_nid || '');
+
+                    return (
+                      <tr key={item._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '12px', fontFamily: 'monospace', color: '#1d4ed8', fontWeight: '800' }}>
+                          {item.deed_no || item.record_id}
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <strong style={{ color: '#0f172a' }}>{item.owner_name}</strong>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {item.owner_nid}</div>
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <strong style={{ color: '#0f172a' }}>{buyerName}</strong>
+                          {buyerNid && <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {buyerNid}</div>}
+                          {Array.isArray(item.buyers) && item.buyers.length > 1 && (
+                            <span style={{ fontSize: '10px', color: '#2563eb', fontWeight: '700' }}>
+                              +{item.buyers.length - 1} জন যৌথ ক্রেতা
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <div style={{ color: '#0f172a' }}>দাগ: <strong>{item.dag_no}</strong> | খতিয়ান: {item.khatian_no}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>মৌজা: {item.mouza}</div>
+                        </td>
+                        <td style={{ padding: '12px', fontWeight: '800', color: '#15803d' }}>
+                          {item.sold_area_decimal || item.available_area_decimal || item.total_area_decimal} শতক
+                        </td>
+                        <td style={{ padding: '12px' }}>
+                          <span style={{
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: '700',
+                            background: '#fef3c7',
+                            color: '#92400e',
+                            border: '1px solid #fde68a',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <Clock size={12} color="#d97706" />
+                            <span>এসি ল্যান্ডে নামজারি অপেক্ষমান</span>
+                          </span>
+                        </td>
+                        <td style={{ padding: '12px', fontSize: '12px', color: '#64748b' }}>
+                          {item.createdAt ? new Date(item.createdAt).toLocaleDateString('bn-BD') : 'সম্প্রতি'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

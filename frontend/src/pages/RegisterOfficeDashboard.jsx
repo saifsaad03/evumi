@@ -18,6 +18,7 @@ export default function RegisterOfficeDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'assign');
+  const [assignSubTab, setAssignSubTab] = useState('form'); // 'form' | 'tracking'
   const [selectedOtherDeedSub, setSelectedOtherDeedSub] = useState('heba');
 
   useEffect(() => {
@@ -685,26 +686,85 @@ export default function RegisterOfficeDashboard() {
     >
       {activeTab === 'assign' && (
         <div>
-          {/* Instructions bar */}
+          {/* Sub-tab Switcher: Form vs Tracking */}
           <div style={{
-            background: '#eff6ff',
-            border: '1.5px solid #bfdbfe',
-            borderRadius: '12px',
-            padding: '14px 20px',
-            marginBottom: '24px',
-            fontSize: '13px',
-            color: '#1e3a8a',
             display: 'flex',
-            alignItems: 'center',
-            gap: '12px'
+            gap: '10px',
+            marginBottom: '20px',
+            background: '#ffffff',
+            padding: '8px 12px',
+            borderRadius: '12px',
+            border: '1.5px solid #cbd5e1',
+            width: 'fit-content',
+            boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
           }}>
-            <Building2 size={20} color="#2563eb" />
-            <div>
-              <strong style={{ color: '#1e40af' }}>ওয়ার্কফ্লো নির্দেশিকা:</strong> ১. ক্যাসকেড ফিল্টার দিয়ে জমি খুঁজুন ➔ ২. নাগরিকের NID দিয়ে ইউজার বের করুন ➔ ৩. ভলিউম বই ও পৃষ্ঠা নম্বর লিখুন ➔ ৪. 'এসি ল্যান্ডে পাঠান' বাটনে ক্লিক করুন। এসি ল্যান্ড রিভিউ করে অনুমোদন দিলে স্বয়ংক্রিয়ভাবে নাগরিকের নামে বরাদ্দ সম্পন্ন হবে।
-            </div>
+            <button
+              type="button"
+              onClick={() => setAssignSubTab('form')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: assignSubTab === 'form' ? '#1d4ed8' : '#f1f5f9',
+                color: assignSubTab === 'form' ? '#ffffff' : '#334155'
+              }}
+            >
+              <Layers size={15} />
+              <span>নতুন জমি বরাদ্দ প্রস্তাব</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setAssignSubTab('tracking');
+                fetchSentRequests();
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: assignSubTab === 'tracking' ? '#1d4ed8' : '#f1f5f9',
+                color: assignSubTab === 'tracking' ? '#ffffff' : '#334155'
+              }}
+            >
+              <Clock size={15} />
+              <span>প্রেরিত জমি বরাদ্দ অনুরোধসমূহের স্থিতি ও ট্র্যাকিং ({sentRequests.length}টি)</span>
+            </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.2fr) minmax(320px, 1fr)', gap: '24px', marginBottom: '32px' }}>
+          {assignSubTab === 'form' && (
+            <div>
+              {/* Instructions bar */}
+              <div style={{
+                background: '#eff6ff',
+                border: '1.5px solid #bfdbfe',
+                borderRadius: '12px',
+                padding: '14px 20px',
+                marginBottom: '24px',
+                fontSize: '13px',
+                color: '#1e3a8a',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <Building2 size={20} color="#2563eb" />
+                <div>
+                  <strong style={{ color: '#1e40af' }}>ওয়ার্কফ্লো নির্দেশিকা:</strong> ১. ক্যাসকেড ফিল্টার দিয়ে জমি খুঁজুন ➔ ২. নাগরিকের NID দিয়ে ইউজার বের করুন ➔ ৩. ভলিউম বই ও পৃষ্ঠা নম্বর লিখুন ➔ ৪. 'এসি ল্যান্ডে পাঠান' বাটনে ক্লিক করুন। এসি ল্যান্ড রিভিউ করে অনুমোদন দিলে স্বয়ংক্রিয়ভাবে নাগরিকের নামে বরাদ্দ সম্পন্ন হবে।
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.2fr) minmax(320px, 1fr)', gap: '24px', marginBottom: '32px' }}>
             {/* Left: Cascade Land Filter & Citizen Search */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Cascade Filter Box */}
@@ -1421,8 +1481,11 @@ export default function RegisterOfficeDashboard() {
               })()}
             </div>
           </div>
+          </div>
+          )}
 
-          {/* Table: Sent Assignment Requests */}
+          {/* Table: Sent Assignment Requests (Dedicated Separate Space) */}
+          {assignSubTab === 'tracking' && (
           <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
               <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -1498,6 +1561,7 @@ export default function RegisterOfficeDashboard() {
               </div>
             )}
           </div>
+          )}
         </div>
       )}
 

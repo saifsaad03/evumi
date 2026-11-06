@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Gift,
@@ -69,6 +69,29 @@ export default function HebaGiftDeedPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(null);
   const [submissionError, setSubmissionError] = useState(null);
+
+  // Sub-tab: Create vs Dedicated Tracking
+  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'tracking'
+  const [hebaApplications, setHebaApplications] = useState([]);
+  const [loadingHebaApps, setLoadingHebaApps] = useState(false);
+
+  const fetchHebaApplications = async () => {
+    setLoadingHebaApps(true);
+    try {
+      const res = await axios.get('/api/other-deeds/heba/applications');
+      if (res.data?.success) {
+        setHebaApplications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load Heba applications:', err);
+    } finally {
+      setLoadingHebaApps(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHebaApplications();
+  }, []);
 
   // Search donor's land
   const handleSearchLand = async (searchParams) => {
@@ -276,6 +299,65 @@ export default function HebaGiftDeedPanel() {
         </div>
       </div>
 
+      {/* Sub-tab Switcher: Create vs Dedicated Tracking */}
+      <div style={{
+        display: 'flex',
+        gap: '10px',
+        marginBottom: '20px',
+        background: '#ffffff',
+        padding: '8px 12px',
+        borderRadius: '12px',
+        border: '1.5px solid #cbd5e1',
+        width: 'fit-content',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.03)'
+      }}>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('create')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            background: activeSubTab === 'create' ? '#065f46' : '#f1f5f9',
+            color: activeSubTab === 'create' ? '#ffffff' : '#334155'
+          }}
+        >
+          <Gift size={15} />
+          <span>নতুন হেবা দলিল সম্পাদন</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveSubTab('tracking');
+            fetchHebaApplications();
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '9px 18px',
+            borderRadius: '8px',
+            border: 'none',
+            fontWeight: '800',
+            fontSize: '13px',
+            cursor: 'pointer',
+            background: activeSubTab === 'tracking' ? '#065f46' : '#f1f5f9',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#334155'
+          }}
+        >
+          <Clock size={15} />
+          <span>প্রেরিত হেবা দলিলের স্থিতি ও ট্র্যাকিং ({hebaApplications.length}টি)</span>
+        </button>
+      </div>
+
+      {activeSubTab === 'create' && (
+      <div>
       {submissionSuccess && (
         <div style={{
           background: '#dcfce7',
@@ -699,6 +781,97 @@ export default function HebaGiftDeedPanel() {
               <span>{submitting ? 'দলিল মঞ্জুর হচ্ছে...' : 'দানপত্র / হেবা দলিল মঞ্জুর করুন (Grant Deed to AC Land)'}</span>
             </button>
           </div>
+        </div>
+      )}
+      </div>
+      )}
+
+      {/* Dedicated Separate Tracking Table for Heba Deeds */}
+      {activeSubTab === 'tracking' && (
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Clock size={18} color="#047857" />
+              প্রেরিত হেবা / দানপত্র দলিলের স্থিতি ও নামজারি ট্র্যাকিং ({hebaApplications.length}টি)
+            </h3>
+            <button
+              onClick={fetchHebaApplications}
+              className="btn-secondary"
+              style={{ padding: '6px 14px', fontSize: '12px', background: '#f1f5f9', border: '1.5px solid #cbd5e1', color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <RefreshCw size={13} className={loadingHebaApps ? 'animate-spin' : ''} />
+              রিফ্রেশ
+            </button>
+          </div>
+
+          {loadingHebaApps ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>তথ্য লোড হচ্ছে...</div>
+          ) : hebaApplications.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b', fontSize: '14px', background: '#f8fafc', borderRadius: '12px', border: '1.5px dashed #cbd5e1' }}>
+              এখনো কোনো হেবা দলিল মঞ্জুর বা প্রেরণ করা হয়নি।
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
+                    <th style={{ padding: '10px 12px' }}>দলিল নং / আবেদন</th>
+                    <th style={{ padding: '10px 12px' }}>দাতার তথ্য</th>
+                    <th style={{ padding: '10px 12px' }}>গ্রহীতার তথ্য ও সম্পর্ক</th>
+                    <th style={{ padding: '10px 12px' }}>জমির বিবরণ</th>
+                    <th style={{ padding: '10px 12px' }}>দানকৃত শতক</th>
+                    <th style={{ padding: '10px 12px' }}>বর্তমান স্থিতি</th>
+                    <th style={{ padding: '10px 12px' }}>তারিখ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hebaApplications.map((app) => (
+                    <tr key={app._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px', fontFamily: 'monospace', color: '#047857', fontWeight: '800' }}>
+                        <div>{app.deed_no}</div>
+                        <div style={{ fontSize: '10px', color: '#64748b' }}>{app.application_no}</div>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <strong style={{ color: '#0f172a' }}>{app.heba?.donor_name}</strong>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {app.heba?.donor_nid}</div>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <strong style={{ color: '#0f172a' }}>{app.heba?.recipient_name}</strong>
+                        <div style={{ fontSize: '11px', color: '#047857', fontWeight: '700' }}>সম্পর্ক: {app.heba?.relationship}</div>
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ color: '#0f172a' }}>দাগ: <strong>{app.heba?.dag_no}</strong> | খতিয়ান: {app.heba?.khatian_no}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>মৌজা: {app.heba?.mouza}</div>
+                      </td>
+                      <td style={{ padding: '12px', fontWeight: '800', color: '#047857' }}>
+                        {app.heba?.gift_area_decimal} শতক
+                      </td>
+                      <td style={{ padding: '12px' }}>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                          background: app.status === 'Approved' ? '#dcfce7' : '#fef3c7',
+                          color: app.status === 'Approved' ? '#166534' : '#92400e',
+                          border: `1px solid ${app.status === 'Approved' ? '#86efac' : '#fde68a'}`,
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px'
+                        }}>
+                          {app.status === 'Approved' ? <CheckCircle size={12} color="#166534" /> : <Clock size={12} color="#d97706" />}
+                          <span>{app.status === 'Approved' ? '✅ এসি ল্যান্ড অনুমোদিত' : '⏳ এসি ল্যান্ডে নামজারি অপেক্ষমান'}</span>
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px', fontSize: '12px', color: '#64748b' }}>
+                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString('bn-BD') : 'সম্প্রতি'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

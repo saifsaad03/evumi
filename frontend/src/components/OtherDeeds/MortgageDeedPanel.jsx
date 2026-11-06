@@ -11,12 +11,13 @@ import {
   Shield,
   Fingerprint,
   RefreshCw,
-  FileCheck
+  FileCheck,
+  Clock
 } from 'lucide-react';
 import CascadingLandSelector from './CascadingLandSelector';
 
 export default function MortgageDeedPanel() {
-  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' or 'unlock'
+  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'unlock' | 'tracking'
 
   // Creation form states
   const [ownerNid, setOwnerNid] = useState('');
@@ -61,9 +62,7 @@ export default function MortgageDeedPanel() {
   const [unlockError, setUnlockError] = useState(null);
 
   useEffect(() => {
-    if (activeSubTab === 'unlock') {
-      fetchLockedLands();
-    }
+    fetchLockedLands();
   }, [activeSubTab]);
 
   const fetchLockedLands = async () => {
@@ -339,8 +338,8 @@ export default function MortgageDeedPanel() {
         </div>
       </div>
 
-      {/* Sub-Tabs: Create vs Unlock */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+      {/* Sub-Tabs: Create vs Unlock vs Tracking */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
         <button
           type="button"
           onClick={() => setActiveSubTab('create')}
@@ -350,12 +349,13 @@ export default function MortgageDeedPanel() {
             gap: '8px',
             padding: '10px 22px',
             borderRadius: '10px',
-            border: 'none',
+            border: activeSubTab === 'create' ? '1.5px solid #701a75' : '1.5px solid #cbd5e1',
             fontSize: '13.5px',
             fontWeight: '800',
             cursor: 'pointer',
-            background: activeSubTab === 'create' ? '#701a75' : '#f1f5f9',
-            color: activeSubTab === 'create' ? '#ffffff' : '#475569',
+            background: activeSubTab === 'create' ? '#701a75' : '#f8fafc',
+            color: activeSubTab === 'create' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'create' ? '0 4px 12px rgba(112, 26, 117, 0.25)' : 'none',
             transition: 'all 0.2s'
           }}
         >
@@ -372,17 +372,51 @@ export default function MortgageDeedPanel() {
             gap: '8px',
             padding: '10px 22px',
             borderRadius: '10px',
-            border: 'none',
+            border: activeSubTab === 'unlock' ? '1.5px solid #701a75' : '1.5px solid #cbd5e1',
             fontSize: '13.5px',
             fontWeight: '800',
             cursor: 'pointer',
-            background: activeSubTab === 'unlock' ? '#701a75' : '#f1f5f9',
-            color: activeSubTab === 'unlock' ? '#ffffff' : '#475569',
+            background: activeSubTab === 'unlock' ? '#701a75' : '#f8fafc',
+            color: activeSubTab === 'unlock' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'unlock' ? '0 4px 12px rgba(112, 26, 117, 0.25)' : 'none',
             transition: 'all 0.2s'
           }}
         >
           <Unlock size={16} />
-          <span>২. বন্ধক দায়মুক্তি ও জমি আনলক ({lockedLands.length})</span>
+          <span>২. বন্ধক দায়মুক্তি ও জমি আনলক</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveSubTab('tracking'); fetchLockedLands(); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: activeSubTab === 'tracking' ? '1.5px solid #701a75' : '1.5px solid #cbd5e1',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeSubTab === 'tracking' ? '#701a75' : '#f8fafc',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'tracking' ? '0 4px 12px rgba(112, 26, 117, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Clock size={16} />
+          <span>৩. প্রেরিত বন্ধকি দলিলের স্থিতি ও ট্র্যাকিং</span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '999px',
+            background: activeSubTab === 'tracking' ? 'rgba(255,255,255,0.3)' : '#e2e8f0',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#475569',
+            fontWeight: '800'
+          }}>
+            {lockedLands.length}
+          </span>
         </button>
       </div>
 
@@ -936,6 +970,123 @@ export default function MortgageDeedPanel() {
                   <span>{unlocking ? 'দায়মুক্তি হচ্ছে...' : 'বন্ধক দায়মুক্তি সম্পন্ন ও জমি আনলক করুন'}</span>
                 </button>
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* SUB-TAB 3: Dedicated Mortgage Tracking Table */}
+      {activeSubTab === 'tracking' && (
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={20} color="#701a75" />
+                প্রেরিত বন্ধকি দলিলের স্থিতি ও জমি ট্র্যাকিং
+              </h3>
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+                আর্থিক প্রতিষ্ঠান বা ব্যক্তির নিকট বন্ধকাবদ্ধ সকল জমির বর্তমান দায় সংক্রান্ত স্থিতি
+              </p>
+            </div>
+            <button
+              onClick={fetchLockedLands}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 16px',
+                fontSize: '13px',
+                background: '#f1f5f9',
+                border: '1.5px solid #94a3b8',
+                borderRadius: '8px',
+                color: '#0f172a',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={14} className={loadingLocked ? 'animate-spin' : ''} />
+              <span>রিফ্রেশ</span>
+            </button>
+          </div>
+
+          {loadingLocked ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+              <div>তথ্য লোড হচ্ছে...</div>
+            </div>
+          ) : lockedLands.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔒</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>বর্তমানে কোনো জমি বন্ধকাবদ্ধ নেই</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>নতুন বন্ধকি দলিল সম্পাদন করা হলে তা এখানে প্রদর্শিত হবে</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
+                    <th style={{ padding: '12px 14px' }}>বন্ধকি দলিল নং</th>
+                    <th style={{ padding: '12px 14px' }}>জমির মালিক</th>
+                    <th style={{ padding: '12px 14px' }}>জমির বিবরণ</th>
+                    <th style={{ padding: '12px 14px' }}>বন্ধকগ্রহীতা / ব্যাংক</th>
+                    <th style={{ padding: '12px 14px' }}>ঋণের পরিমাণ ও তারিখ</th>
+                    <th style={{ padding: '12px 14px' }}>বর্তমান অবস্থা</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lockedLands.map((land) => {
+                    const m = land.mortgage_details || {};
+                    return (
+                      <tr key={land._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontFamily: 'monospace', color: '#701a75', fontWeight: '800' }}>
+                            {m.mortgage_deed_no || `MORT-${land.dag_no}`}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '700', color: '#0f172a' }}>{land.owner_name}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {land.owner_nid}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ color: '#0f172a' }}>দাগ: <strong>{land.dag_no}</strong> | খতিয়ান: {land.khatian_no}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>
+                            মৌজা: {land.mouza} ({land.available_area_decimal} শতক)
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '700', color: '#0f172a' }}>{m.mortgagee_name || 'ব্যাংক / ঋণদাতা'}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>NID/আইডি: {m.mortgagee_nid || '-'}</div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <div style={{ fontWeight: '800', color: '#b91c1c' }}>
+                            ৳ {Number(m.loan_amount_bdt || 0).toLocaleString('bn-BD')}
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                            তারিখ: {m.mortgage_date || (land.updatedAt ? new Date(land.updatedAt).toLocaleDateString('bn-BD') : '-')}
+                          </div>
+                        </td>
+                        <td style={{ padding: '12px 14px' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            padding: '4px 10px',
+                            borderRadius: '999px',
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            background: '#fce7f3',
+                            color: '#9d174d',
+                            border: '1px solid #f472b6'
+                          }}>
+                            <Lock size={12} />
+                            <span>বন্ধকাবদ্ধ (Locked)</span>
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

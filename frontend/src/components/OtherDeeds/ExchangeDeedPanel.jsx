@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   ArrowRightLeft,
@@ -10,11 +10,17 @@ import {
   Fingerprint,
   UserCheck,
   FileCheck,
-  Info
+  Info,
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import CascadingLandSelector from './CascadingLandSelector';
 
 export default function ExchangeDeedPanel() {
+  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'tracking'
+  const [exchangeApplications, setExchangeApplications] = useState([]);
+  const [loadingExchangeApps, setLoadingExchangeApps] = useState(false);
+
   // Party 1 States
   const [p1Nid, setP1Nid] = useState('');
   const [p1User, setP1User] = useState(null);
@@ -43,6 +49,24 @@ export default function ExchangeDeedPanel() {
   const [submitting, setSubmitting] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(null);
   const [submissionError, setSubmissionError] = useState(null);
+
+  const fetchExchangeApplications = async () => {
+    setLoadingExchangeApps(true);
+    try {
+      const res = await axios.get('/api/other-deeds/exchange/applications');
+      if (res.data?.success) {
+        setExchangeApplications(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load exchange applications:', err);
+    } finally {
+      setLoadingExchangeApps(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExchangeApplications();
+  }, []);
 
   // Search Land Helper
   const searchPartyLand = async (party, params) => {
@@ -186,6 +210,7 @@ export default function ExchangeDeedPanel() {
         setP2Otp('');
         setP1Biometric(false);
         setP2Biometric(false);
+        fetchExchangeApplications();
       } else {
         setSubmissionError(res.data.message || 'বিনিময় দলিল তৈরি ব্যর্থ হয়েছে।');
       }
@@ -239,24 +264,85 @@ export default function ExchangeDeedPanel() {
         </div>
       </div>
 
-      {submissionSuccess && (
-        <div style={{
-          background: '#dcfce7',
-          border: '1.5px solid #86efac',
-          borderRadius: '12px',
-          padding: '16px 20px',
-          color: '#166534',
-          fontSize: '15px',
-          fontWeight: '800',
-          marginBottom: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px'
-        }}>
-          <CheckCircle size={22} color="#166534" />
-          <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
-        </div>
-      )}
+      {/* Sub-Tabs Navigation */}
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          onClick={() => setActiveSubTab('create')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: activeSubTab === 'create' ? '1.5px solid #1d4ed8' : '1.5px solid #cbd5e1',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeSubTab === 'create' ? 'linear-gradient(135deg, #1e3a8a, #2563eb)' : '#f8fafc',
+            color: activeSubTab === 'create' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'create' ? '0 4px 14px rgba(37, 99, 235, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <ArrowRightLeft size={16} />
+          <span>১. নতুন বিনিময় দলিল সম্পাদন</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveSubTab('tracking'); fetchExchangeApplications(); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: activeSubTab === 'tracking' ? '1.5px solid #1d4ed8' : '1.5px solid #cbd5e1',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeSubTab === 'tracking' ? 'linear-gradient(135deg, #1e3a8a, #2563eb)' : '#f8fafc',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'tracking' ? '0 4px 14px rgba(37, 99, 235, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Clock size={16} />
+          <span>২. প্রেরিত বিনিময় দলিলের স্থিতি ও ট্র্যাকিং</span>
+          <span style={{
+            fontSize: '11px',
+            padding: '2px 8px',
+            borderRadius: '999px',
+            background: activeSubTab === 'tracking' ? 'rgba(255,255,255,0.3)' : '#e2e8f0',
+            color: activeSubTab === 'tracking' ? '#ffffff' : '#475569',
+            fontWeight: '800'
+          }}>
+            {exchangeApplications.length}
+          </span>
+        </button>
+      </div>
+
+      {activeSubTab === 'create' && (
+        <>
+          {submissionSuccess && (
+            <div style={{
+              background: '#dcfce7',
+              border: '1.5px solid #86efac',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              color: '#166534',
+              fontSize: '15px',
+              fontWeight: '800',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <CheckCircle size={22} color="#166534" />
+              <span>আবেদন পাঠানো সম্পন্ন হলো ।</span>
+            </div>
+          )}
 
       {/* Side-by-Side Dual Party Columns */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', marginBottom: '24px' }}>
@@ -528,6 +614,135 @@ export default function ExchangeDeedPanel() {
           </button>
         </div>
       </div>
+      </>
+      )}
+
+      {/* SUB-TAB 2: Dedicated Tracking Table */}
+      {activeSubTab === 'tracking' && (
+        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
+            <div>
+              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Clock size={20} color="#2563eb" />
+                প্রেরিত বিনিময় দলিলের স্থিতি ও যুগপৎ নামজারি ট্র্যাকিং
+              </h3>
+              <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0 0' }}>
+                এসি ল্যান্ড অফিসে প্রেরিত দ্বিপাক্ষিক বিনিময় দলিল ও মিউটেশনের হালনাগাদ অগ্রগতি
+              </p>
+            </div>
+            <button
+              onClick={fetchExchangeApplications}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '7px 16px',
+                fontSize: '13px',
+                background: '#f1f5f9',
+                border: '1.5px solid #94a3b8',
+                borderRadius: '8px',
+                color: '#0f172a',
+                fontWeight: '700',
+                cursor: 'pointer'
+              }}
+            >
+              <RefreshCw size={14} className={loadingExchangeApps ? 'animate-spin' : ''} />
+              <span>রিফ্রেশ</span>
+            </button>
+          </div>
+
+          {loadingExchangeApps ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+              <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+              <div>তথ্য লোড হচ্ছে...</div>
+            </div>
+          ) : exchangeApplications.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '8px' }}>🔄</div>
+              <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>এখনো কোনো বিনিময় দলিল প্রেরণ করা হয়নি</div>
+              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>নতুন বিনিময় দলিল সম্পাদন করলে তা এখানে প্রদর্শিত হবে</div>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
+                    <th style={{ padding: '12px 14px' }}>দলিল ও আবেদন নং</th>
+                    <th style={{ padding: '12px 14px' }}>১ম পক্ষ (মালিক-১ ও জমি)</th>
+                    <th style={{ padding: '12px 14px' }}>২য় পক্ষ (মালিক-২ ও জমি)</th>
+                    <th style={{ padding: '12px 14px' }}>আবেদনের তারিখ</th>
+                    <th style={{ padding: '12px 14px' }}>বর্তমান স্ট্যাটাস</th>
+                    <th style={{ padding: '12px 14px' }}>পর্যালোচনা/রেজিস্ট্রার</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {exchangeApplications.map((app) => (
+                    <tr key={app._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontFamily: 'monospace', color: '#1d4ed8', fontWeight: '800' }}>
+                          {app.deed_no || app.application_no}
+                        </div>
+                        {app.application_no && (
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>আবেদন: {app.application_no}</div>
+                        )}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: '700', color: '#0f172a' }}>{app.exchange?.owner1?.name || 'মালিক-১'}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {app.exchange?.owner1?.nid}</div>
+                        <div style={{ fontSize: '11px', color: '#1e40af', marginTop: '2px' }}>
+                          দাগ: {app.exchange?.owner1?.dag_no} | খতিয়ান: {app.exchange?.owner1?.khatian_no}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#475569' }}>
+                          মৌজা: {app.exchange?.owner1?.mouza} ({app.exchange?.owner1?.area_decimal} শতক)
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <div style={{ fontWeight: '700', color: '#0f172a' }}>{app.exchange?.owner2?.name || 'মালিক-২'}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {app.exchange?.owner2?.nid}</div>
+                        <div style={{ fontSize: '11px', color: '#059669', marginTop: '2px' }}>
+                          দাগ: {app.exchange?.owner2?.dag_no} | খতিয়ান: {app.exchange?.owner2?.khatian_no}
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#475569' }}>
+                          মৌজা: {app.exchange?.owner2?.mouza} ({app.exchange?.owner2?.area_decimal} শতক)
+                        </div>
+                      </td>
+                      <td style={{ padding: '12px 14px', fontSize: '12px', color: '#334155' }}>
+                        {app.createdAt ? new Date(app.createdAt).toLocaleDateString('bn-BD', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                      </td>
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '4px 10px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: '800',
+                          background: app.status === 'Approved' ? '#dcfce7' : app.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                          color: app.status === 'Approved' ? '#166534' : app.status === 'Rejected' ? '#991b1b' : '#92400e',
+                          border: `1px solid ${app.status === 'Approved' ? '#86efac' : app.status === 'Rejected' ? '#f87171' : '#fde68a'}`
+                        }}>
+                          {app.status === 'Approved'
+                            ? '✅ অনুমোদিত ও হস্তান্তরিত'
+                            : app.status === 'Rejected'
+                            ? '❌ প্রত্যাখ্যাত (Rejected)'
+                            : '⏳ এসি ল্যান্ডে অপেক্ষমান'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '12px 14px', fontSize: '12px', color: '#334155' }}>
+                        <div>অফিসার: {app.submitted_by_officer || 'সাব-রেজিস্ট্রার'}</div>
+                        {app.rejection_reason && (
+                          <div style={{ color: '#dc2626', fontWeight: '700', fontSize: '11px', marginTop: '2px' }}>
+                            কারণ: {app.rejection_reason}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
