@@ -161,9 +161,8 @@ export default function HebaGiftDeedPanel() {
 
       if (res.data.success) {
         let msg = res.data.message || `ওটিপি সফলভাবে পাঠানো হয়েছে।`;
-        if (res.data.simulated_otp) {
-          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
-          setDonorOtp(res.data.simulated_otp);
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
         }
         setDonorOtpSentMsg(msg);
       }

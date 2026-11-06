@@ -165,9 +165,8 @@ export default function BaynaDeedPanel() {
       });
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated_otp) {
-          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
-          setSellerOtp(res.data.simulated_otp);
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
         }
         setSellerOtpSentMsg(msg);
       }
@@ -253,9 +252,8 @@ export default function BaynaDeedPanel() {
       });
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated_otp) {
-          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
-          setBuyerOtp(res.data.simulated_otp);
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
         }
         setUnlockOtpSentMsg(msg);
       }

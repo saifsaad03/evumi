@@ -121,10 +121,8 @@ export default function ExchangeDeedPanel() {
 
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated_otp) {
-          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
-          if (isP1) setP1Otp(res.data.simulated_otp);
-          else setP2Otp(res.data.simulated_otp);
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
         }
         if (isP1) setP1OtpSentMsg(msg);
         else setP2OtpSentMsg(msg);

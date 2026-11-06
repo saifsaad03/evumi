@@ -86,12 +86,12 @@ export default function ACLandOtherDeedsPanel() {
         deed_no: selectedHeba.deed_no
       });
       if (res.data.success) {
-        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated_otp) {
-          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
-          setRecipientOtp(res.data.simulated_otp);
+        let msg = res.data.message || 'গ্রহীতার নিবন্ধিত ইমেইলে ওটিপি কোড সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
         }
         setRecipientOtpSentMsg(msg);
+        setRecipientOtp(''); // ইনপুট বক্সে অটো-ইনপুট হবে না; গ্রহীতার নিকট থেকে কোড সংগ্রহ করে ম্যানুয়ালি ইনপুট দিতে হবে
       }
     } catch (err) {
       const errMsg = err.response?.data?.message || err.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।';
