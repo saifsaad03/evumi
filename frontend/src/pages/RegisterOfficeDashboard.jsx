@@ -63,214 +63,14 @@ export default function RegisterOfficeDashboard() {
     dag_no: ''
   });
 
-  // ── Cascading Fetch Functions (Admin-created dynamic hierarchy) ──
-  const fetchDagsForKhatian = async (khatianId, khatianNo, currentFilter) => {
+  // ── Cascading Handlers (User-driven dropdown selection without auto-cascade) ──
+  const loadInitialHierarchy = async () => {
+    setLoadingLocations(true);
     try {
-      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}`);
-      const dags = res.data?.data || [];
-      setDagsList(dags);
-      if (dags.length > 0) {
-        const firstDag = dags[0];
-        setSelectedDagId(firstDag._id);
-        const updatedFilter = {
-          ...currentFilter,
-          khatian_no: khatianNo,
-          dag_no: firstDag.dag_no
-        };
-        setFilter(updatedFilter);
-        handleSearchLandWithParams(updatedFilter);
-      } else {
-        setSelectedDagId('');
-        const updatedFilter = {
-          ...currentFilter,
-          khatian_no: khatianNo,
-          dag_no: ''
-        };
-        setFilter(updatedFilter);
-        setSelectedLand(null);
-      }
-    } catch (err) {
-      console.error('Error fetching dags:', err);
-      setDagsList([]);
-      setSelectedDagId('');
-      setSelectedLand(null);
-    }
-  };
-
-  const fetchKhatiansForMouza = async (mouzaId, mouzaName, jlNo, currentFilter) => {
-    try {
-      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}`);
-      const khatians = res.data?.data || [];
-      setKhatiansList(khatians);
-      if (khatians.length > 0) {
-        const firstKh = khatians[0];
-        setSelectedKhatianId(firstKh._id);
-        const updatedFilter = {
-          ...currentFilter,
-          mouza: mouzaName,
-          jl_no: jlNo || '',
-          khatian_no: firstKh.khatian_no
-        };
-        setFilter(updatedFilter);
-        await fetchDagsForKhatian(firstKh._id, firstKh.khatian_no, updatedFilter);
-      } else {
-        setSelectedKhatianId('');
-        setDagsList([]);
-        setSelectedDagId('');
-        const updatedFilter = {
-          ...currentFilter,
-          mouza: mouzaName,
-          jl_no: jlNo || '',
-          khatian_no: '',
-          dag_no: ''
-        };
-        setFilter(updatedFilter);
-        setSelectedLand(null);
-      }
-    } catch (err) {
-      console.error('Error fetching khatians:', err);
-      setKhatiansList([]);
-      setSelectedKhatianId('');
-      setDagsList([]);
-      setSelectedDagId('');
-      setSelectedLand(null);
-    }
-  };
-
-  const fetchMouzasForUpazila = async (upzId, upzName, currentFilter) => {
-    try {
-      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
-      const mouzas = res.data?.data || [];
-      setMouzasList(mouzas);
-      if (mouzas.length > 0) {
-        const firstMouza = mouzas[0];
-        setSelectedMouzaId(firstMouza._id);
-        const updatedFilter = {
-          ...currentFilter,
-          upazila: upzName,
-          mouza: firstMouza.name,
-          jl_no: firstMouza.jl_no || ''
-        };
-        setFilter(updatedFilter);
-        await fetchKhatiansForMouza(firstMouza._id, firstMouza.name, firstMouza.jl_no, updatedFilter);
-      } else {
-        setSelectedMouzaId('');
-        setKhatiansList([]);
-        setSelectedKhatianId('');
-        setDagsList([]);
-        setSelectedDagId('');
-        const updatedFilter = {
-          ...currentFilter,
-          upazila: upzName,
-          mouza: '',
-          jl_no: '',
-          khatian_no: '',
-          dag_no: ''
-        };
-        setFilter(updatedFilter);
-        setSelectedLand(null);
-      }
-    } catch (err) {
-      console.error('Error fetching mouzas:', err);
-      setMouzasList([]);
-      setSelectedMouzaId('');
-      setKhatiansList([]);
-      setSelectedKhatianId('');
-      setDagsList([]);
-      setSelectedDagId('');
-      setSelectedLand(null);
-    }
-  };
-
-  const fetchUpazilasForDistrict = async (distId, distName, currentFilter) => {
-    try {
-      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
-      const upazilas = res.data?.data || [];
-      setUpazilasList(upazilas);
-      if (upazilas.length > 0) {
-        const firstUpz = upazilas[0];
-        setSelectedUpzId(firstUpz._id);
-        const updatedFilter = {
-          ...currentFilter,
-          district: distName,
-          upazila: firstUpz.name
-        };
-        setFilter(updatedFilter);
-        await fetchMouzasForUpazila(firstUpz._id, firstUpz.name, updatedFilter);
-      } else {
-        setSelectedUpzId('');
-        setMouzasList([]);
-        setSelectedMouzaId('');
-        setKhatiansList([]);
-        setSelectedKhatianId('');
-        setDagsList([]);
-        setSelectedDagId('');
-        const updatedFilter = {
-          ...currentFilter,
-          district: distName,
-          upazila: '',
-          mouza: '',
-          jl_no: '',
-          khatian_no: '',
-          dag_no: ''
-        };
-        setFilter(updatedFilter);
-        setSelectedLand(null);
-      }
-    } catch (err) {
-      console.error('Error fetching upazilas:', err);
-      setUpazilasList([]);
-      setSelectedUpzId('');
-      setMouzasList([]);
-      setSelectedMouzaId('');
-      setKhatiansList([]);
-      setSelectedKhatianId('');
-      setDagsList([]);
-      setSelectedDagId('');
-      setSelectedLand(null);
-    }
-  };
-
-  const fetchDistrictsForDivision = async (divId, divName, currentFilter) => {
-    try {
-      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
-      const districts = res.data?.data || [];
-      setDistrictsList(districts);
-      if (districts.length > 0) {
-        const firstDist = districts[0];
-        setSelectedDistId(firstDist._id);
-        const updatedFilter = {
-          ...currentFilter,
-          division: divName,
-          district: firstDist.name
-        };
-        setFilter(updatedFilter);
-        await fetchUpazilasForDistrict(firstDist._id, firstDist.name, updatedFilter);
-      } else {
-        setSelectedDistId('');
-        setUpazilasList([]);
-        setSelectedUpzId('');
-        setMouzasList([]);
-        setSelectedMouzaId('');
-        setKhatiansList([]);
-        setSelectedKhatianId('');
-        setDagsList([]);
-        setSelectedDagId('');
-        const updatedFilter = {
-          ...currentFilter,
-          division: divName,
-          district: '',
-          upazila: '',
-          mouza: '',
-          jl_no: '',
-          khatian_no: '',
-          dag_no: ''
-        };
-        setFilter(updatedFilter);
-        setSelectedLand(null);
-      }
-    } catch (err) {
-      console.error('Error fetching districts:', err);
+      const res = await axios.get('/api/locations/divisions');
+      const divisions = res.data?.data || [];
+      setDivisionsList(divisions);
+      setSelectedDivId('');
       setDistrictsList([]);
       setSelectedDistId('');
       setUpazilasList([]);
@@ -281,44 +81,17 @@ export default function RegisterOfficeDashboard() {
       setSelectedKhatianId('');
       setDagsList([]);
       setSelectedDagId('');
+      setFilter({
+        division: '',
+        district: '',
+        upazila: '',
+        mouza: '',
+        jl_no: '',
+        khatian_no: '',
+        dag_no: ''
+      });
       setSelectedLand(null);
-    }
-  };
-
-  const loadInitialHierarchy = async () => {
-    setLoadingLocations(true);
-    try {
-      const res = await axios.get('/api/locations/divisions');
-      const divisions = res.data?.data || [];
-      setDivisionsList(divisions);
-      if (divisions.length > 0) {
-        const firstDiv = divisions[0];
-        setSelectedDivId(firstDiv._id);
-        const initialFilter = {
-          division: firstDiv.name,
-          district: '',
-          upazila: '',
-          mouza: '',
-          jl_no: '',
-          khatian_no: '',
-          dag_no: ''
-        };
-        setFilter(initialFilter);
-        await fetchDistrictsForDivision(firstDiv._id, firstDiv.name, initialFilter);
-      } else {
-        setSelectedDivId('');
-        setDistrictsList([]);
-        setSelectedDistId('');
-        setUpazilasList([]);
-        setSelectedUpzId('');
-        setMouzasList([]);
-        setSelectedMouzaId('');
-        setKhatiansList([]);
-        setSelectedKhatianId('');
-        setDagsList([]);
-        setSelectedDagId('');
-        setSelectedLand(null);
-      }
+      setPlotMeta(null);
     } catch (err) {
       console.error('Failed to load initial hierarchy:', err);
     } finally {
@@ -326,14 +99,26 @@ export default function RegisterOfficeDashboard() {
     }
   };
 
-  // Cascade selection change handlers
   const handleDivisionChange = async (divId) => {
+    setSelectedDivId(divId);
+    setSelectedDistId('');
+    setDistrictsList([]);
+    setSelectedUpzId('');
+    setUpazilasList([]);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+    setSelectedLand(null);
+    setPlotMeta(null);
+
     const div = divisionsList.find(d => d._id === divId);
-    if (!div) return;
-    setSelectedDivId(div._id);
+    const divName = div ? div.name : '';
+
     const updatedFilter = {
-      ...filter,
-      division: div.name,
+      division: divName,
       district: '',
       upazila: '',
       mouza: '',
@@ -342,16 +127,40 @@ export default function RegisterOfficeDashboard() {
       dag_no: ''
     };
     setFilter(updatedFilter);
-    await fetchDistrictsForDivision(div._id, div.name, updatedFilter);
+
+    if (!divId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      setDistrictsList(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching districts:', err);
+      setDistrictsList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
   const handleDistrictChange = async (distId) => {
+    setSelectedDistId(distId);
+    setSelectedUpzId('');
+    setUpazilasList([]);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+    setSelectedLand(null);
+    setPlotMeta(null);
+
     const dist = districtsList.find(d => d._id === distId);
-    if (!dist) return;
-    setSelectedDistId(dist._id);
+    const distName = dist ? dist.name : '';
+
     const updatedFilter = {
       ...filter,
-      district: dist.name,
+      district: distName,
       upazila: '',
       mouza: '',
       jl_no: '',
@@ -359,57 +168,135 @@ export default function RegisterOfficeDashboard() {
       dag_no: ''
     };
     setFilter(updatedFilter);
-    await fetchUpazilasForDistrict(dist._id, dist.name, updatedFilter);
+
+    if (!distId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      setUpazilasList(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching upazilas:', err);
+      setUpazilasList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
   const handleUpazilaChange = async (upzId) => {
+    setSelectedUpzId(upzId);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+    setSelectedLand(null);
+    setPlotMeta(null);
+
     const upz = upazilasList.find(u => u._id === upzId);
-    if (!upz) return;
-    setSelectedUpzId(upz._id);
+    const upzName = upz ? upz.name : '';
+
     const updatedFilter = {
       ...filter,
-      upazila: upz.name,
+      upazila: upzName,
       mouza: '',
       jl_no: '',
       khatian_no: '',
       dag_no: ''
     };
     setFilter(updatedFilter);
-    await fetchMouzasForUpazila(upz._id, upz.name, updatedFilter);
+
+    if (!upzId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      setMouzasList(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching mouzas:', err);
+      setMouzasList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
   const handleMouzaChange = async (mouzaId) => {
+    setSelectedMouzaId(mouzaId);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+    setSelectedLand(null);
+    setPlotMeta(null);
+
     const mouza = mouzasList.find(m => m._id === mouzaId);
-    if (!mouza) return;
-    setSelectedMouzaId(mouza._id);
+    const mouzaName = mouza ? mouza.name : '';
+    const jlNo = mouza ? (mouza.jl_no || '') : '';
+
     const updatedFilter = {
       ...filter,
-      mouza: mouza.name,
-      jl_no: mouza.jl_no || '',
+      mouza: mouzaName,
+      jl_no: jlNo,
       khatian_no: '',
       dag_no: ''
     };
     setFilter(updatedFilter);
-    await fetchKhatiansForMouza(mouza._id, mouza.name, mouza.jl_no, updatedFilter);
+
+    if (!mouzaId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}`);
+      setKhatiansList(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching khatians:', err);
+      setKhatiansList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
   const handleKhatianChange = async (khatianId) => {
+    setSelectedKhatianId(khatianId);
+    setSelectedDagId('');
+    setDagsList([]);
+    setSelectedLand(null);
+    setPlotMeta(null);
+
     const kh = khatiansList.find(k => k._id === khatianId);
-    if (!kh) return;
-    setSelectedKhatianId(kh._id);
+    const khatianNo = kh ? kh.khatian_no : '';
+
     const updatedFilter = {
       ...filter,
-      khatian_no: kh.khatian_no,
+      khatian_no: khatianNo,
       dag_no: ''
     };
     setFilter(updatedFilter);
-    await fetchDagsForKhatian(kh._id, kh.khatian_no, updatedFilter);
+
+    if (!khatianId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}`);
+      setDagsList(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching dags:', err);
+      setDagsList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
   };
 
   const handleDagChange = (dagId) => {
+    setSelectedDagId(dagId);
     const dag = dagsList.find(d => d._id === dagId);
-    if (!dag) return;
-    setSelectedDagId(dag._id);
+    if (!dag) {
+      setFilter(prev => ({ ...prev, dag_no: '' }));
+      setSelectedLand(null);
+      setPlotMeta(null);
+      return;
+    }
     const updatedFilter = {
       ...filter,
       dag_no: dag.dag_no
@@ -570,6 +457,10 @@ export default function RegisterOfficeDashboard() {
   };
 
   const handleSearchLand = () => {
+    if (!filter.division || !filter.district || !filter.upazila || !filter.mouza || !filter.dag_no) {
+      alert('অনুগ্রহ করে বিভাগ, জেলা, উপজেলা, মৌজা এবং দাগ নম্বর নির্বাচন করুন।');
+      return;
+    }
     handleSearchLandWithParams(filter);
   };
 
@@ -887,7 +778,7 @@ export default function RegisterOfficeDashboard() {
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
                       disabled={loadingLocations || divisionsList.length === 0}
                     >
-                      {divisionsList.length === 0 && <option value="">বিভাগ নেই</option>}
+                      <option value="">-- বিভাগ নির্বাচন করুন --</option>
                       {divisionsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
                     </select>
                   </div>
@@ -899,9 +790,11 @@ export default function RegisterOfficeDashboard() {
                       value={selectedDistId}
                       onChange={(e) => handleDistrictChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                      disabled={loadingLocations || districtsList.length === 0}
+                      disabled={loadingLocations || !selectedDivId || districtsList.length === 0}
                     >
-                      {districtsList.length === 0 && <option value="">জেলা নেই</option>}
+                      <option value="">
+                        {!selectedDivId ? '-- প্রথমে বিভাগ নির্বাচন করুন --' : (districtsList.length === 0 ? '-- কোনো জেলা নেই --' : '-- জেলা নির্বাচন করুন --')}
+                      </option>
                       {districtsList.map(d => <option key={d._id} value={d._id}>{d.name}</option>)}
                     </select>
                   </div>
@@ -913,9 +806,11 @@ export default function RegisterOfficeDashboard() {
                       value={selectedUpzId}
                       onChange={(e) => handleUpazilaChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                      disabled={loadingLocations || upazilasList.length === 0}
+                      disabled={loadingLocations || !selectedDistId || upazilasList.length === 0}
                     >
-                      {upazilasList.length === 0 && <option value="">উপজেলা নেই</option>}
+                      <option value="">
+                        {!selectedDistId ? '-- প্রথমে জেলা নির্বাচন করুন --' : (upazilasList.length === 0 ? '-- কোনো উপজেলা নেই --' : '-- উপজেলা নির্বাচন করুন --')}
+                      </option>
                       {upazilasList.map(u => <option key={u._id} value={u._id}>{u.name}</option>)}
                     </select>
                   </div>
@@ -927,9 +822,11 @@ export default function RegisterOfficeDashboard() {
                       value={selectedMouzaId}
                       onChange={(e) => handleMouzaChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                      disabled={loadingLocations || mouzasList.length === 0}
+                      disabled={loadingLocations || !selectedUpzId || mouzasList.length === 0}
                     >
-                      {mouzasList.length === 0 && <option value="">মৌজা নেই</option>}
+                      <option value="">
+                        {!selectedUpzId ? '-- প্রথমে উপজেলা নির্বাচন করুন --' : (mouzasList.length === 0 ? '-- কোনো মৌজা নেই --' : '-- মৌজা নির্বাচন করুন --')}
+                      </option>
                       {mouzasList.map(m => (
                         <option key={m._id} value={m._id}>
                           {m.name} {m.jl_no ? `(জে.এল ${m.jl_no})` : ''}
@@ -957,9 +854,11 @@ export default function RegisterOfficeDashboard() {
                       value={selectedKhatianId}
                       onChange={(e) => handleKhatianChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                      disabled={loadingLocations || khatiansList.length === 0}
+                      disabled={loadingLocations || !selectedMouzaId || khatiansList.length === 0}
                     >
-                      {khatiansList.length === 0 && <option value="">খতিয়ান নেই</option>}
+                      <option value="">
+                        {!selectedMouzaId ? '-- প্রথমে মৌজা নির্বাচন করুন --' : (khatiansList.length === 0 ? '-- কোনো খতিয়ান নেই --' : '-- খতিয়ান নির্বাচন করুন --')}
+                      </option>
                       {khatiansList.map(k => (
                         <option key={k._id} value={k._id}>
                           {k.khatian_no} {k.khatian_type ? `(${k.khatian_type})` : ''}
@@ -975,9 +874,11 @@ export default function RegisterOfficeDashboard() {
                       value={selectedDagId}
                       onChange={(e) => handleDagChange(e.target.value)}
                       style={{ width: '100%', fontSize: '12px', color: '#0f172a', background: '#ffffff' }}
-                      disabled={loadingLocations || dagsList.length === 0}
+                      disabled={loadingLocations || !selectedKhatianId || dagsList.length === 0}
                     >
-                      {dagsList.length === 0 && <option value="">দাগ নেই</option>}
+                      <option value="">
+                        {!selectedKhatianId ? '-- প্রথমে খতিয়ান নির্বাচন করুন --' : (dagsList.length === 0 ? '-- কোনো দাগ নেই --' : '-- দাগ নির্বাচন করুন --')}
+                      </option>
                       {dagsList.map(d => (
                         <option key={d._id} value={d._id}>
                           দাগ {d.dag_no} {d.total_area_decimal ? `(${d.total_area_decimal} শতক)` : ''}
@@ -1046,77 +947,10 @@ export default function RegisterOfficeDashboard() {
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px', fontSize: '12px' }}>
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2px' }}>
-                          <span style={{ color: '#475569', fontSize: '11px', fontWeight: '600' }}>খতিয়ান নং:</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setEditingKhatian(!editingKhatian);
-                              if (!editingKhatian) {
-                                setCustomKhatianInput(selectedLand.khatian_no || filter.khatian_no || '');
-                              }
-                            }}
-                            style={{
-                              fontSize: '11px',
-                              color: '#2563eb',
-                              background: '#eff6ff',
-                              border: '1px solid #bfdbfe',
-                              borderRadius: '4px',
-                              padding: '2px 6px',
-                              cursor: 'pointer',
-                              fontWeight: '600'
-                            }}
-                          >
-                            {editingKhatian ? 'বাতিল' : '✏️ পরিবর্তন'}
-                          </button>
-                        </div>
-                        {editingKhatian ? (
-                          <div style={{ marginTop: '4px' }}>
-                            <div style={{ display: 'flex', gap: '4px' }}>
-                              <input
-                                type="text"
-                                value={customKhatianInput}
-                                onChange={(e) => setCustomKhatianInput(e.target.value)}
-                                placeholder="খতিয়ান নং"
-                                style={{
-                                  flex: 1,
-                                  padding: '4px 6px',
-                                  fontSize: '12px',
-                                  border: '1px solid #94a3b8',
-                                  borderRadius: '4px',
-                                  color: '#0f172a',
-                                  background: '#ffffff'
-                                }}
-                              />
-                              <button
-                                type="button"
-                                onClick={handleSaveKhatianToDb}
-                                disabled={savingKhatian}
-                                style={{
-                                  padding: '4px 8px',
-                                  fontSize: '11px',
-                                  fontWeight: '700',
-                                  background: '#16a34a',
-                                  color: '#ffffff',
-                                  border: 'none',
-                                  borderRadius: '4px',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                {savingKhatian ? '...' : 'সংরক্ষণ'}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <strong style={{ color: '#0f172a', fontSize: '13px' }}>
-                            {selectedLand.khatian_no || filter.khatian_no || 'অনির্ধারিত'}
-                          </strong>
-                        )}
-                        {khatianSaveMsg && (
-                          <div style={{ fontSize: '10px', color: '#16a34a', marginTop: '4px', fontWeight: '700' }}>
-                            {khatianSaveMsg}
-                          </div>
-                        )}
+                        <span style={{ color: '#475569', display: 'block', fontSize: '11px', marginBottom: '2px', fontWeight: '600' }}>খতিয়ান নং:</span>
+                        <strong style={{ color: '#0f172a', fontSize: '14px', fontWeight: '800' }}>
+                          {selectedLand.khatian_no || filter.khatian_no || 'অনির্ধারিত'}
+                        </strong>
                       </div>
 
                       <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #cbd5e1' }}>
