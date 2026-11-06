@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {
   ArrowRightLeft,
@@ -12,20 +12,13 @@ import {
   FileCheck,
   Info
 } from 'lucide-react';
+import CascadingLandSelector from './CascadingLandSelector';
 
 export default function ExchangeDeedPanel() {
-  // Common locations
-  const [divisions, setDivisions] = useState([]);
-  useEffect(() => {
-    axios.get('/api/locations/divisions').then(res => setDivisions(res.data?.data || [])).catch(() => {});
-  }, []);
-
   // Party 1 States
   const [p1Nid, setP1Nid] = useState('');
   const [p1User, setP1User] = useState(null);
-  const [p1Mouza, setP1Mouza] = useState('');
-  const [p1Dag, setP1Dag] = useState('');
-  const [p1Khatian, setP1Khatian] = useState('');
+  const [p1Loc, setP1Loc] = useState({ division: '', district: '', upazila: '', mouza: '', khatian_no: '', dag_no: '' });
   const [p1Land, setP1Land] = useState(null);
   const [p1Searching, setP1Searching] = useState(false);
   const [p1Error, setP1Error] = useState(null);
@@ -37,9 +30,7 @@ export default function ExchangeDeedPanel() {
   // Party 2 States
   const [p2Nid, setP2Nid] = useState('');
   const [p2User, setP2User] = useState(null);
-  const [p2Mouza, setP2Mouza] = useState('');
-  const [p2Dag, setP2Dag] = useState('');
-  const [p2Khatian, setP2Khatian] = useState('');
+  const [p2Loc, setP2Loc] = useState({ division: '', district: '', upazila: '', mouza: '', khatian_no: '', dag_no: '' });
   const [p2Land, setP2Land] = useState(null);
   const [p2Searching, setP2Searching] = useState(false);
   const [p2Error, setP2Error] = useState(null);
@@ -54,16 +45,16 @@ export default function ExchangeDeedPanel() {
   const [submissionError, setSubmissionError] = useState(null);
 
   // Search Land Helper
-  const searchPartyLand = async (party) => {
+  const searchPartyLand = async (party, params) => {
     const isP1 = party === 1;
-    const nid = isP1 ? p1Nid.trim() : p2Nid.trim();
-    const mouza = isP1 ? p1Mouza.trim() : p2Mouza.trim();
-    const dag_no = isP1 ? p1Dag.trim() : p2Dag.trim();
-    const khatian_no = isP1 ? p1Khatian.trim() : p2Khatian.trim();
+    const nid = (params?.owner_nid || (isP1 ? p1Nid : p2Nid) || '').trim();
+    const mouza = (params?.mouza || (isP1 ? p1Loc.mouza : p2Loc.mouza) || '').trim();
+    const dag_no = (params?.dag_no || (isP1 ? p1Loc.dag_no : p2Loc.dag_no) || '').trim();
+    const khatian_no = (params?.khatian_no || (isP1 ? p1Loc.khatian_no : p2Loc.khatian_no) || '').trim();
 
     if (!nid || !mouza || !dag_no || !khatian_no) {
-      if (isP1) setP1Error('অনুগ্রহ করে মালিক-১ এর NID, মৌজা, দাগ ও খতিয়ান নম্বর লিখুন।');
-      else setP2Error('অনুগ্রহ করে মালিক-২ এর NID, মৌজা, দাগ ও খতিয়ান নম্বর লিখুন।');
+      if (isP1) setP1Error('অনুগ্রহ করে মালিক-১ এর NID এবং বিভাগ থেকে দাগ নম্বর পর্যন্ত প্রতিটি অপশন সিলেক্ট করুন।');
+      else setP2Error('অনুগ্রহ করে মালিক-২ এর NID এবং বিভাগ থেকে দাগ নম্বর পর্যন্ত প্রতিটি অপশন সিলেক্ট করুন।');
       return;
     }
 
@@ -81,7 +72,10 @@ export default function ExchangeDeedPanel() {
         owner_nid: nid,
         mouza,
         dag_no,
-        khatian_no
+        khatian_no,
+        division: params?.division || '',
+        district: params?.district || '',
+        upazila: params?.upazila || ''
       });
 
       if (lRes.data.success && lRes.data.record) {
@@ -107,27 +101,31 @@ export default function ExchangeDeedPanel() {
     const land = isP1 ? p1Land : p2Land;
     const user = isP1 ? p1User : p2User;
 
-    if (!land || !user) return;
-    const email = (user.email || land.owner_email || '').trim().toLowerCase();
-    if (!email) {
-      alert(`${isP1 ? 'মালিক-১' : 'মালিক-২'} এর কোনো ইমেইল ঠিকানা পাওয়া যায়নি।`);
-      return;
-    }
+    if (!land) return;
+    const email = (user?.email || land.owner_email || '').trim().toLowerCase();
+    const nid = user?.nid || land.owner_nid;
+    const name = user?.name || land.owner_name;
 
-    if (isP1) setP1OtpSending(true);
-    else setP2OtpSending(true);
+    if (isP1) { setP1OtpSending(true); setP1OtpSentMsg(null); }
+    else { setP2OtpSending(true); setP2OtpSentMsg(null); }
 
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
         recipient_email: email,
-        recipient_name: user.name,
+        recipient_nid: nid,
+        recipient_name: name,
+        record_id: land._id,
         deed_title: 'জমি বিনিময় দলিল রেজিস্ট্রেশন',
         deed_no: `EXCH-DAG-${land.dag_no}`
       });
 
       if (res.data.success) {
-        if (isP1) setP1OtpSentMsg(res.data.message);
-        else setP2OtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        if (isP1) setP1OtpSentMsg(msg);
+        else setP2OtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -152,7 +150,7 @@ export default function ExchangeDeedPanel() {
       return;
     }
     if (!p1Otp.trim() || !p2Otp.trim()) {
-      setSubmissionError('উভয় মালিকেরই ওটিপি (OTP) কোড প্রদান আবশ্যক।');
+      setSubmissionError('উভয় মালিকেরই ৬ ডিজিটের ওটিপি (OTP) কোড প্রদান আবশ্যক।');
       return;
     }
     if (!p1Biometric || !p2Biometric) {
@@ -176,26 +174,30 @@ export default function ExchangeDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmissionSuccess(res.data.message);
+        setSubmissionSuccess(res.data.message || 'বিনিময় দলিল সফলভাবে অনুমোদনের জন্য এসি ল্যান্ডে প্রেরিত হয়েছে।');
         setP1Land(null);
         setP2Land(null);
+        setP1User(null);
+        setP2User(null);
         setP1Otp('');
         setP2Otp('');
         setP1Biometric(false);
         setP2Biometric(false);
+      } else {
+        setSubmissionError(res.data.message || 'বিনিময় দলিল তৈরি ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      setSubmissionError(err.response?.data?.message || 'বিনিময় দলিল সৃষ্টিতে সমস্যা হয়েছে।');
+      setSubmissionError(err.response?.data?.message || 'বিনিময় দলিল সৃষ্টিতে সার্ভার ত্রুটি হয়েছে।');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ padding: '8px 0' }}>
-      {/* Header Banner */}
+    <div style={{ padding: '4px' }}>
+      {/* Top Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #1e3a8a, #2563eb)',
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%)',
         color: '#ffffff',
         padding: '20px 24px',
         borderRadius: '16px',
@@ -254,7 +256,7 @@ export default function ExchangeDeedPanel() {
       )}
 
       {/* Side-by-Side Dual Party Columns */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         
         {/* Party 1 Column */}
         <div className="glass-card" style={{
@@ -265,7 +267,7 @@ export default function ExchangeDeedPanel() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
             <span style={{ fontSize: '14px', fontWeight: '800', color: '#1e40af' }}>
-              👤 পক্ষ-১ (মালিক-১ এর জমি)
+              👤 পক্ষ-১ (মালিক-১ এর জমি অনুসন্ধান)
             </span>
             {p1Land && (
               <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1e40af', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>
@@ -274,131 +276,86 @@ export default function ExchangeDeedPanel() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>মালিক-১ এর NID</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="NID নম্বর"
-                value={p1Nid}
-                onChange={e => setP1Nid(e.target.value)}
-                style={{ width: '100%', marginTop: '3px', fontWeight: '600' }}
-              />
+          <CascadingLandSelector
+            nidLabel="মালিক-১ এর NID নম্বর"
+            nidPlaceholder="মালিক-১ এর NID লিখুন"
+            nidValue={p1Nid}
+            onNidChange={setP1Nid}
+            onSelectionChange={setP1Loc}
+            onSearch={(params) => searchPartyLand(1, params)}
+            searching={p1Searching}
+            accentColor="#2563eb"
+            searchButtonText="🔍 পক্ষ-১ এর জমি ও মালিকানা যাচাই"
+            compact={true}
+          />
+
+          {p1Error && (
+            <div style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700', marginTop: '10px', background: '#fee2e2', padding: '8px 12px', borderRadius: '6px' }}>
+              {p1Error}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>মৌজা</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="যেমন: গুজিয়া"
-                  value={p1Mouza}
-                  onChange={e => setP1Mouza(e.target.value)}
-                  style={{ width: '100%', marginTop: '3px' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>দাগ নং</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="দাগ নং"
-                  value={p1Dag}
-                  onChange={e => setP1Dag(e.target.value)}
-                  style={{ width: '100%', marginTop: '3px' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>খতিয়ান নং</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="খতিয়ান নং"
-                value={p1Khatian}
-                onChange={e => setP1Khatian(e.target.value)}
-                style={{ width: '100%', marginTop: '3px' }}
-              />
-            </div>
+          )}
 
-            <button
-              type="button"
-              onClick={() => searchPartyLand(1)}
-              disabled={p1Searching}
-              style={{
-                padding: '8px 14px',
-                background: '#2563eb',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '700',
-                fontSize: '12.5px',
-                cursor: p1Searching ? 'wait' : 'pointer',
-                marginTop: '4px'
-              }}
-            >
-              {p1Searching ? 'যাচাই হচ্ছে...' : 'মালিক-১ এর জমি যাচাই করুন'}
-            </button>
-
-            {p1Error && <div style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700' }}>{p1Error}</div>}
-
-            {p1Land && p1User && (
-              <div style={{ background: '#eff6ff', padding: '12px', borderRadius: '8px', fontSize: '12px', marginTop: '6px' }}>
-                <div>মালিক: <strong>{p1User.name}</strong></div>
-                <div>জমি: <strong>{p1Land.available_area_decimal} শতক</strong> (দাগ: {p1Land.dag_no}, খতিয়ান: {p1Land.khatian_no})</div>
-                
-                {/* OTP & Biometric for P1 */}
-                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #bfdbfe' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700' }}>মালিক-১ ওটিপি:</span>
-                    <button
-                      type="button"
-                      onClick={() => sendPartyOtp(1)}
-                      disabled={p1OtpSending}
-                      style={{ fontSize: '11px', background: '#1d4ed8', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      {p1OtpSending ? '...' : 'ওটিপি পাঠান'}
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="৬ ডিজিট কোড"
-                    maxLength={6}
-                    value={p1Otp}
-                    onChange={e => setP1Otp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
-                  />
-                  {p1OtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '3px' }}>{p1OtpSentMsg}</div>}
-
+          {p1Land && p1User && (
+            <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '14px', borderRadius: '10px', fontSize: '12.5px', marginTop: '14px' }}>
+              <div style={{ fontWeight: '800', color: '#1e40af', marginBottom: '4px' }}>✅ মালিক-১ নিশ্চিতকরণ:</div>
+              <div>মালিক: <strong>{p1User.name}</strong> (NID: {p1User.nid})</div>
+              <div>ইমেইল: <strong>{p1Land.owner_email || p1User.email || 'সংরক্ষিত'}</strong></div>
+              <div>জমি: <strong>{p1Land.available_area_decimal} শতক</strong> (দাগ: {p1Land.dag_no}, খতিয়ান: {p1Land.khatian_no}, মৌজা: {p1Land.mouza})</div>
+              
+              {/* OTP & Biometric for P1 */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #bfdbfe' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontWeight: '700', color: '#1e40af' }}>মালিক-১ ওটিপি (OTP):</span>
                   <button
                     type="button"
-                    onClick={() => setP1Biometric(!p1Biometric)}
-                    style={{
-                      width: '100%',
-                      marginTop: '8px',
-                      padding: '6px',
-                      background: p1Biometric ? '#dcfce7' : '#ffffff',
-                      color: p1Biometric ? '#166534' : '#475569',
-                      border: `1px solid ${p1Biometric ? '#86efac' : '#cbd5e1'}`,
-                      borderRadius: '6px',
-                      fontSize: '11.5px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '5px'
-                    }}
+                    onClick={() => sendPartyOtp(1)}
+                    disabled={p1OtpSending}
+                    style={{ fontSize: '11px', background: '#1d4ed8', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                   >
-                    <Fingerprint size={14} />
-                    <span>{p1Biometric ? 'মালিক-১ বায়োমেট্রিক সম্পন্ন' : 'মালিক-১ ফিঙ্গারপ্রিন্ট স্ক্যান'}</span>
+                    {p1OtpSending ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                   </button>
                 </div>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="৬ ডিজিটের কোড"
+                  maxLength={6}
+                  value={p1Otp}
+                  onChange={e => setP1Otp(e.target.value.replace(/\D/g, ''))}
+                  style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
+                />
+                {p1OtpSentMsg && (
+                  <div style={{ fontSize: '11.5px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>
+                    {p1OtpSentMsg}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setP1Biometric(!p1Biometric)}
+                  style={{
+                    width: '100%',
+                    marginTop: '10px',
+                    padding: '8px',
+                    background: p1Biometric ? '#dcfce7' : '#ffffff',
+                    color: p1Biometric ? '#166534' : '#475569',
+                    border: `1.5px solid ${p1Biometric ? '#86efac' : '#cbd5e1'}`,
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Fingerprint size={16} />
+                  <span>{p1Biometric ? 'মালিক-১ বায়োমেট্রিক সিল সম্পন্ন' : 'মালিক-১ ফিঙ্গারপ্রিন্ট স্ক্যান'}</span>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Party 2 Column */}
@@ -410,7 +367,7 @@ export default function ExchangeDeedPanel() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
             <span style={{ fontSize: '14px', fontWeight: '800', color: '#047857' }}>
-              👤 পক্ষ-২ (মালিক-২ এর জমি)
+              👤 পক্ষ-২ (মালিক-২ এর জমি অনুসন্ধান)
             </span>
             {p2Land && (
               <span style={{ fontSize: '11px', background: '#dcfce7', color: '#047857', padding: '3px 8px', borderRadius: '6px', fontWeight: '800' }}>
@@ -419,131 +376,86 @@ export default function ExchangeDeedPanel() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>মালিক-২ এর NID</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="NID নম্বর"
-                value={p2Nid}
-                onChange={e => setP2Nid(e.target.value)}
-                style={{ width: '100%', marginTop: '3px', fontWeight: '600' }}
-              />
+          <CascadingLandSelector
+            nidLabel="মালিক-২ এর NID নম্বর"
+            nidPlaceholder="মালিক-২ এর NID লিখুন"
+            nidValue={p2Nid}
+            onNidChange={setP2Nid}
+            onSelectionChange={setP2Loc}
+            onSearch={(params) => searchPartyLand(2, params)}
+            searching={p2Searching}
+            accentColor="#047857"
+            searchButtonText="🔍 পক্ষ-২ এর জমি ও মালিকানা যাচাই"
+            compact={true}
+          />
+
+          {p2Error && (
+            <div style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700', marginTop: '10px', background: '#fee2e2', padding: '8px 12px', borderRadius: '6px' }}>
+              {p2Error}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>মৌজা</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="যেমন: গুজিয়া"
-                  value={p2Mouza}
-                  onChange={e => setP2Mouza(e.target.value)}
-                  style={{ width: '100%', marginTop: '3px' }}
-                />
-              </div>
-              <div>
-                <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>দাগ নং</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="দাগ নং"
-                  value={p2Dag}
-                  onChange={e => setP2Dag(e.target.value)}
-                  style={{ width: '100%', marginTop: '3px' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label style={{ fontSize: '12px', fontWeight: '700', color: '#475569' }}>খতিয়ান নং</label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="খতিয়ান নং"
-                value={p2Khatian}
-                onChange={e => setP2Khatian(e.target.value)}
-                style={{ width: '100%', marginTop: '3px' }}
-              />
-            </div>
+          )}
 
-            <button
-              type="button"
-              onClick={() => searchPartyLand(2)}
-              disabled={p2Searching}
-              style={{
-                padding: '8px 14px',
-                background: '#047857',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '700',
-                fontSize: '12.5px',
-                cursor: p2Searching ? 'wait' : 'pointer',
-                marginTop: '4px'
-              }}
-            >
-              {p2Searching ? 'যাচাই হচ্ছে...' : 'মালিক-২ এর জমি যাচাই করুন'}
-            </button>
-
-            {p2Error && <div style={{ color: '#dc2626', fontSize: '12px', fontWeight: '700' }}>{p2Error}</div>}
-
-            {p2Land && p2User && (
-              <div style={{ background: '#f0fdf4', padding: '12px', borderRadius: '8px', fontSize: '12px', marginTop: '6px' }}>
-                <div>মালিক: <strong>{p2User.name}</strong></div>
-                <div>জমি: <strong>{p2Land.available_area_decimal} শতক</strong> (দাগ: {p2Land.dag_no}, খতিয়ান: {p2Land.khatian_no})</div>
-                
-                {/* OTP & Biometric for P2 */}
-                <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #bbf7d0' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontWeight: '700' }}>মালিক-২ ওটিপি:</span>
-                    <button
-                      type="button"
-                      onClick={() => sendPartyOtp(2)}
-                      disabled={p2OtpSending}
-                      style={{ fontSize: '11px', background: '#047857', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      {p2OtpSending ? '...' : 'ওটিপি পাঠান'}
-                    </button>
-                  </div>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="৬ ডিজিট কোড"
-                    maxLength={6}
-                    value={p2Otp}
-                    onChange={e => setP2Otp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
-                  />
-                  {p2OtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '3px' }}>{p2OtpSentMsg}</div>}
-
+          {p2Land && p2User && (
+            <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', padding: '14px', borderRadius: '10px', fontSize: '12.5px', marginTop: '14px' }}>
+              <div style={{ fontWeight: '800', color: '#047857', marginBottom: '4px' }}>✅ মালিক-২ নিশ্চিতকরণ:</div>
+              <div>মালিক: <strong>{p2User.name}</strong> (NID: {p2User.nid})</div>
+              <div>ইমেইল: <strong>{p2Land.owner_email || p2User.email || 'সংরক্ষিত'}</strong></div>
+              <div>জমি: <strong>{p2Land.available_area_decimal} শতক</strong> (দাগ: {p2Land.dag_no}, খতিয়ান: {p2Land.khatian_no}, মৌজা: {p2Land.mouza})</div>
+              
+              {/* OTP & Biometric for P2 */}
+              <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #bbf7d0' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                  <span style={{ fontWeight: '700', color: '#047857' }}>মালিক-২ ওটিপি (OTP):</span>
                   <button
                     type="button"
-                    onClick={() => setP2Biometric(!p2Biometric)}
-                    style={{
-                      width: '100%',
-                      marginTop: '8px',
-                      padding: '6px',
-                      background: p2Biometric ? '#dcfce7' : '#ffffff',
-                      color: p2Biometric ? '#166534' : '#475569',
-                      border: `1px solid ${p2Biometric ? '#86efac' : '#cbd5e1'}`,
-                      borderRadius: '6px',
-                      fontSize: '11.5px',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '5px'
-                    }}
+                    onClick={() => sendPartyOtp(2)}
+                    disabled={p2OtpSending}
+                    style={{ fontSize: '11px', background: '#047857', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                   >
-                    <Fingerprint size={14} />
-                    <span>{p2Biometric ? 'মালিক-২ বায়োমেট্রিক সম্পন্ন' : 'মালিক-২ ফিঙ্গারপ্রিন্ট স্ক্যান'}</span>
+                    {p2OtpSending ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                   </button>
                 </div>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="৬ ডিজিটের কোড"
+                  maxLength={6}
+                  value={p2Otp}
+                  onChange={e => setP2Otp(e.target.value.replace(/\D/g, ''))}
+                  style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
+                />
+                {p2OtpSentMsg && (
+                  <div style={{ fontSize: '11.5px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>
+                    {p2OtpSentMsg}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setP2Biometric(!p2Biometric)}
+                  style={{
+                    width: '100%',
+                    marginTop: '10px',
+                    padding: '8px',
+                    background: p2Biometric ? '#dcfce7' : '#ffffff',
+                    color: p2Biometric ? '#166534' : '#475569',
+                    border: `1.5px solid ${p2Biometric ? '#86efac' : '#cbd5e1'}`,
+                    borderRadius: '6px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Fingerprint size={16} />
+                  <span>{p2Biometric ? 'মালিক-২ বায়োমেট্রিক সিল সম্পন্ন' : 'মালিক-২ ফিঙ্গারপ্রিন্ট স্ক্যান'}</span>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -616,4 +528,3 @@ export default function ExchangeDeedPanel() {
     </div>
   );
 }
-

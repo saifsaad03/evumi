@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Gift,
@@ -15,6 +15,7 @@ import {
   Info,
   Clock
 } from 'lucide-react';
+import CascadingLandSelector from './CascadingLandSelector';
 
 const ALLOWED_RELATIONS = [
   'পিতা',
@@ -32,23 +33,15 @@ const ALLOWED_RELATIONS = [
 ];
 
 export default function HebaGiftDeedPanel() {
-  // Cascading location states
-  const [divisions, setDivisions] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [upazilas, setUpazilas] = useState([]);
-  const [mouzas, setMouzas] = useState([]);
-
-  const [selectedDivId, setSelectedDivId] = useState('');
-  const [selectedDistId, setSelectedDistId] = useState('');
-  const [selectedUpzId, setSelectedUpzId] = useState('');
-  const [selectedMouzaId, setSelectedMouzaId] = useState('');
-
-  // Search parameters
-  const [searchForm, setSearchForm] = useState({
-    owner_nid: '',
+  // Donor search parameters
+  const [donorNid, setDonorNid] = useState('');
+  const [landLocation, setLandLocation] = useState({
+    division: '',
+    district: '',
+    upazila: '',
     mouza: '',
-    dag_no: '',
-    khatian_no: ''
+    khatian_no: '',
+    dag_no: ''
   });
 
   const [searching, setSearching] = useState(false);
@@ -77,79 +70,18 @@ export default function HebaGiftDeedPanel() {
   const [submissionSuccess, setSubmissionSuccess] = useState(null);
   const [submissionError, setSubmissionError] = useState(null);
 
-  useEffect(() => {
-    loadDivisions();
-  }, []);
-
-  const loadDivisions = async () => {
-    try {
-      const res = await axios.get('/api/locations/divisions');
-      setDivisions(res.data?.data || []);
-    } catch (err) {
-      console.error('Failed to load divisions:', err);
-    }
-  };
-
-  const handleDivisionChange = async (divId) => {
-    setSelectedDivId(divId);
-    setSelectedDistId('');
-    setSelectedUpzId('');
-    setSelectedMouzaId('');
-    setDistricts([]);
-    setUpazilas([]);
-    setMouzas([]);
-    setSearchForm(p => ({ ...p, mouza: '' }));
-
-    if (!divId) return;
-    try {
-      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
-      setDistricts(res.data?.data || []);
-    } catch (err) {
-      console.error('Error fetching districts:', err);
-    }
-  };
-
-  const handleDistrictChange = async (distId) => {
-    setSelectedDistId(distId);
-    setSelectedUpzId('');
-    setSelectedMouzaId('');
-    setUpazilas([]);
-    setMouzas([]);
-    setSearchForm(p => ({ ...p, mouza: '' }));
-
-    if (!distId) return;
-    try {
-      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
-      setUpazilas(res.data?.data || []);
-    } catch (err) {
-      console.error('Error fetching upazilas:', err);
-    }
-  };
-
-  const handleUpazilaChange = async (upzId) => {
-    setSelectedUpzId(upzId);
-    setSelectedMouzaId('');
-    setMouzas([]);
-    setSearchForm(p => ({ ...p, mouza: '' }));
-
-    if (!upzId) return;
-    try {
-      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
-      setMouzas(res.data?.data || []);
-    } catch (err) {
-      console.error('Error fetching mouzas:', err);
-    }
-  };
-
-  const handleMouzaChange = (mouzaId) => {
-    setSelectedMouzaId(mouzaId);
-    const m = mouzas.find(item => item._id === mouzaId);
-    setSearchForm(p => ({ ...p, mouza: m ? (m.name || m.bn_name) : '' }));
-  };
-
   // Search donor's land
-  const handleSearchLand = async (e) => {
-    e.preventDefault();
+  const handleSearchLand = async (searchParams) => {
+    const nid = (searchParams?.owner_nid || donorNid || '').trim();
+    const mouza = (searchParams?.mouza || landLocation.mouza || '').trim();
+    const dag_no = (searchParams?.dag_no || landLocation.dag_no || '').trim();
+    const khatian_no = (searchParams?.khatian_no || landLocation.khatian_no || '').trim();
+
+    if (!nid || !mouza || !dag_no || !khatian_no) {
+      setSearchError('অনুগ্রহ করে দাতার NID নম্বর এবং বিভাগ থেকে শুরু করে দাগ নম্বর পর্যন্ত প্রতিটি ড্রপডাউন ক্রমানুসারে সিলেক্ট করুন।');
+      return;
+    }
+
     setSearching(true);
     setSearchResult(null);
     setSearchError(null);
@@ -158,10 +90,13 @@ export default function HebaGiftDeedPanel() {
 
     try {
       const res = await axios.post('/api/other-deeds/search-owner-land', {
-        owner_nid: searchForm.owner_nid.trim(),
-        mouza: searchForm.mouza,
-        dag_no: searchForm.dag_no.trim(),
-        khatian_no: searchForm.khatian_no.trim()
+        owner_nid: nid,
+        mouza,
+        dag_no,
+        khatian_no,
+        division: searchParams?.division || landLocation.division || '',
+        district: searchParams?.district || landLocation.district || '',
+        upazila: searchParams?.upazila || landLocation.upazila || ''
       });
 
       if (res.data.success && res.data.record) {
@@ -180,9 +115,14 @@ export default function HebaGiftDeedPanel() {
   // Verify Recipient NID
   const handleVerifyRecipient = async () => {
     if (!recipientNid.trim()) {
-      setRecipientError('অনুগ্রহ করে গ্রহীতার NID লিখুন।');
+      setRecipientError('অনুগ্রহ করে গ্রহীতার NID নম্বর লিখুন।');
       return;
     }
+    if (recipientNid.trim() === donorNid.trim()) {
+      setRecipientError('দাতা ও গ্রহীতার NID একই হতে পারে না।');
+      return;
+    }
+
     setVerifyingRecipient(true);
     setRecipientData(null);
     setRecipientError(null);
@@ -192,10 +132,10 @@ export default function HebaGiftDeedPanel() {
         nid: recipientNid.trim()
       });
 
-      if (res.data.success) {
+      if (res.data.success && res.data.user) {
         setRecipientData(res.data.user);
       } else {
-        setRecipientError(res.data.message || 'গ্রহীতা পাওয়া যায়নি।');
+        setRecipientError(res.data.message || 'গ্রহীতার তথ্য পাওয়া যায়নি।');
       }
     } catch (err) {
       setRecipientError(err.response?.data?.message || 'গ্রহীতা অনুসন্ধানে সমস্যা হয়েছে।');
@@ -207,24 +147,24 @@ export default function HebaGiftDeedPanel() {
   // Send Donor OTP
   const handleSendDonorOtp = async () => {
     if (!searchResult) return;
-    const donorEmail = searchResult.owner_email;
-    if (!donorEmail) {
-      alert('দাতার প্রোফাইলে কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
-
     setSendingDonorOtp(true);
     setDonorOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
-        recipient_email: donorEmail,
+        recipient_email: searchResult.owner_email || '',
+        recipient_nid: searchResult.owner_nid || donorNid,
         recipient_name: searchResult.owner_name,
+        record_id: searchResult._id,
         deed_title: 'দানপত্র / হেবা দলিল রেজিস্ট্রেশন',
         deed_no: `HEBA-DAG-${searchResult.dag_no}`
       });
 
       if (res.data.success) {
-        setDonorOtpSentMsg(res.data.message || `ওটিপি সফলভাবে '${donorEmail}' ঠিকানায় পাঠানো হয়েছে।`);
+        let msg = res.data.message || `ওটিপি সফলভাবে পাঠানো হয়েছে।`;
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setDonorOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'দাতার ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -235,7 +175,7 @@ export default function HebaGiftDeedPanel() {
 
   // Submit Heba Deed to AC Land
   const handleSubmitHebaDeed = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!searchResult || !recipientData) {
       setSubmissionError('দাতা ও গ্রহীতার তথ্য সঠিকভাবে যাচাই করুন।');
       return;
@@ -245,7 +185,7 @@ export default function HebaGiftDeedPanel() {
       return;
     }
     if (!donorOtp.trim()) {
-      setSubmissionError('দাতার ইমেইলে প্রেরিত ওটিপি কোড প্রদান আবশ্যক।');
+      setSubmissionError('দাতার ইমেইলে প্রেরিত ৬ ডিজিটের ওটিপি কোড প্রদান আবশ্যক।');
       return;
     }
     if (!donorBiometricVerified) {
@@ -260,13 +200,13 @@ export default function HebaGiftDeedPanel() {
     }
 
     setSubmitting(true);
-    setSubmissionSuccess(null);
     setSubmissionError(null);
+    setSubmissionSuccess(null);
 
     try {
       const res = await axios.post('/api/other-deeds/heba/create', {
         land_record_id: searchResult._id,
-        donor_nid: searchResult.owner_nid,
+        donor_nid: donorNid.trim() || searchResult.owner_nid,
         recipient_nid: recipientData.nid,
         relationship,
         gift_area_decimal: gArea,
@@ -275,27 +215,27 @@ export default function HebaGiftDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmissionSuccess(res.data.message);
+        setSubmissionSuccess(res.data.message || 'হেবা দলিল সফলভাবে অনুমোদনের জন্য এসি ল্যান্ড কার্যালয়ে পাঠানো হয়েছে।');
         setSearchResult(null);
         setRecipientData(null);
-        setRecipientNid('');
         setDonorOtp('');
-        setDonorOtpSentMsg(null);
         setDonorBiometricVerified(false);
         setRelationVerifiedCheck(false);
+      } else {
+        setSubmissionError(res.data.message || 'হেবা দলিল তৈরি ব্যর্থ হয়েছে।');
       }
     } catch (err) {
-      setSubmissionError(err.response?.data?.message || 'হেবা দলিল সৃষ্টিতে সমস্যা হয়েছে।');
+      setSubmissionError(err.response?.data?.message || 'সার্ভার সমস্যা হয়েছে।');
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div style={{ padding: '8px 0' }}>
+    <div style={{ padding: '4px' }}>
       {/* Header Banner */}
       <div style={{
-        background: 'linear-gradient(135deg, #065f46, #047857)',
+        background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)',
         color: '#ffffff',
         padding: '20px 24px',
         borderRadius: '16px',
@@ -361,154 +301,27 @@ export default function HebaGiftDeedPanel() {
         padding: '24px',
         marginBottom: '24px'
       }}>
-        <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Search size={18} color="#047857" />
-          <span>১. দাতার জমি অনুসন্ধান ও মালিকানা যাচাই (Donor & Land Verification)</span>
-        </h3>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Search size={18} color="#047857" />
+            <span>১. দাতার জমি অনুসন্ধান ও মালিকানা যাচাই (Donor & Land Verification)</span>
+          </h3>
+          <span style={{ fontSize: '11px', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+            ধাপ ১ / ৩
+          </span>
+        </div>
 
-        <form onSubmit={handleSearchLand}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                দাতার NID নম্বর <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="দাতার NID লিখুন"
-                value={searchForm.owner_nid}
-                onChange={e => setSearchForm(p => ({ ...p, owner_nid: e.target.value }))}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                বিভাগ
-              </label>
-              <select
-                className="input-field"
-                value={selectedDivId}
-                onChange={e => handleDivisionChange(e.target.value)}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
-              >
-                <option value="">-- বিভাগ বেছে নিন --</option>
-                {divisions.map(d => (
-                  <option key={d._id} value={d._id}>{d.name || d.bn_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                জেলা
-              </label>
-              <select
-                className="input-field"
-                value={selectedDistId}
-                onChange={e => handleDistrictChange(e.target.value)}
-                disabled={!selectedDivId}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: !selectedDivId ? '#f8fafc' : '#ffffff' }}
-              >
-                <option value="">-- জেলা বেছে নিন --</option>
-                {districts.map(d => (
-                  <option key={d._id} value={d._id}>{d.name || d.bn_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                উপজেলা
-              </label>
-              <select
-                className="input-field"
-                value={selectedUpzId}
-                onChange={e => handleUpazilaChange(e.target.value)}
-                disabled={!selectedDistId}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: !selectedDistId ? '#f8fafc' : '#ffffff' }}
-              >
-                <option value="">-- উপজেলা বেছে নিন --</option>
-                {upazilas.map(u => (
-                  <option key={u._id} value={u._id}>{u.name || u.bn_name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                মৌজা <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
-                className="input-field"
-                value={selectedMouzaId}
-                onChange={e => handleMouzaChange(e.target.value)}
-                disabled={!selectedUpzId}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600', background: !selectedUpzId ? '#f8fafc' : '#ffffff' }}
-                required
-              >
-                <option value="">-- মৌজা বেছে নিন --</option>
-                {mouzas.map(m => (
-                  <option key={m._id} value={m._id}>{m.name || m.bn_name} (জে.এল {m.jl_no})</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                দাগ নম্বর <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="যেমন: ১০১"
-                value={searchForm.dag_no}
-                onChange={e => setSearchForm(p => ({ ...p, dag_no: e.target.value }))}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
-                required
-              />
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                খতিয়ান নম্বর <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <input
-                type="text"
-                className="input-field"
-                placeholder="যেমন: ৫২"
-                value={searchForm.khatian_no}
-                onChange={e => setSearchForm(p => ({ ...p, khatian_no: e.target.value }))}
-                style={{ width: '100%', color: '#0f172a', fontWeight: '600' }}
-                required
-              />
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button
-              type="submit"
-              disabled={searching}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '10px 24px',
-                background: 'linear-gradient(135deg, #065f46, #047857)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '8px',
-                fontWeight: '700',
-                fontSize: '13.5px',
-                cursor: searching ? 'wait' : 'pointer'
-              }}
-            >
-              <Search size={16} />
-              <span>{searching ? 'যাচাই হচ্ছে...' : 'জমি ও মালিকানা যাচাই করুন'}</span>
-            </button>
-          </div>
-        </form>
+        <CascadingLandSelector
+          nidLabel="দাতার NID নম্বর"
+          nidPlaceholder="দাতার ১০/১৩/১৭ ডিজিট NID লিখুন"
+          nidValue={donorNid}
+          onNidChange={setDonorNid}
+          onSelectionChange={setLandLocation}
+          onSearch={handleSearchLand}
+          searching={searching}
+          accentColor="#047857"
+          searchButtonText="🔍 দাতার জমি অনুসন্ধান ও মালিকানা যাচাই করুন"
+        />
 
         {searchError && (
           <div style={{
@@ -596,8 +409,8 @@ export default function HebaGiftDeedPanel() {
                 </strong>
               </div>
               <div>
-                <span style={{ color: '#64748b' }}>ইমেইল:</span>{' '}
-                <strong>{searchResult.owner_email || 'সংরক্ষিত নেই'}</strong>
+                <span style={{ color: '#64748b' }}>নিবন্ধিত ইমেইল:</span>{' '}
+                <strong style={{ color: '#0f172a' }}>{searchResult.owner_email || 'সংরক্ষিত আছে'}</strong>
               </div>
             </div>
           </div>
@@ -613,10 +426,15 @@ export default function HebaGiftDeedPanel() {
           padding: '24px',
           marginBottom: '24px'
         }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <UserCheck size={18} color="#047857" />
-            <span>২. গ্রহীতার NID ও রক্তের সম্পর্ক যাচাই (Recipient & Relation Verification)</span>
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UserCheck size={18} color="#047857" />
+              <span>২. গ্রহীতার NID ও রক্তের সম্পর্ক যাচাই (Recipient & Relation Verification)</span>
+            </h3>
+            <span style={{ fontSize: '11px', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+              ধাপ ২ / ৩
+            </span>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', alignItems: 'flex-end', marginBottom: '16px' }}>
             <div>
@@ -758,32 +576,40 @@ export default function HebaGiftDeedPanel() {
           borderRadius: '14px',
           padding: '24px'
         }}>
-          <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Shield size={18} color="#047857" />
-            <span>৩. দাতার সম্মতি, ওটিপি (OTP) ও বায়োমেট্রিক সিল (Grant Deed)</span>
-          </h3>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield size={18} color="#047857" />
+              <span>৩. দাতার সম্মতি, ওটিপি (OTP) ও বায়োমেট্রিক সিল (Grant Deed)</span>
+            </h3>
+            <span style={{ fontSize: '11px', color: '#065f46', background: '#d1fae5', border: '1px solid #a7f3d0', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+              ধাপ ৩ / ৩
+            </span>
+          </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '20px' }}>
             {/* OTP Section */}
             <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>দাতার ইমেইল ওটিপি</span>
+                <span style={{ fontSize: '13px', fontWeight: '700', color: '#1e293b' }}>দাতার ইমেইল ওটিপি (OTP)</span>
                 <button
                   type="button"
                   onClick={handleSendDonorOtp}
                   disabled={sendingDonorOtp}
                   style={{
-                    padding: '5px 12px',
-                    fontSize: '11.5px',
+                    padding: '6px 14px',
+                    fontSize: '12px',
                     fontWeight: '700',
                     background: '#047857',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '6px',
-                    cursor: sendingDonorOtp ? 'wait' : 'pointer'
+                    cursor: sendingDonorOtp ? 'wait' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
-                  <Send size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                  <Send size={12} />
                   {sendingDonorOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                 </button>
               </div>
@@ -792,12 +618,12 @@ export default function HebaGiftDeedPanel() {
                 className="input-field"
                 placeholder="৬ ডিজিটের ওটিপি লিখুন"
                 value={donorOtp}
-                onChange={e => setDonorOtp(e.target.value)}
+                onChange={e => setDonorOtp(e.target.value.replace(/\D/g, ''))}
                 maxLength={6}
-                style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px', fontSize: '15px' }}
+                style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px', fontSize: '16px' }}
               />
               {donorOtpSentMsg && (
-                <div style={{ fontSize: '11.5px', color: '#166534', marginTop: '6px', fontWeight: '600' }}>
+                <div style={{ fontSize: '12px', color: '#166534', marginTop: '6px', fontWeight: '600', background: '#dcfce7', padding: '6px 10px', borderRadius: '6px' }}>
                   {donorOtpSentMsg}
                 </div>
               )}
@@ -816,7 +642,7 @@ export default function HebaGiftDeedPanel() {
                   alignItems: 'center',
                   gap: '8px',
                   width: '100%',
-                  padding: '10px 16px',
+                  padding: '11px 16px',
                   background: donorBiometricVerified ? '#dcfce7' : '#ffffff',
                   color: donorBiometricVerified ? '#166534' : '#475569',
                   border: `1.5px solid ${donorBiometricVerified ? '#86efac' : '#cbd5e1'}`,
@@ -876,4 +702,3 @@ export default function HebaGiftDeedPanel() {
     </div>
   );
 }
-

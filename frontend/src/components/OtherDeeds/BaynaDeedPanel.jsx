@@ -15,15 +15,14 @@ import {
   Calendar,
   DollarSign
 } from 'lucide-react';
+import CascadingLandSelector from './CascadingLandSelector';
 
 export default function BaynaDeedPanel() {
   const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' or 'unlock'
 
   // Creation form states
   const [sellerNid, setSellerNid] = useState('');
-  const [mouza, setMouza] = useState('');
-  const [dagNo, setDagNo] = useState('');
-  const [khatianNo, setKhatianNo] = useState('');
+  const [landLoc, setLandLoc] = useState({ division: '', district: '', upazila: '', mouza: '', khatian_no: '', dag_no: '' });
 
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState(null);
@@ -84,8 +83,17 @@ export default function BaynaDeedPanel() {
   };
 
   // Search Land
-  const handleSearchLand = async (e) => {
-    e.preventDefault();
+  const handleSearchLand = async (params) => {
+    const nid = (params?.owner_nid || sellerNid || '').trim();
+    const mouza = (params?.mouza || landLoc.mouza || '').trim();
+    const dag_no = (params?.dag_no || landLoc.dag_no || '').trim();
+    const khatian_no = (params?.khatian_no || landLoc.khatian_no || '').trim();
+
+    if (!nid || !mouza || !dag_no || !khatian_no) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID এবং বিভাগ থেকে শুরু করে দাগ নম্বর পর্যন্ত প্রতিটি ড্রপডাউন সিলেক্ট করুন।');
+      return;
+    }
+
     setSearching(true);
     setSearchResult(null);
     setSearchError(null);
@@ -94,10 +102,13 @@ export default function BaynaDeedPanel() {
 
     try {
       const res = await axios.post('/api/other-deeds/search-owner-land', {
-        owner_nid: sellerNid.trim(),
-        mouza: mouza.trim(),
-        dag_no: dagNo.trim(),
-        khatian_no: khatianNo.trim()
+        owner_nid: nid,
+        mouza,
+        dag_no,
+        khatian_no,
+        division: params?.division || landLoc.division || '',
+        district: params?.district || landLoc.district || '',
+        upazila: params?.upazila || landLoc.upazila || ''
       });
 
       if (res.data.success && res.data.record) {
@@ -141,22 +152,23 @@ export default function BaynaDeedPanel() {
   // Send Seller OTP
   const handleSendSellerOtp = async () => {
     if (!searchResult) return;
-    const email = (searchResult.owner_email || '').trim().toLowerCase();
-    if (!email) {
-      alert('বিক্রেতার কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
     setSendingSellerOtp(true);
     setSellerOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
-        recipient_email: email,
+        recipient_email: searchResult.owner_email || '',
+        recipient_nid: searchResult.owner_nid || sellerNid,
         recipient_name: searchResult.owner_name,
+        record_id: searchResult._id,
         deed_title: 'বায়নাপত্র দলিল সম্পাদন ও লকিং',
         deed_no: `BAYNA-DAG-${searchResult.dag_no}`
       });
       if (res.data.success) {
-        setSellerOtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setSellerOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -167,7 +179,7 @@ export default function BaynaDeedPanel() {
 
   // Submit Bayna Deed
   const handleSubmitBayna = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!searchResult || !buyerData) {
       setSubmitError('বিক্রেতা ও বায়না গ্রহীতার তথ্য সঠিকভাবে যাচাই করুন।');
       return;
@@ -177,7 +189,7 @@ export default function BaynaDeedPanel() {
       return;
     }
     if (!sellerOtp.trim()) {
-      setSubmitError('বিক্রেতার ওটিপি কোড প্রদান আবশ্যক।');
+      setSubmitError('বিক্রেতার ৬ ডিজিটের ওটিপি কোড প্রদান আবশ্যক।');
       return;
     }
     if (!sellerBiometricVerified) {
@@ -202,7 +214,7 @@ export default function BaynaDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmitSuccess(res.data.message);
+        setSubmitSuccess(res.data.message || 'বায়নাপত্র দলিল সফলভাবে নিবন্ধিত হয়েছে এবং জমিটি বায়নাসূত্রে লক করা হয়েছে।');
         setSearchResult(null);
         setBuyerData(null);
         setBuyerNid('');
@@ -211,6 +223,8 @@ export default function BaynaDeedPanel() {
         setSellerOtp('');
         setSellerBiometricVerified(false);
         setSellerOtpSentMsg(null);
+      } else {
+        setSubmitError(res.data.message || 'বায়নাপত্র দলিল সৃষ্টিতে সমস্যা হয়েছে।');
       }
     } catch (err) {
       setSubmitError(err.response?.data?.message || 'বায়নাপত্র দলিল সৃষ্টিতে সমস্যা হয়েছে।');
@@ -223,23 +237,23 @@ export default function BaynaDeedPanel() {
   const handleSendUnlockOtp = async () => {
     if (!selectedLandForUnlock) return;
     const bDetails = selectedLandForUnlock.bayna_details || {};
-    const email = (bDetails.bayna_buyer_email || '').trim().toLowerCase();
-    if (!email) {
-      alert('বায়না গ্রহীতার কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
-
     setSendingUnlockOtp(true);
     setUnlockOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
-        recipient_email: email,
+        recipient_email: bDetails.bayna_buyer_email || '',
+        recipient_nid: bDetails.bayna_buyer_nid || unlockBuyerNid,
         recipient_name: bDetails.bayna_buyer_name,
+        record_id: selectedLandForUnlock._id,
         deed_title: 'বায়নাপত্র দায়মুক্তি ও আনলক অনুমোদন',
         deed_no: bDetails.bayna_deed_no || `BAYNA-RELEASE-${selectedLandForUnlock.dag_no}`
       });
       if (res.data.success) {
-        setUnlockOtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setUnlockOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -256,7 +270,7 @@ export default function BaynaDeedPanel() {
       return;
     }
     if (!unlockOtp.trim()) {
-      setUnlockError('বায়না গ্রহীতার ওটিপি কোড প্রদান আবশ্যক।');
+      setUnlockError('বায়না গ্রহীতার ৬ ডিজিটের ওটিপি কোড প্রদান আবশ্যক।');
       return;
     }
     if (!unlockBiometricVerified) {
@@ -276,13 +290,15 @@ export default function BaynaDeedPanel() {
       });
 
       if (res.data.success) {
-        setUnlockSuccess(res.data.message);
+        setUnlockSuccess(res.data.message || 'বায়না লক প্রত্যাহার সম্পন্ন হয়েছে এবং জমিটি দায়মুক্ত হয়েছে।');
         setSelectedLandForUnlock(null);
         setUnlockBuyerNid('');
         setUnlockOtp('');
         setUnlockBiometricVerified(false);
         setUnlockOtpSentMsg(null);
         fetchLockedLands();
+      } else {
+        setUnlockError(res.data.message || 'বায়না আনলক করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
       setUnlockError(err.response?.data?.message || 'বায়না আনলক করতে সমস্যা হয়েছে।');
@@ -319,7 +335,7 @@ export default function BaynaDeedPanel() {
               বায়নাপত্র দলিল ব্যবস্থাপনা (Agreement for Sale / Bayna Deed)
             </h2>
             <p style={{ fontSize: '13px', margin: '4px 0 0 0', opacity: 0.9 }}>
-              জমি বিক্রয়ের চূড়ান্ত চুক্তিনামা সম্পাদন, অ্যান্টি ডাবল-সেলিং লকিং ও দায়মুক্তি আনলক
+              সম্পত্তি কেনাবেচার চূড়ান্ত চুক্তি, বায়না লক নিশ্চিতকরণ ও চুক্তি প্রত্যাহার/সম্পাদন ব্যবস্থাপনা
             </p>
           </div>
         </div>
@@ -346,7 +362,7 @@ export default function BaynaDeedPanel() {
           }}
         >
           <Lock size={16} />
-          <span>১. নতুন বায়নাপত্র দলিল সম্পাদন ও জমি লক</span>
+          <span>১. নতুন বায়নাপত্র দলিল ও জমি লক</span>
         </button>
 
         <button
@@ -368,7 +384,7 @@ export default function BaynaDeedPanel() {
           }}
         >
           <Unlock size={16} />
-          <span>২. বায়না দায়মুক্তি ও জমি আনলক ({lockedLands.length})</span>
+          <span>২. বায়নাপত্র দায়মুক্তি / আনলক ({lockedLands.length})</span>
         </button>
       </div>
 
@@ -402,90 +418,27 @@ export default function BaynaDeedPanel() {
             padding: '24px',
             marginBottom: '20px'
           }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={18} color="#c2410c" />
-              <span>১. বিক্রেতার জমি অনুসন্ধান ও অ্যান্টি ডাবল-সেলিং ভেরিফিকেশন</span>
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search size={18} color="#c2410c" />
+                <span>১. বিক্রেতার জমি অনুসন্ধান ও অ্যান্টি ডাবল-সেলিং ভেরিফিকেশন</span>
+              </h3>
+              <span style={{ fontSize: '11px', color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                ধাপ ১ / ৩
+              </span>
+            </div>
 
-            <form onSubmit={handleSearchLand}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    বিক্রেতার NID <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="NID লিখুন"
-                    value={sellerNid}
-                    onChange={e => setSellerNid(e.target.value)}
-                    style={{ width: '100%', fontWeight: '600' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    মৌজা <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="মৌজার নাম লিখুন"
-                    value={mouza}
-                    onChange={e => setMouza(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    দাগ নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="দাগ নম্বর"
-                    value={dagNo}
-                    onChange={e => setDagNo(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    খতিয়ান নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="খতিয়ান নম্বর"
-                    value={khatianNo}
-                    onChange={e => setKhatianNo(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="submit"
-                  disabled={searching}
-                  style={{
-                    padding: '10px 24px',
-                    background: '#c2410c',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '700',
-                    fontSize: '13.5px',
-                    cursor: searching ? 'wait' : 'pointer'
-                  }}
-                >
-                  {searching ? 'যাচাই হচ্ছে...' : 'জমি যাচাই করুন'}
-                </button>
-              </div>
-            </form>
+            <CascadingLandSelector
+              nidLabel="বিক্রেতার NID নম্বর"
+              nidPlaceholder="বিক্রেতার ১০/১৩/১৭ ডিজিট NID লিখুন"
+              nidValue={sellerNid}
+              onNidChange={setSellerNid}
+              onSelectionChange={setLandLoc}
+              onSearch={handleSearchLand}
+              searching={searching}
+              accentColor="#c2410c"
+              searchButtonText="🔍 বিক্রেতার জমি অনুসন্ধান ও অ্যান্টি ডাবল-সেলিং চেক"
+            />
 
             {searchError && (
               <div style={{
@@ -507,14 +460,14 @@ export default function BaynaDeedPanel() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <CheckCircle size={16} color="#c2410c" />
                   <span style={{ fontWeight: '800', color: '#9a3412', fontSize: '14px' }}>
-                    বিক্রেতার সক্রিয় জমি নিশ্চিতকৃত (দাগ নং {searchResult.dag_no}, খতিয়ান নং {searchResult.khatian_no})
+                    বিক্রেতার সক্রিয় জমি নিশ্চিতকৃত (দাগ নং {searchResult.dag_no}, খতিয়ান নং {searchResult.khatian_no}, মৌজা: {searchResult.mouza})
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '13px' }}>
                   <div>মালিক: <strong>{searchResult.owner_name}</strong></div>
                   <div>NID: <strong>{searchResult.owner_nid}</strong></div>
                   <div>জমি: <strong>{searchResult.total_area_decimal} শতক</strong></div>
-                  <div>ইমেইল: <strong>{searchResult.owner_email || 'নেই'}</strong></div>
+                  <div>ইমেইল: <strong>{searchResult.owner_email || 'সংরক্ষিত'}</strong></div>
                 </div>
               </div>
             )}
@@ -529,10 +482,15 @@ export default function BaynaDeedPanel() {
               padding: '24px',
               marginBottom: '20px'
             }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <UserCheck size={18} color="#c2410c" />
-                <span>২. বায়না সূত্রে ক্রেতা ও বায়না চুক্তির শর্তাবলী</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <UserCheck size={18} color="#c2410c" />
+                  <span>২. বায়না সূত্রে ক্রেতা ও বায়না চুক্তির শর্তাবলী</span>
+                </h3>
+                <span style={{ fontSize: '11px', color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                  ধাপ ২ / ৩
+                </span>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                 <div>
@@ -649,20 +607,25 @@ export default function BaynaDeedPanel() {
               borderRadius: '14px',
               padding: '24px'
             }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shield size={18} color="#c2410c" />
-                <span>৩. বিক্রেতা মালিকের ওটিপি ও বায়োমেট্রিক সিল</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Shield size={18} color="#c2410c" />
+                  <span>৩. বিক্রেতা মালিকের ওটিপি ও বায়োমেট্রিক সিল</span>
+                </h3>
+                <span style={{ fontSize: '11px', color: '#c2410c', background: '#fff7ed', border: '1px solid #fed7aa', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                  ধাপ ৩ / ৩
+                </span>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '700' }}>বিক্রেতার ইমেইল ওটিপি:</span>
+                    <span style={{ fontSize: '13px', fontWeight: '700' }}>বিক্রেতার ইমেইল ওটিপি (OTP):</span>
                     <button
                       type="button"
                       onClick={handleSendSellerOtp}
                       disabled={sendingSellerOtp}
-                      style={{ fontSize: '11.5px', background: '#c2410c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                      style={{ fontSize: '11.5px', background: '#c2410c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                     >
                       {sendingSellerOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                     </button>
@@ -673,10 +636,10 @@ export default function BaynaDeedPanel() {
                     placeholder="৬ ডিজিটের কোড"
                     maxLength={6}
                     value={sellerOtp}
-                    onChange={e => setSellerOtp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
+                    onChange={e => setSellerOtp(e.target.value.replace(/\D/g, ''))}
+                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
                   />
-                  {sellerOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>{sellerOtpSentMsg}</div>}
+                  {sellerOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>{sellerOtpSentMsg}</div>}
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
@@ -906,14 +869,14 @@ export default function BaynaDeedPanel() {
 
                 <div style={{ background: '#fff7ed', padding: '14px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#c2410c' }}>ক্রেতার ইমেইল ওটিপি:</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#c2410c' }}>ক্রেতার ইমেইল ওটিপি (OTP):</span>
                     <button
                       type="button"
                       onClick={handleSendUnlockOtp}
                       disabled={sendingUnlockOtp}
-                      style={{ fontSize: '11px', background: '#c2410c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      style={{ fontSize: '11px', background: '#c2410c', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                     >
-                      {sendingUnlockOtp ? '...' : 'ওটিপি পাঠান'}
+                      {sendingUnlockOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                     </button>
                   </div>
                   <input
@@ -922,10 +885,10 @@ export default function BaynaDeedPanel() {
                     placeholder="৬ ডিজিট ওটিপি"
                     maxLength={6}
                     value={unlockOtp}
-                    onChange={e => setUnlockOtp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
+                    onChange={e => setUnlockOtp(e.target.value.replace(/\D/g, ''))}
+                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
                   />
-                  {unlockOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>{unlockOtpSentMsg}</div>}
+                  {unlockOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>{unlockOtpSentMsg}</div>}
                 </div>
 
                 <div style={{ background: '#fff7ed', padding: '14px', borderRadius: '8px', border: '1px solid #fed7aa' }}>
@@ -940,7 +903,7 @@ export default function BaynaDeedPanel() {
                       padding: '8px',
                       background: unlockBiometricVerified ? '#dcfce7' : '#ffffff',
                       color: unlockBiometricVerified ? '#166534' : '#475569',
-                      border: `1px solid ${unlockBiometricVerified ? '#86efac' : '#cbd5e1'}`,
+                      border: `1.5px solid ${unlockBiometricVerified ? '#86efac' : '#cbd5e1'}`,
                       borderRadius: '6px',
                       fontWeight: '700',
                       fontSize: '12px',
@@ -994,4 +957,3 @@ export default function BaynaDeedPanel() {
     </div>
   );
 }
-

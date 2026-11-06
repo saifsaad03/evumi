@@ -72,22 +72,25 @@ export default function ACLandOtherDeedsPanel() {
   const handleSendRecipientOtp = async () => {
     if (!selectedHeba) return;
     const email = (selectedHeba.heba?.recipient_email || '').trim().toLowerCase();
-    if (!email) {
-      alert('গ্রহীতার কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
+    const nid = selectedHeba.heba?.recipient_nid || '';
 
     setSendingRecipientOtp(true);
     setRecipientOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
         recipient_email: email,
-        recipient_name: selectedHeba.heba.recipient_name,
+        recipient_nid: nid,
+        recipient_name: selectedHeba.heba?.recipient_name,
+        record_id: selectedHeba.heba?.land_record_id,
         deed_title: 'হেবা নামজারি অনুমোদন ওটিপি',
         deed_no: selectedHeba.deed_no
       });
       if (res.data.success) {
-        setRecipientOtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setRecipientOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');

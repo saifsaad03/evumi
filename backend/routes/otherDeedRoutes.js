@@ -9,7 +9,7 @@ const LegalStatus = require('../models/LegalStatus');
 const OtherDeedApplication = require('../models/OtherDeedApplication');
 const { verifyToken, requireRole } = require('../middleware/auth');
 const { logActivity } = require('../utils/auditLogger');
-const { generate6DigitOtp, createDeedOtp, findLatestDeedOtp, deleteDeedOtps } = require('../utils/dbStore');
+const { generate6DigitOtp, createDeedOtp, findLatestDeedOtp, deleteDeedOtps, findUserByNid, findUserByEmail } = require('../utils/dbStore');
 const { sendOtpEmail } = require('../utils/emailService');
 const { generateLandCryptoPayload } = require('../utils/cryptoEngine');
 
@@ -165,6 +165,21 @@ router.post('/search-owner-land', verifyToken, async (req, res) => {
     );
     const deceasedRec = ownerRecords.find(r => r.is_deceased_locked || r.status === 'Deceased_Locked');
 
+    // Find user profile by NID to populate email/phone if missing on land record
+    let ownerUser = null;
+    try {
+      ownerUser = await User.findOne({
+        $or: [
+          { nid: cleanNid },
+          { nid: engNid },
+          { nid: benNid }
+        ]
+      });
+    } catch (e) {}
+    if (!ownerUser) {
+      ownerUser = (await findUserByNid(cleanNid)) || (await findUserByNid(engNid)) || (await findUserByNid(benNid));
+    }
+
     if (deceasedRec && !activeRec) {
       return res.status(200).json({
         success: false,
@@ -174,22 +189,34 @@ router.post('/search-owner-land', verifyToken, async (req, res) => {
     }
 
     if (mortgageRec && !activeRec) {
+      const mObj = mortgageRec.toObject ? mortgageRec.toObject() : { ...mortgageRec };
+      if (ownerUser) {
+        mObj.owner_email = (ownerUser.email || mObj.owner_email || '').trim().toLowerCase();
+        mObj.owner_name = ownerUser.name || mObj.owner_name || '';
+        mObj.owner_phone = ownerUser.phone || mObj.owner_phone || '';
+      }
       const mName = mortgageRec.mortgage_details?.mortgagee_name ? ` (${mortgageRec.mortgage_details.mortgagee_name}-এর অনুকূলে)` : '';
       return res.status(200).json({
         success: false,
         alert_type: 'MORTGAGE_LOCKED',
         message: `🔴 বন্ধকি সতর্কতা: এই জমিটি বর্তমানে বন্ধক রয়েছে${mName}। দায়মুক্ত না হওয়া পর্যন্ত কোনো হস্তান্তর সম্ভব নয়।`,
-        record: mortgageRec
+        record: mObj
       });
     }
 
     if (baynaRec && !activeRec) {
+      const bObj = baynaRec.toObject ? baynaRec.toObject() : { ...baynaRec };
+      if (ownerUser) {
+        bObj.owner_email = (ownerUser.email || bObj.owner_email || '').trim().toLowerCase();
+        bObj.owner_name = ownerUser.name || bObj.owner_name || '';
+        bObj.owner_phone = ownerUser.phone || bObj.owner_phone || '';
+      }
       const bName = baynaRec.bayna_details?.bayna_buyer_name ? ` (${baynaRec.bayna_details.bayna_buyer_name}-এর বরাবরে)` : '';
       return res.status(200).json({
         success: false,
         alert_type: 'BAYNA_LOCKED',
         message: `🔴 বায়নাপত্র সতর্কতা: এই জমিটির অনুকূলে একটি বায়না চুক্তি চলমান রয়েছে${bName}। চুক্তি বাতিল ছাড়া হস্তান্তর নিষিদ্ধ।`,
-        record: baynaRec
+        record: bObj
       });
     }
 
@@ -217,11 +244,18 @@ router.post('/search-owner-land', verifyToken, async (req, res) => {
       });
     }
 
+    const activeRecObj = activeRec.toObject ? activeRec.toObject() : { ...activeRec };
+    if (ownerUser) {
+      activeRecObj.owner_email = (ownerUser.email || activeRecObj.owner_email || '').trim().toLowerCase();
+      activeRecObj.owner_name = ownerUser.name || activeRecObj.owner_name || '';
+      activeRecObj.owner_phone = ownerUser.phone || activeRecObj.owner_phone || '';
+    }
+
     return res.status(200).json({
       success: true,
       alert_type: 'VERIFIED',
       message: '✅ জমিটি সক্রিয়, হস্তান্তরযোগ্য এবং বৈধ পাওয়া গেছে।',
-      record: activeRec
+      record: activeRecObj
     });
   } catch (err) {
     console.error('Search owner land error:', err);
@@ -233,32 +267,69 @@ router.post('/search-owner-land', verifyToken, async (req, res) => {
 // Universal OTP generator and email sender for deed parties
 router.post('/send-otp', verifyToken, async (req, res) => {
   try {
-    const { recipient_email, recipient_name, deed_title, deed_no } = req.body;
-    if (!recipient_email) {
-      return res.status(400).json({ success: false, message: 'প্রাপকের ইমেইল ঠিকানা প্রদান আবশ্যক।' });
+    const { recipient_email, recipient_nid, recipient_name, record_id, deed_title, deed_no } = req.body;
+    let cleanEmail = (recipient_email || '').trim().toLowerCase();
+    let cleanName = recipient_name || '';
+    const cleanNid = (recipient_nid || '').toString().trim();
+
+    // If recipient email is missing or empty, find citizen profile by NID
+    if ((!cleanEmail || !cleanEmail.includes('@')) && cleanNid) {
+      const engNid = toEnglishDigits(cleanNid);
+      const benNid = toBengaliDigits(cleanNid);
+      let user = null;
+      try {
+        user = await User.findOne({
+          $or: [
+            { nid: cleanNid },
+            { nid: engNid },
+            { nid: benNid }
+          ]
+        });
+      } catch (e) {}
+      if (!user) {
+        user = (await findUserByNid(cleanNid)) || (await findUserByNid(engNid)) || (await findUserByNid(benNid));
+      }
+      if (user && user.email) {
+        cleanEmail = user.email.trim().toLowerCase();
+        if (!cleanName) cleanName = user.name || 'সম্মানিত নাগরিক';
+      }
     }
 
-    const cleanEmail = recipient_email.trim().toLowerCase();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      return res.status(400).json({
+        success: false,
+        message: 'প্রাপকের কোনো নিবন্ধিত ইমেইল ঠিকানা পাওয়া যায়নি। উক্ত নাগরিকের প্রোফাইলে বৈধ ইমেইল ঠিকানা থাকা আবশ্যক।'
+      });
+    }
+
     const otp = generate6DigitOtp();
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     await createDeedOtp(cleanEmail, otp, {
-      purpose: 'OTHER_DEED_REGISTRATION',
+      record_id: record_id ? record_id.toString() : '',
       deed_title: deed_title || 'দলিল রেজিস্ট্রেশন',
-      deed_no: deed_no || ''
+      deed_no: deed_no || '',
+      recipient_nid: cleanNid
     }, expiresAt);
 
-    console.log(`🔑 [${deed_title || 'OTHER DEED'} OTP for ${cleanEmail}]: ${otp}`);
+    console.log(`🔑 [${deed_title || 'OTHER DEED'} OTP for ${cleanEmail} (NID: ${cleanNid})]: ${otp}`);
 
-    await sendOtpEmail(cleanEmail, otp, 'DEED_REGISTRATION', {
-      citizen_name: recipient_name || 'সম্মানিত নাগরিক',
+    const emailResult = await sendOtpEmail(cleanEmail, otp, 'DEED_REGISTRATION', {
+      citizen_name: cleanName || 'সম্মানিত নাগরিক',
       deed_no: deed_no || deed_title || 'ই-ভূমি দলিল রেজিস্ট্রেশন'
     });
 
+    const isEmailDelivered = !emailResult?.simulated;
+    const responseMsg = isEmailDelivered
+      ? `৬ ডিজিটের ওটিপি সফলভাবে '${cleanEmail}' ঠিকানায় পাঠানো হয়েছে।`
+      : `৬ ডিজিটের ওটিপি পাঠানো হয়েছে '${cleanEmail}' ঠিকানায়।`;
+
     return res.status(200).json({
       success: true,
-      message: `৬ ডিজিটের ওটিপি সফলভাবে '${cleanEmail}' ঠিকানায় পাঠানো হয়েছে।`,
-      recipient_email: cleanEmail
+      message: responseMsg,
+      recipient_email: cleanEmail,
+      simulated: emailResult?.simulated || false,
+      ...(emailResult?.simulated ? { simulated_otp: otp } : {})
     });
   } catch (err) {
     console.error('Send other deed OTP error:', err);
@@ -338,11 +409,15 @@ router.post('/heba/create', verifyToken, requireRole('Register Office', 'Super A
     }
 
     const donorEmail = (donorUser.email || land.owner_email || '').trim().toLowerCase();
-    const storedOtpObj = await findLatestDeedOtp(donorEmail);
+    let storedOtpObj = await findLatestDeedOtp(donorEmail, land_record_id);
+    if (!storedOtpObj && land.owner_email && land.owner_email.toLowerCase() !== donorEmail) {
+      storedOtpObj = await findLatestDeedOtp(land.owner_email.toLowerCase(), land_record_id);
+    }
     if (!storedOtpObj || storedOtpObj.otp !== donor_otp.trim()) {
       return res.status(400).json({ success: false, message: 'দাতার ওটিপি কোডটি ভুল বা মেয়াদোত্তীর্ণ।' });
     }
-    await deleteDeedOtps(donorEmail);
+    await deleteDeedOtps(donorEmail, land_record_id);
+    if (land.owner_email) await deleteDeedOtps(land.owner_email.toLowerCase(), land_record_id);
 
     // 4. Verify Recipient User
     const recipientUser = await User.findOne({
@@ -695,20 +770,28 @@ router.post('/exchange/create', verifyToken, requireRole('Register Office', 'Sup
 
     // 3. Verify OTP for Owner 1
     const email1 = (user1.email || land1.owner_email || '').trim().toLowerCase();
-    const storedOtp1 = await findLatestDeedOtp(email1);
+    let storedOtp1 = await findLatestDeedOtp(email1, owner1_land_id);
+    if (!storedOtp1 && land1.owner_email && land1.owner_email.toLowerCase() !== email1) {
+      storedOtp1 = await findLatestDeedOtp(land1.owner_email.toLowerCase(), owner1_land_id);
+    }
     if (!storedOtp1 || storedOtp1.otp !== owner1_otp.trim()) {
       return res.status(400).json({ success: false, message: `মালিক-১ (${user1.name}) এর ওটিপি কোড ভুল বা মেয়াদোত্তীর্ণ।` });
     }
 
     // 4. Verify OTP for Owner 2
     const email2 = (user2.email || land2.owner_email || '').trim().toLowerCase();
-    const storedOtp2 = await findLatestDeedOtp(email2);
+    let storedOtp2 = await findLatestDeedOtp(email2, owner2_land_id);
+    if (!storedOtp2 && land2.owner_email && land2.owner_email.toLowerCase() !== email2) {
+      storedOtp2 = await findLatestDeedOtp(land2.owner_email.toLowerCase(), owner2_land_id);
+    }
     if (!storedOtp2 || storedOtp2.otp !== owner2_otp.trim()) {
       return res.status(400).json({ success: false, message: `মালিক-২ (${user2.name}) এর ওটিপি কোড ভুল বা মেয়াদোত্তীর্ণ।` });
     }
 
-    await deleteDeedOtps(email1);
-    await deleteDeedOtps(email2);
+    await deleteDeedOtps(email1, owner1_land_id);
+    await deleteDeedOtps(email2, owner2_land_id);
+    if (land1.owner_email) await deleteDeedOtps(land1.owner_email.toLowerCase(), owner1_land_id);
+    if (land2.owner_email) await deleteDeedOtps(land2.owner_email.toLowerCase(), owner2_land_id);
 
     // 5. Lock both lands for Exchange Review
     land1.status = 'Pending_Exchange_Review';
@@ -983,11 +1066,15 @@ router.post('/mortgage/create', verifyToken, requireRole('Register Office', 'Sup
     }
 
     const ownerEmail = (ownerUser.email || land.owner_email || '').trim().toLowerCase();
-    const storedOtp = await findLatestDeedOtp(ownerEmail);
+    let storedOtp = await findLatestDeedOtp(ownerEmail, land_record_id);
+    if (!storedOtp && land.owner_email && land.owner_email.toLowerCase() !== ownerEmail) {
+      storedOtp = await findLatestDeedOtp(land.owner_email.toLowerCase(), land_record_id);
+    }
     if (!storedOtp || storedOtp.otp !== owner_otp.trim()) {
       return res.status(400).json({ success: false, message: 'মালিকের ওটিপি কোডটি ভুল বা মেয়াদোত্তীর্ণ।' });
     }
-    await deleteDeedOtps(ownerEmail);
+    await deleteDeedOtps(ownerEmail, land_record_id);
+    if (land.owner_email) await deleteDeedOtps(land.owner_email.toLowerCase(), land_record_id);
 
     // 3. Fetch Mortgagee User
     const mortgageeUser = await User.findOne({
@@ -1132,11 +1219,17 @@ router.post('/mortgage/unlock', verifyToken, requireRole('Register Office', 'Sup
 
     // Verify Mortgagee OTP
     const mortEmail = (mDetails.mortgagee_email || '').trim().toLowerCase();
-    const storedOtp = await findLatestDeedOtp(mortEmail);
+    let storedOtp = await findLatestDeedOtp(mortEmail, land_record_id);
+    if (!storedOtp && cleanMortNid) {
+      const mortUser = await User.findOne({ $or: [{ nid: cleanMortNid }, { nid: toEnglishDigits(cleanMortNid) }] });
+      if (mortUser && mortUser.email) {
+        storedOtp = await findLatestDeedOtp(mortUser.email.trim().toLowerCase(), land_record_id);
+      }
+    }
     if (!storedOtp || storedOtp.otp !== mortgagee_otp.trim()) {
       return res.status(400).json({ success: false, message: 'বন্ধকগ্রহীতার ওটিপি ভুল বা মেয়াদোত্তীর্ণ।' });
     }
-    await deleteDeedOtps(mortEmail);
+    if (mortEmail) await deleteDeedOtps(mortEmail, land_record_id);
 
     // Release mortgage lock -> Revert to Active
     land.status = 'Active';
@@ -1229,11 +1322,15 @@ router.post('/bayna/create', verifyToken, requireRole('Register Office', 'Super 
     }
 
     const sellerEmail = (sellerUser.email || land.owner_email || '').trim().toLowerCase();
-    const storedOtp = await findLatestDeedOtp(sellerEmail);
+    let storedOtp = await findLatestDeedOtp(sellerEmail, land_record_id);
+    if (!storedOtp && land.owner_email && land.owner_email.toLowerCase() !== sellerEmail) {
+      storedOtp = await findLatestDeedOtp(land.owner_email.toLowerCase(), land_record_id);
+    }
     if (!storedOtp || storedOtp.otp !== seller_otp.trim()) {
       return res.status(400).json({ success: false, message: 'বিক্রেতার ওটিপি ভুল বা মেয়াদোত্তীর্ণ।' });
     }
-    await deleteDeedOtps(sellerEmail);
+    await deleteDeedOtps(sellerEmail, land_record_id);
+    if (land.owner_email) await deleteDeedOtps(land.owner_email.toLowerCase(), land_record_id);
 
     // 3. Fetch Bayna Buyer User
     const buyerUser = await User.findOne({
@@ -1381,11 +1478,17 @@ router.post('/bayna/unlock', verifyToken, requireRole('Register Office', 'Super 
 
     // Verify Bayna Buyer OTP
     const buyerEmail = (bDetails.bayna_buyer_email || '').trim().toLowerCase();
-    const storedOtp = await findLatestDeedOtp(buyerEmail);
+    let storedOtp = await findLatestDeedOtp(buyerEmail, land_record_id);
+    if (!storedOtp && cleanBuyerNid) {
+      const bUser = await User.findOne({ $or: [{ nid: cleanBuyerNid }, { nid: toEnglishDigits(cleanBuyerNid) }] });
+      if (bUser && bUser.email) {
+        storedOtp = await findLatestDeedOtp(bUser.email.trim().toLowerCase(), land_record_id);
+      }
+    }
     if (!storedOtp || storedOtp.otp !== bayna_buyer_otp.trim()) {
       return res.status(400).json({ success: false, message: 'বায়না গ্রহীতার ওটিপি ভুল বা মেয়াদোত্তীর্ণ।' });
     }
-    await deleteDeedOtps(buyerEmail);
+    if (buyerEmail) await deleteDeedOtps(buyerEmail, land_record_id);
 
     // Release Bayna lock -> Revert to Active
     land.status = 'Active';

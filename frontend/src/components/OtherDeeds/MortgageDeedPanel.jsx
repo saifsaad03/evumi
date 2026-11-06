@@ -6,30 +6,21 @@ import {
   Search,
   CheckCircle,
   AlertTriangle,
+  Building2,
   Send,
   Shield,
   Fingerprint,
   RefreshCw,
-  UserCheck,
-  FileCheck,
-  Building2,
-  DollarSign
+  FileCheck
 } from 'lucide-react';
+import CascadingLandSelector from './CascadingLandSelector';
 
 export default function MortgageDeedPanel() {
   const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' or 'unlock'
 
-  // Locations
-  const [divisions, setDivisions] = useState([]);
-  useEffect(() => {
-    axios.get('/api/locations/divisions').then(r => setDivisions(r.data?.data || [])).catch(() => {});
-  }, []);
-
   // Creation form states
   const [ownerNid, setOwnerNid] = useState('');
-  const [mouza, setMouza] = useState('');
-  const [dagNo, setDagNo] = useState('');
-  const [khatianNo, setKhatianNo] = useState('');
+  const [landLoc, setLandLoc] = useState({ division: '', district: '', upazila: '', mouza: '', khatian_no: '', dag_no: '' });
 
   const [searching, setSearching] = useState(false);
   const [searchResult, setSearchResult] = useState(null);
@@ -88,8 +79,17 @@ export default function MortgageDeedPanel() {
   };
 
   // Search Land
-  const handleSearchLand = async (e) => {
-    e.preventDefault();
+  const handleSearchLand = async (params) => {
+    const nid = (params?.owner_nid || ownerNid || '').trim();
+    const mouza = (params?.mouza || landLoc.mouza || '').trim();
+    const dag_no = (params?.dag_no || landLoc.dag_no || '').trim();
+    const khatian_no = (params?.khatian_no || landLoc.khatian_no || '').trim();
+
+    if (!nid || !mouza || !dag_no || !khatian_no) {
+      setSearchError('অনুগ্রহ করে মালিকের NID এবং বিভাগ থেকে দাগ নম্বর পর্যন্ত প্রতিটি অপশন ক্রমানুসারে সিলেক্ট করুন।');
+      return;
+    }
+
     setSearching(true);
     setSearchResult(null);
     setSearchError(null);
@@ -98,10 +98,13 @@ export default function MortgageDeedPanel() {
 
     try {
       const res = await axios.post('/api/other-deeds/search-owner-land', {
-        owner_nid: ownerNid.trim(),
-        mouza: mouza.trim(),
-        dag_no: dagNo.trim(),
-        khatian_no: khatianNo.trim()
+        owner_nid: nid,
+        mouza,
+        dag_no,
+        khatian_no,
+        division: params?.division || landLoc.division || '',
+        district: params?.district || landLoc.district || '',
+        upazila: params?.upazila || landLoc.upazila || ''
       });
 
       if (res.data.success && res.data.record) {
@@ -146,22 +149,23 @@ export default function MortgageDeedPanel() {
   // Send Owner OTP
   const handleSendOwnerOtp = async () => {
     if (!searchResult) return;
-    const email = (searchResult.owner_email || '').trim().toLowerCase();
-    if (!email) {
-      alert('মালিকের কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
     setSendingOwnerOtp(true);
     setOwnerOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
-        recipient_email: email,
+        recipient_email: searchResult.owner_email || '',
+        recipient_nid: searchResult.owner_nid || ownerNid,
         recipient_name: searchResult.owner_name,
+        record_id: searchResult._id,
         deed_title: 'বন্ধকি দলিল রেজিস্ট্রেশন ও লকিং',
         deed_no: `MORT-DAG-${searchResult.dag_no}`
       });
       if (res.data.success) {
-        setOwnerOtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setOwnerOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -172,7 +176,7 @@ export default function MortgageDeedPanel() {
 
   // Submit Mortgage Deed
   const handleSubmitMortgage = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!searchResult || !mortgageeData) {
       setSubmitError('মালিক ও বন্ধকগ্রহীতার তথ্য সঠিকভাবে যাচাই করুন।');
       return;
@@ -182,7 +186,7 @@ export default function MortgageDeedPanel() {
       return;
     }
     if (!ownerOtp.trim()) {
-      setSubmitError('মালিকের ওটিপি প্রদান আবশ্যক।');
+      setSubmitError('মালিকের ৬ ডিজিটের ওটিপি প্রদান আবশ্যক।');
       return;
     }
     if (!ownerBiometricVerified) {
@@ -205,7 +209,7 @@ export default function MortgageDeedPanel() {
       });
 
       if (res.data.success) {
-        setSubmitSuccess(res.data.message);
+        setSubmitSuccess(res.data.message || 'বন্ধকি দলিল সফলভাবে নিবন্ধিত হয়েছে এবং জমিটি বন্ধকসূত্রে লক করা হয়েছে।');
         setSearchResult(null);
         setMortgageeData(null);
         setMortgageeNid('');
@@ -213,6 +217,8 @@ export default function MortgageDeedPanel() {
         setOwnerOtp('');
         setOwnerBiometricVerified(false);
         setOwnerOtpSentMsg(null);
+      } else {
+        setSubmitError(res.data.message || 'বন্ধকি দলিল সম্পাদন ব্যর্থ হয়েছে।');
       }
     } catch (err) {
       setSubmitError(err.response?.data?.message || 'বন্ধকি দলিল সম্পাদন ব্যর্থ হয়েছে।');
@@ -225,23 +231,23 @@ export default function MortgageDeedPanel() {
   const handleSendUnlockOtp = async () => {
     if (!selectedLandForUnlock) return;
     const mDetails = selectedLandForUnlock.mortgage_details || {};
-    const email = (mDetails.mortgagee_email || '').trim().toLowerCase();
-    if (!email) {
-      alert('বন্ধকগ্রহীতার কোনো ইমেইল ঠিকানা পাওয়া যায়নি।');
-      return;
-    }
-
     setSendingUnlockOtp(true);
     setUnlockOtpSentMsg(null);
     try {
       const res = await axios.post('/api/other-deeds/send-otp', {
-        recipient_email: email,
+        recipient_email: mDetails.mortgagee_email || '',
+        recipient_nid: mDetails.mortgagee_nid || unlockMortgageeNid,
         recipient_name: mDetails.mortgagee_name,
+        record_id: selectedLandForUnlock._id,
         deed_title: 'বন্ধক দায়মুক্তি ও আনলক অনুমোদন',
         deed_no: mDetails.mortgage_deed_no || `MORT-RELEASE-${selectedLandForUnlock.dag_no}`
       });
       if (res.data.success) {
-        setUnlockOtpSentMsg(res.data.message);
+        let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
+        if (res.data.simulated && res.data.simulated_otp) {
+          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        }
+        setUnlockOtpSentMsg(msg);
       }
     } catch (err) {
       alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
@@ -258,7 +264,7 @@ export default function MortgageDeedPanel() {
       return;
     }
     if (!unlockOtp.trim()) {
-      setUnlockError('বন্ধকগ্রহীতার ওটিপি কোড প্রদান আবশ্যক।');
+      setUnlockError('বন্ধকগ্রহীতার ৬ ডিজিটের ওটিপি কোড প্রদান আবশ্যক।');
       return;
     }
     if (!unlockBiometricVerified) {
@@ -278,13 +284,15 @@ export default function MortgageDeedPanel() {
       });
 
       if (res.data.success) {
-        setUnlockSuccess(res.data.message);
+        setUnlockSuccess(res.data.message || 'জমিটি সফলভাবে বন্ধক দায়মুক্ত ও সক্রিয় (Active) করা হয়েছে।');
         setSelectedLandForUnlock(null);
         setUnlockMortgageeNid('');
         setUnlockOtp('');
         setUnlockBiometricVerified(false);
         setUnlockOtpSentMsg(null);
         fetchLockedLands();
+      } else {
+        setUnlockError(res.data.message || 'আনলক করতে সমস্যা হয়েছে।');
       }
     } catch (err) {
       setUnlockError(err.response?.data?.message || 'আনলক করতে সমস্যা হয়েছে।');
@@ -404,90 +412,27 @@ export default function MortgageDeedPanel() {
             padding: '24px',
             marginBottom: '20px'
           }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Search size={18} color="#701a75" />
-              <span>১. বন্ধকদাতার জমি অনুসন্ধান ও মালিকানা যাচাই</span>
-            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search size={18} color="#701a75" />
+                <span>১. বন্ধকদাতার জমি অনুসন্ধান ও মালিকানা যাচাই</span>
+              </h3>
+              <span style={{ fontSize: '11px', color: '#701a75', background: '#fdf4ff', border: '1px solid #f0abfc', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                ধাপ ১ / ৩
+              </span>
+            </div>
 
-            <form onSubmit={handleSearchLand}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    মালিকের NID নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="NID লিখুন"
-                    value={ownerNid}
-                    onChange={e => setOwnerNid(e.target.value)}
-                    style={{ width: '100%', fontWeight: '600' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    মৌজা <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="মৌজার নাম লিখুন"
-                    value={mouza}
-                    onChange={e => setMouza(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    দাগ নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="দাগ নম্বর লিখুন"
-                    value={dagNo}
-                    onChange={e => setDagNo(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-                <div>
-                  <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    খতিয়ান নম্বর <span style={{ color: '#dc2626' }}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    className="input-field"
-                    placeholder="খতিয়ান নম্বর লিখুন"
-                    value={khatianNo}
-                    onChange={e => setKhatianNo(e.target.value)}
-                    style={{ width: '100%' }}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="submit"
-                  disabled={searching}
-                  style={{
-                    padding: '10px 24px',
-                    background: '#701a75',
-                    color: '#ffffff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontWeight: '700',
-                    fontSize: '13.5px',
-                    cursor: searching ? 'wait' : 'pointer'
-                  }}
-                >
-                  {searching ? 'যাচাই হচ্ছে...' : 'জমি যাচাই করুন'}
-                </button>
-              </div>
-            </form>
+            <CascadingLandSelector
+              nidLabel="মালিকের NID নম্বর"
+              nidPlaceholder="মালিকের ১০/১৩/১৭ ডিজিট NID লিখুন"
+              nidValue={ownerNid}
+              onNidChange={setOwnerNid}
+              onSelectionChange={setLandLoc}
+              onSearch={handleSearchLand}
+              searching={searching}
+              accentColor="#701a75"
+              searchButtonText="🔍 বন্ধকদাতার জমি অনুসন্ধান ও মালিকানা যাচাই"
+            />
 
             {searchError && (
               <div style={{
@@ -509,14 +454,14 @@ export default function MortgageDeedPanel() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                   <CheckCircle size={16} color="#a21caf" />
                   <span style={{ fontWeight: '800', color: '#86198f', fontSize: '14px' }}>
-                    মালিকের সক্রিয় জমি নিশ্চিতকৃত (দাগ নং {searchResult.dag_no}, খতিয়ান নং {searchResult.khatian_no})
+                    মালিকের সক্রিয় জমি নিশ্চিতকৃত (দাগ নং {searchResult.dag_no}, খতিয়ান নং {searchResult.khatian_no}, মৌজা: {searchResult.mouza})
                   </span>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', fontSize: '13px' }}>
                   <div>মালিক: <strong>{searchResult.owner_name}</strong></div>
                   <div>NID: <strong>{searchResult.owner_nid}</strong></div>
                   <div>জমি: <strong>{searchResult.total_area_decimal} শতক</strong></div>
-                  <div>ইমেইল: <strong>{searchResult.owner_email || 'নেই'}</strong></div>
+                  <div>ইমেইল: <strong>{searchResult.owner_email || 'সংরক্ষিত'}</strong></div>
                 </div>
               </div>
             )}
@@ -531,10 +476,15 @@ export default function MortgageDeedPanel() {
               padding: '24px',
               marginBottom: '20px'
             }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Building2 size={18} color="#701a75" />
-                <span>২. বন্ধকগ্রহীতা (ব্যাংক/ব্যক্তি) ও ঋণের শর্তাবলী</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Building2 size={18} color="#701a75" />
+                  <span>২. বন্ধকগ্রহীতা (ব্যাংক/ব্যক্তি) ও ঋণের শর্তাবলী</span>
+                </h3>
+                <span style={{ fontSize: '11px', color: '#701a75', background: '#fdf4ff', border: '1px solid #f0abfc', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                  ধাপ ২ / ৩
+                </span>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '16px' }}>
                 <div>
@@ -637,20 +587,25 @@ export default function MortgageDeedPanel() {
               borderRadius: '14px',
               padding: '24px'
             }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Shield size={18} color="#701a75" />
-                <span>৩. বন্ধকদাতা মালিকের ওটিপি ও বায়োমেট্রিক সিল</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Shield size={18} color="#701a75" />
+                  <span>৩. বন্ধকদাতা মালিকের ওটিপি ও বায়োমেট্রিক সিল</span>
+                </h3>
+                <span style={{ fontSize: '11px', color: '#701a75', background: '#fdf4ff', border: '1px solid #f0abfc', padding: '2px 8px', borderRadius: '4px', fontWeight: '700' }}>
+                  ধাপ ৩ / ৩
+                </span>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '700' }}>মালিকের ইমেইল ওটিপি:</span>
+                    <span style={{ fontSize: '13px', fontWeight: '700' }}>মালিকের ইমেইল ওটিপি (OTP):</span>
                     <button
                       type="button"
                       onClick={handleSendOwnerOtp}
                       disabled={sendingOwnerOtp}
-                      style={{ fontSize: '11.5px', background: '#701a75', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                      style={{ fontSize: '11.5px', background: '#701a75', color: '#fff', border: 'none', padding: '4px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                     >
                       {sendingOwnerOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                     </button>
@@ -661,10 +616,10 @@ export default function MortgageDeedPanel() {
                     placeholder="৬ ডিজিটের কোড"
                     maxLength={6}
                     value={ownerOtp}
-                    onChange={e => setOwnerOtp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
+                    onChange={e => setOwnerOtp(e.target.value.replace(/\D/g, ''))}
+                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
                   />
-                  {ownerOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>{ownerOtpSentMsg}</div>}
+                  {ownerOtpSentMsg && <div style={{ fontSize: '11.5px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>{ownerOtpSentMsg}</div>}
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
@@ -861,7 +816,7 @@ export default function MortgageDeedPanel() {
             )}
           </div>
 
-          {/* Unlock Execution Panel */}
+          {/* Unlock Execution Form */}
           {selectedLandForUnlock && (
             <div className="glass-card" style={{
               background: '#ffffff',
@@ -869,15 +824,23 @@ export default function MortgageDeedPanel() {
               borderRadius: '14px',
               padding: '24px'
             }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#701a75', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Unlock size={18} />
-                <span>বন্ধক দায়মুক্তি যাচাইকরণ ও আনলকিং (দাগ নং: {selectedLandForUnlock.dag_no})</span>
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                <Unlock size={20} color="#701a75" />
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#701a75', margin: 0 }}>
+                  বন্ধক দায়মুক্তি সম্পাদন ও আনলক
+                </h3>
+              </div>
+
+              <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '20px', fontSize: '13px' }}>
+                <div>নির্বাচিত জমি: <strong>দাগ নং {selectedLandForUnlock.dag_no}, খতিয়ান নং {selectedLandForUnlock.khatian_no}, মৌজা: {selectedLandForUnlock.mouza}</strong></div>
+                <div>মালিক: <strong>{selectedLandForUnlock.owner_name}</strong> (NID: {selectedLandForUnlock.owner_nid})</div>
+                <div>বন্ধকগ্রহীতা: <strong>{selectedLandForUnlock.mortgage_details?.mortgagee_name}</strong> (NID: {selectedLandForUnlock.mortgage_details?.mortgagee_nid})</div>
+              </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '20px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#334155', marginBottom: '5px' }}>
-                    বন্ধকগ্রহীতার NID নিশ্চিতকরণ <span style={{ color: '#dc2626' }}>*</span>
+                    বন্ধকগ্রহীতার NID নম্বর <span style={{ color: '#dc2626' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -885,53 +848,47 @@ export default function MortgageDeedPanel() {
                     value={unlockMortgageeNid}
                     onChange={e => setUnlockMortgageeNid(e.target.value)}
                     style={{ width: '100%', fontWeight: '700' }}
-                    readOnly
                   />
-                  <span style={{ fontSize: '11px', color: '#64748b' }}>
-                    বন্ধকগ্রহীতা: {selectedLandForUnlock.mortgage_details?.mortgagee_name}
-                  </span>
                 </div>
 
-                <div style={{ background: '#fdf4ff', padding: '14px', borderRadius: '8px', border: '1px solid #f0abfc' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12.5px', fontWeight: '700', color: '#701a75' }}>বন্ধকগ্রহীতার ইমেইল ওটিপি:</span>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '12.5px', fontWeight: '700', color: '#334155' }}>
+                      বন্ধকগ্রহীতার ওটিপি (OTP) <span style={{ color: '#dc2626' }}>*</span>
+                    </label>
                     <button
                       type="button"
                       onClick={handleSendUnlockOtp}
                       disabled={sendingUnlockOtp}
-                      style={{ fontSize: '11px', background: '#701a75', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer' }}
+                      style={{ fontSize: '11px', background: '#701a75', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700' }}
                     >
-                      {sendingUnlockOtp ? '...' : 'ওটিপি পাঠান'}
+                      {sendingUnlockOtp ? 'পাঠানো হচ্ছে...' : 'ওটিপি পাঠান'}
                     </button>
                   </div>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="৬ ডিজিট ওটিপি"
+                    placeholder="৬ ডিজিটের কোড"
                     maxLength={6}
                     value={unlockOtp}
-                    onChange={e => setUnlockOtp(e.target.value)}
-                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800' }}
+                    onChange={e => setUnlockOtp(e.target.value.replace(/\D/g, ''))}
+                    style={{ width: '100%', fontFamily: 'monospace', fontWeight: '800', letterSpacing: '2px' }}
                   />
-                  {unlockOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px' }}>{unlockOtpSentMsg}</div>}
+                  {unlockOtpSentMsg && <div style={{ fontSize: '11px', color: '#166534', marginTop: '4px', background: '#dcfce7', padding: '4px 8px', borderRadius: '4px' }}>{unlockOtpSentMsg}</div>}
                 </div>
 
-                <div style={{ background: '#fdf4ff', padding: '14px', borderRadius: '8px', border: '1px solid #f0abfc' }}>
-                  <span style={{ display: 'block', fontSize: '12.5px', fontWeight: '700', color: '#701a75', marginBottom: '8px' }}>
-                    বন্ধকগ্রহীতার বায়োমেট্রিক সিল
-                  </span>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
                   <button
                     type="button"
                     onClick={() => setUnlockBiometricVerified(!unlockBiometricVerified)}
                     style={{
-                      width: '100%',
-                      padding: '8px',
+                      padding: '10px',
                       background: unlockBiometricVerified ? '#dcfce7' : '#ffffff',
                       color: unlockBiometricVerified ? '#166534' : '#475569',
-                      border: `1px solid ${unlockBiometricVerified ? '#86efac' : '#cbd5e1'}`,
-                      borderRadius: '6px',
+                      border: `1.5px solid ${unlockBiometricVerified ? '#86efac' : '#cbd5e1'}`,
+                      borderRadius: '8px',
                       fontWeight: '700',
-                      fontSize: '12px',
+                      fontSize: '12.5px',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -939,8 +896,8 @@ export default function MortgageDeedPanel() {
                       gap: '6px'
                     }}
                   >
-                    <Fingerprint size={16} />
-                    <span>{unlockBiometricVerified ? 'দায়মুক্তি ফিঙ্গারপ্রিন্ট সম্পন্ন' : 'বন্ধকগ্রহীতার ফিঙ্গারপ্রিন্ট স্ক্যান'}</span>
+                    <Fingerprint size={18} />
+                    <span>{unlockBiometricVerified ? 'বন্ধকগ্রহীতার বায়োমেট্রিক সম্পন্ন' : 'বায়োমেট্রিক স্ক্যান'}</span>
                   </button>
                 </div>
               </div>
@@ -958,21 +915,21 @@ export default function MortgageDeedPanel() {
                   disabled={unlocking}
                   style={{
                     padding: '12px 32px',
-                    background: 'linear-gradient(135deg, #059669, #10b981)',
+                    background: 'linear-gradient(135deg, #701a75, #a21caf)',
                     color: '#ffffff',
                     border: 'none',
                     borderRadius: '10px',
                     fontWeight: '800',
                     fontSize: '14px',
                     cursor: unlocking ? 'wait' : 'pointer',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                    boxShadow: '0 4px 14px rgba(162, 28, 175, 0.35)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px'
                   }}
                 >
                   <Unlock size={18} />
-                  <span>{unlocking ? 'আনলক হচ্ছে...' : 'বন্ধক দায়মুক্তি অনুমোদন ও জমি আনলক করুন'}</span>
+                  <span>{unlocking ? 'দায়মুক্তি হচ্ছে...' : 'বন্ধক দায়মুক্তি সম্পন্ন ও জমি আনলক করুন'}</span>
                 </button>
               </div>
             </div>
@@ -982,4 +939,3 @@ export default function MortgageDeedPanel() {
     </div>
   );
 }
-
