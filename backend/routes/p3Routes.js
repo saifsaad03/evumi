@@ -194,6 +194,10 @@ router.post('/verify-deed', async (req, res) => {
     const pendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Mutation' || r.status === 'Pending_AC_Land_Review');
     const soldRecordForSeller = landForThisSeller.find(r => r.status === 'Sold');
     const deceasedRecordForSeller = landForThisSeller.find(r => r.is_deceased_locked || r.status === 'Deceased_Locked' || r.status === 'Transferred_To_Heirs');
+    const mortgageRecordForSeller = landForThisSeller.find(r => r.status === 'Mortgage_Locked');
+    const baynaRecordForSeller = landForThisSeller.find(r => r.status === 'Bayna_Locked');
+    const hebaPendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Heba_Review');
+    const exchangePendingRecordForSeller = landForThisSeller.find(r => r.status === 'Pending_Exchange_Review');
 
     // Rule 5.5: Deceased Landowner / Pending Bonton Nama Check
     if (deceasedRecordForSeller && !activeRecordForSeller) {
@@ -208,6 +212,37 @@ router.post('/verify-deed', async (req, res) => {
         success: false,
         alert_type: 'DECEASED_LOCKED',
         message: '⚠️ জমির মূল মালিক মৃত্যুবরণ করেছেন। মৃত্যু সনদ অনুমোদিত হওয়ায় ওয়ারিশদের মধ্যে বণ্টননামা (Bonton Nama) সম্পন্ন না হওয়া পর্যন্ত এই জমির বিক্রয় কার্যক্রম সাময়িকভাবে স্থগিত রয়েছে।'
+      });
+    }
+
+    // Rule 5.6: Mortgage Lock Check
+    if (mortgageRecordForSeller && !activeRecordForSeller) {
+      const mortDetails = mortgageRecordForSeller.mortgage_details || {};
+      const mortTo = mortDetails.mortgagee_name ? ` (${mortDetails.mortgagee_name}-এর অনুকূলে)` : '';
+      return res.status(200).json({
+        success: false,
+        alert_type: 'MORTGAGE_LOCKED',
+        message: `🔴 বন্ধকি সতর্কতা (Mortgage Locked): এই জমিটি বর্তমানে বন্ধক রয়েছে${mortTo}। ঋণ পরিশোধ ও সাব-রেজিস্ট্রি অফিস থেকে বন্ধক আনলক না করা পর্যন্ত জমি হস্তান্তর, বিক্রয় বা নতুন দলিল সম্পাদন সম্পূর্ণ নিষিদ্ধ!`
+      });
+    }
+
+    // Rule 5.7: Bayna Agreement Lock Check
+    if (baynaRecordForSeller && !activeRecordForSeller) {
+      const bDetails = baynaRecordForSeller.bayna_details || {};
+      const baynaTo = bDetails.bayna_buyer_name ? ` (${bDetails.bayna_buyer_name}-এর বরাবরে)` : '';
+      return res.status(200).json({
+        success: false,
+        alert_type: 'BAYNA_LOCKED',
+        message: `🔴 বায়নাপত্র সতর্কতা (Bayna Locked): এই জমিটির অনুকূলে একটি বায়নাপত্র চুক্তি কার্যকর রয়েছে${baynaTo}। চুক্তি বাতিল বা আনলক না হওয়া পর্যন্ত অন্য কারও কাছে বিক্রি বা হস্তান্তর আইনত নিষিদ্ধ!`
+      });
+    }
+
+    // Rule 5.8: Pending Heba or Exchange Check
+    if ((hebaPendingRecordForSeller || exchangePendingRecordForSeller) && !activeRecordForSeller) {
+      return res.status(200).json({
+        success: false,
+        alert_type: 'OTHER_DEED_PENDING',
+        message: `🔴 হস্তান্তর চলমান সতর্কতা: এই জমিতে একটি হেবা বা বিনিময় দলিলের নামজারি বর্তমানে এসি ল্যান্ড কার্যালয়ে প্রক্রিয়াধীন রয়েছে। নিষ্পত্তি না হওয়া পর্যন্ত নতুন দলিল করা যাবে না।`
       });
     }
 

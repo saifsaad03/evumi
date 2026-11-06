@@ -9,6 +9,7 @@ import {
 import DashboardLayout from '../components/DashboardLayout';
 import P4AcLandPanel from './P4AcLandPanel';
 import BontonNamaAcLandSection from '../components/BontonNamaAcLandSection';
+import ACLandOtherDeedsPanel from '../components/OtherDeeds/ACLandOtherDeedsPanel';
 
 export default function AcLandDashboard() {
   const { user } = useAuth();
@@ -105,6 +106,11 @@ export default function AcLandDashboard() {
       icon: Users,
     },
     {
+      id: 'other_deeds_requests',
+      label: 'অন্যান্য হস্তান্তর/বিনিময় অনুরোধ',
+      icon: FileText,
+    },
+    {
       id: 'assign_requests',
       label: 'সরকারি জমি বরাদ্দ ইনবক্স',
       icon: Layers,
@@ -143,6 +149,13 @@ export default function AcLandDashboard() {
       {activeTab === 'bontonnama_abedon' && (
         <div>
           <BontonNamaAcLandSection />
+        </div>
+      )}
+
+      {/* ── TAB: Other Deeds Mutation Requests ──────────────────── */}
+      {activeTab === 'other_deeds_requests' && (
+        <div>
+          <ACLandOtherDeedsPanel />
         </div>
       )}
 

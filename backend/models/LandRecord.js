@@ -17,9 +17,59 @@ const LandRecordSchema = new mongoose.Schema({
   available_area_decimal: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['Active', 'Pending_Mutation', 'Sold', 'Pending_AC_Land_Review', 'Deceased_Locked', 'Transferred_To_Heirs'],
+    enum: [
+      'Active', 
+      'Pending_Mutation', 
+      'Sold', 
+      'Pending_AC_Land_Review', 
+      'Deceased_Locked', 
+      'Transferred_To_Heirs',
+      'Mortgage_Locked',
+      'Bayna_Locked',
+      'Pending_Heba_Review',
+      'Pending_Exchange_Review'
+    ],
     default: 'Active'
   },
+  mutation_source: { type: String, default: 'ক্রয়/সাধারণ সূত্রে নামজারি' },
+  mortgage_details: {
+    is_mortgaged: { type: Boolean, default: false },
+    mortgagee_nid: { type: String },
+    mortgagee_name: { type: String },
+    mortgagee_phone: { type: String },
+    mortgagee_email: { type: String },
+    loan_amount: { type: Number },
+    mortgage_date: { type: Date },
+    mortgage_deed_no: { type: String },
+    unlocked_at: { type: Date }
+  },
+  bayna_details: {
+    is_bayna_locked: { type: Boolean, default: false },
+    bayna_buyer_nid: { type: String },
+    bayna_buyer_name: { type: String },
+    bayna_buyer_phone: { type: String },
+    bayna_buyer_email: { type: String },
+    bayna_amount: { type: Number },
+    bayna_date: { type: Date },
+    bayna_deed_no: { type: String },
+    unlocked_at: { type: Date }
+  },
+  exchange_details: {
+    exchanged_with_nid: { type: String },
+    exchanged_with_name: { type: String },
+    exchanged_with_dag: { type: String },
+    exchanged_with_khatian: { type: String },
+    exchange_deed_no: { type: String }
+  },
+  transfer_history: [
+    {
+      title: { type: String },
+      date: { type: Date, default: Date.now },
+      details: { type: String },
+      deed_no: { type: String },
+      source_type: { type: String }
+    }
+  ],
   // Deceased owner and Bonton Nama fields
   is_deceased_locked: { type: Boolean, default: false },
   deceased_owner_nid: { type: String },

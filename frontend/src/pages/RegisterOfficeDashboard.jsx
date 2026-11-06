@@ -7,6 +7,10 @@ import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
 import BontonNamaRegistrySection from '../components/BontonNamaRegistrySection';
 import DynamicLocationManager from '../components/DynamicLocationManager';
+import HebaGiftDeedPanel from '../components/OtherDeeds/HebaGiftDeedPanel';
+import ExchangeDeedPanel from '../components/OtherDeeds/ExchangeDeedPanel';
+import MortgageDeedPanel from '../components/OtherDeeds/MortgageDeedPanel';
+import BaynaDeedPanel from '../components/OtherDeeds/BaynaDeedPanel';
 
 
 export default function RegisterOfficeDashboard() {
@@ -14,6 +18,7 @@ export default function RegisterOfficeDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'assign');
+  const [selectedOtherDeedSub, setSelectedOtherDeedSub] = useState('heba');
 
   useEffect(() => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
@@ -739,6 +744,11 @@ export default function RegisterOfficeDashboard() {
       id: 'bonton_nama',
       label: 'মৃত মালিকের ওয়ারিশ বণ্টননামা ও মৃত্যু সনদ',
       icon: Users,
+    },
+    {
+      id: 'other_deeds',
+      label: 'অন্যান্য হস্তান্তর/বিনিময় দলিল',
+      icon: Sparkles,
     },
     {
       id: 'requests',
@@ -1664,6 +1674,114 @@ export default function RegisterOfficeDashboard() {
       {activeTab === 'bonton_nama' && (
         <div>
           <BontonNamaRegistrySection />
+        </div>
+      )}
+
+      {/* TAB: Other Transfer & Exchange Deeds */}
+      {activeTab === 'other_deeds' && (
+        <div>
+          {/* Sub-menu bar */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '10px',
+            background: '#ffffff',
+            padding: '14px 18px',
+            borderRadius: '14px',
+            border: '1.5px solid #cbd5e1',
+            marginBottom: '20px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
+          }}>
+            <button
+              type="button"
+              onClick={() => setSelectedOtherDeedSub('heba')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: selectedOtherDeedSub === 'heba' ? '#065f46' : '#f1f5f9',
+                color: selectedOtherDeedSub === 'heba' ? '#ffffff' : '#334155',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🎁 দানপত্র / হেবা দলিল</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedOtherDeedSub('exchange')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: selectedOtherDeedSub === 'exchange' ? '#1e3a8a' : '#f1f5f9',
+                color: selectedOtherDeedSub === 'exchange' ? '#ffffff' : '#334155',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🔄 বিনিময় দলিল</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedOtherDeedSub('mortgage')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: selectedOtherDeedSub === 'mortgage' ? '#701a75' : '#f1f5f9',
+                color: selectedOtherDeedSub === 'mortgage' ? '#ffffff' : '#334155',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🔒 বন্ধকি দলিল (Mortgage)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedOtherDeedSub('bayna')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: selectedOtherDeedSub === 'bayna' ? '#c2410c' : '#f1f5f9',
+                color: selectedOtherDeedSub === 'bayna' ? '#ffffff' : '#334155',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>📝 বায়নাপত্র দলিল (Bayna)</span>
+            </button>
+          </div>
+
+          {/* Render selected sub-panel */}
+          {selectedOtherDeedSub === 'heba' && <HebaGiftDeedPanel />}
+          {selectedOtherDeedSub === 'exchange' && <ExchangeDeedPanel />}
+          {selectedOtherDeedSub === 'mortgage' && <MortgageDeedPanel />}
+          {selectedOtherDeedSub === 'bayna' && <BaynaDeedPanel />}
         </div>
       )}
 

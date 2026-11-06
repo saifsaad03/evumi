@@ -123,7 +123,13 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
       { 'co_owners.nid': bngNid },
       { 'buyers.nid': rawNid },
       { 'buyers.nid': engNid },
-      { 'buyers.nid': bngNid }
+      { 'buyers.nid': bngNid },
+      { 'bayna_details.bayna_buyer_nid': rawNid },
+      { 'bayna_details.bayna_buyer_nid': engNid },
+      { 'bayna_details.bayna_buyer_nid': bngNid },
+      { 'mortgage_details.mortgagee_nid': rawNid },
+      { 'mortgage_details.mortgagee_nid': engNid },
+      { 'mortgage_details.mortgagee_nid': bngNid }
     ];
 
     const userNidConditions = [
@@ -132,14 +138,14 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
       { user_nid: bngNid }
     ];
 
-    // 1. Strictly find ONLY land records owned by THIS citizen (Active or Deceased_Locked)
+    // 1. Strictly find ONLY land records owned by THIS citizen (Active, Deceased_Locked, Mortgage_Locked, Bayna_Locked)
     // Never include government khas or unassigned plots
     const activeLands = await LandRecord.find({
       $and: [
         { $or: nidConditions },
         { owner_nid: { $nin: ['GOVT-KHAS-01', '1000000000000', 'অনলাইনে রেকর্ড নেই', ''] } },
         { owner_name: { $not: /সরকার|অনলাইনে অনিবন্ধিত/ } },
-        { status: { $in: ['Active', 'Deceased_Locked'] } }
+        { status: { $in: ['Active', 'Deceased_Locked', 'Mortgage_Locked', 'Bayna_Locked'] } }
       ]
     }).sort({ updatedAt: -1 });
 

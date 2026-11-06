@@ -289,6 +289,8 @@ export default function UserDashboard() {
             if (rNid && (rNid === engCurrentNid || r.owner_nid === currentNid)) return true;
             if (Array.isArray(r.co_owners) && r.co_owners.some(co => toEng(co.nid) === engCurrentNid || co.nid === currentNid)) return true;
             if (Array.isArray(r.buyers) && r.buyers.some(b => toEng(b.nid) === engCurrentNid || b.nid === currentNid)) return true;
+            if (r.bayna_details && (toEng(r.bayna_details.bayna_buyer_nid) === engCurrentNid || r.bayna_details.bayna_buyer_nid === currentNid)) return true;
+            if (r.mortgage_details && (toEng(r.mortgage_details.mortgagee_nid) === engCurrentNid || r.mortgage_details.mortgagee_nid === currentNid)) return true;
             return false;
           };
 
@@ -568,22 +570,30 @@ export default function UserDashboard() {
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
               {landData.active_lands.map((land) => {
-                const isLocked = land.is_deceased_locked || land.status === 'Deceased_Locked' || land.bonton_status === 'Locked';
+                const isDeceasedLocked = land.is_deceased_locked || land.status === 'Deceased_Locked' || land.bonton_status === 'Locked';
+                const isMortgaged = land.status === 'Mortgage_Locked';
+                const isBayna = land.status === 'Bayna_Locked';
+                const isLocked = isDeceasedLocked || isMortgaged || isBayna;
+
+                const topBorderColor = isDeceasedLocked ? '4px solid #ef4444' : isMortgaged ? '4px solid #a21caf' : isBayna ? '4px solid #ea580c' : '4px solid #059669';
+                const cardBorderColor = isDeceasedLocked ? '1.5px solid #fca5a5' : isMortgaged ? '1.5px solid #f0abfc' : isBayna ? '1.5px solid #fed7aa' : '1.5px solid #cbd5e1';
+                const cardBg = isDeceasedLocked ? '#fffbfb' : isMortgaged ? '#fdf4ff' : isBayna ? '#fffaf5' : '#ffffff';
+
                 return (
                 <div
                   key={land._id}
                   className="glass-card"
                   style={{
                     padding: '24px',
-                    borderTop: isLocked ? '4px solid #ef4444' : '4px solid #059669',
-                    background: isLocked ? '#fffbfb' : '#ffffff',
-                    border: isLocked ? '1.5px solid #fca5a5' : '1.5px solid #cbd5e1',
+                    borderTop: topBorderColor,
+                    background: cardBg,
+                    border: cardBorderColor,
                     borderRadius: '14px',
                     boxShadow: isLocked ? '0 4px 16px rgba(239, 68, 68, 0.08)' : '0 4px 16px rgba(15, 23, 42, 0.05)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
-                    {isLocked ? (
+                    {isDeceasedLocked ? (
                       <span style={{
                         fontSize: '11px',
                         padding: '3px 10px',
@@ -598,6 +608,38 @@ export default function UserDashboard() {
                       }}>
                         <Lock size={12} color="#dc2626" />
                         🔒 লককৃত (মালিকের মৃত্যুজনিত স্থগিতাদেশ)
+                      </span>
+                    ) : isMortgaged ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#fdf4ff',
+                        color: '#86198f',
+                        border: '1px solid #f0abfc',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Lock size={12} color="#a21caf" />
+                        🔒 বন্ধকাবদ্ধ জমি (Mortgage Locked)
+                      </span>
+                    ) : isBayna ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#fff7ed',
+                        color: '#9a3412',
+                        border: '1px solid #fed7aa',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <FileText size={12} color="#ea580c" />
+                        📝 বায়নাকৃত জমি (Bayna Locked)
                       </span>
                     ) : (
                       <span style={{
@@ -617,7 +659,7 @@ export default function UserDashboard() {
                     </span>
                   </div>
 
-                  {isLocked && (
+                  {isDeceasedLocked && (
                     <div style={{
                       background: '#fef2f2',
                       border: '1px solid #f87171',
@@ -634,6 +676,48 @@ export default function UserDashboard() {
                       <Lock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#dc2626' }} />
                       <div>
                         <strong style={{ color: '#7f1d1d' }}>জমি সাময়িকভাবে লককৃত:</strong> মূল মালিক মৃত্যুবরণ করায় সরকারি নিয়ম অনুযায়ী জমিটির সকল প্রকার বিক্রয় ও হস্তান্তর কার্যক্রম স্থগিত রাখা হয়েছে। ওয়ারিশ বণ্টননামা (Bonton Nama) সম্পন্ন হলে ওয়ারিশদের নামে নতুন স্বত্ব সক্রিয় হবে।
+                      </div>
+                    </div>
+                  )}
+
+                  {isMortgaged && (
+                    <div style={{
+                      background: '#fdf4ff',
+                      border: '1px solid #f0abfc',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#86198f',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <Lock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#a21caf' }} />
+                      <div>
+                        <strong style={{ color: '#701a75' }}>জমি বন্ধকাবদ্ধ রয়েছে:</strong> {land.mortgage_details?.mortgagee_name ? `${land.mortgage_details.mortgagee_name}-এর নিকট ` : ''}ঋণের বিপরীতে জমিটি বন্ধক রাখা হয়েছে (ঋণ: ৳{land.mortgage_details?.loan_amount || 0})। ঋণ পরিশোধ সাপেক্ষে দায়মুক্তি আনলক না করা পর্যন্ত এ জমির বিক্রয় স্থগিত থাকবে।
+                      </div>
+                    </div>
+                  )}
+
+                  {isBayna && (
+                    <div style={{
+                      background: '#fff7ed',
+                      border: '1px solid #fed7aa',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#9a3412',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <FileText size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#ea580c' }} />
+                      <div>
+                        <strong style={{ color: '#c2410c' }}>বায়না চুক্তি চলমান:</strong> {land.bayna_details?.bayna_buyer_name ? `${land.bayna_details.bayna_buyer_name}-এর অনুকূলে ` : ''}বায়নাপত্র চুক্তি বলবৎ রয়েছে (পরিশোধিত বায়না: ৳{land.bayna_details?.bayna_amount || 0})। চুক্তি নিষ্পত্তি ছাড়া এ জমি অন্য কোথাও হস্তান্তর করা নিষিদ্ধ।
                       </div>
                     </div>
                   )}
@@ -693,6 +777,46 @@ export default function UserDashboard() {
                         fontWeight: '700'
                       }}>
                         📜 স্বত্ব বা অর্জনের সূত্র: {land.inheritance_source}
+                      </div>
+                    )}
+                    {land.mutation_source && (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        padding: '8px 12px',
+                        background: '#f0fdf4',
+                        borderRadius: '8px',
+                        border: '1px solid #86efac',
+                        fontSize: '12px',
+                        color: '#166534',
+                        fontWeight: '700'
+                      }}>
+                        📜 নামজারির সূত্র: {land.mutation_source}
+                      </div>
+                    )}
+                    {land.mortgage_details?.is_mortgaged && (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        padding: '8px 12px',
+                        background: '#fdf4ff',
+                        borderRadius: '8px',
+                        border: '1px solid #f0abfc',
+                        fontSize: '12px',
+                        color: '#86198f'
+                      }}>
+                        <strong>🔒 দায়বদ্ধতা তথ্য:</strong> {land.mortgage_details.mortgagee_name} (NID: {land.mortgage_details.mortgagee_nid})-এর নিকট ৳{land.mortgage_details.loan_amount} টাকায় জমি বন্ধক রয়েছে। (দলিল নং: {land.mortgage_details.mortgage_deed_no || 'N/A'})
+                      </div>
+                    )}
+                    {land.bayna_details?.is_bayna_locked && (
+                      <div style={{
+                        gridColumn: '1 / -1',
+                        padding: '8px 12px',
+                        background: '#fff7ed',
+                        borderRadius: '8px',
+                        border: '1px solid #fed7aa',
+                        fontSize: '12px',
+                        color: '#9a3412'
+                      }}>
+                        <strong>📝 বায়না তথ্য:</strong> {land.bayna_details.bayna_buyer_name} (NID: {land.bayna_details.bayna_buyer_nid})-এর অনুকূলে ৳{land.bayna_details.bayna_amount} টাকায় বায়না চুক্তি রয়েছে। (দলিল নং: {land.bayna_details.bayna_deed_no || 'N/A'})
                       </div>
                     )}
                     {land.is_joint_ownership && land.co_owners && land.co_owners.length > 1 && (
