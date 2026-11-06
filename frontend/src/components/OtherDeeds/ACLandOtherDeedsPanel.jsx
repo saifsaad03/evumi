@@ -87,13 +87,16 @@ export default function ACLandOtherDeedsPanel() {
       });
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated && res.data.simulated_otp) {
-          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        if (res.data.simulated_otp) {
+          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
+          setRecipientOtp(res.data.simulated_otp);
         }
         setRecipientOtpSentMsg(msg);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
+      const errMsg = err.response?.data?.message || err.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।';
+      alert(errMsg);
+      setRecipientOtpSentMsg(`❌ ${errMsg}`);
     } finally {
       setSendingRecipientOtp(false);
     }

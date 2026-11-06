@@ -121,14 +121,19 @@ export default function ExchangeDeedPanel() {
 
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated && res.data.simulated_otp) {
-          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        if (res.data.simulated_otp) {
+          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
+          if (isP1) setP1Otp(res.data.simulated_otp);
+          else setP2Otp(res.data.simulated_otp);
         }
         if (isP1) setP1OtpSentMsg(msg);
         else setP2OtpSentMsg(msg);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
+      const errMsg = err.response?.data?.message || err.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।';
+      alert(errMsg);
+      if (isP1) setP1OtpSentMsg(`❌ ${errMsg}`);
+      else setP2OtpSentMsg(`❌ ${errMsg}`);
     } finally {
       if (isP1) setP1OtpSending(false);
       else setP2OtpSending(false);

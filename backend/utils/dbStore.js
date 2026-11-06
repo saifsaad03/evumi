@@ -477,15 +477,20 @@ const createDeedOtp = async (cleanEmail, otp, extraData = {}, expiresAt) => {
   return otpRecord;
 };
 
-const findLatestDeedOtp = async (cleanEmail, recordId) => {
+const findLatestDeedOtp = async (cleanEmail, recordId, nid) => {
   const emailLower = (cleanEmail || '').trim().toLowerCase();
   const recIdStr = (recordId || '').toString().trim();
+  const nidStr = (nid || '').toString().trim();
 
   return safeDbCall(
     async () => {
       const orConditions = [];
       if (emailLower) orConditions.push({ email: emailLower });
       if (recIdStr) orConditions.push({ 'metadata.record_id': recIdStr });
+      if (nidStr) {
+        orConditions.push({ 'metadata.recipient_nid': nidStr });
+        orConditions.push({ 'metadata.heir_nid': nidStr });
+      }
 
       const query = {
         purpose: 'DEED_REGISTRATION',
@@ -502,6 +507,7 @@ const findLatestDeedOtp = async (cleanEmail, recordId) => {
           if (o.purpose !== 'DEED_REGISTRATION') return false;
           if (emailLower && o.email && o.email.toLowerCase() === emailLower) return true;
           if (recIdStr && o.metadata && o.metadata.record_id === recIdStr) return true;
+          if (nidStr && o.metadata && (o.metadata.recipient_nid === nidStr || o.metadata.heir_nid === nidStr)) return true;
           return false;
         })
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -510,14 +516,16 @@ const findLatestDeedOtp = async (cleanEmail, recordId) => {
   );
 };
 
-const deleteDeedOtps = async (cleanEmail, recordId) => {
+const deleteDeedOtps = async (cleanEmail, recordId, nid) => {
   const emailLower = (cleanEmail || '').trim().toLowerCase();
   const recIdStr = (recordId || '').toString().trim();
+  const nidStr = (nid || '').toString().trim();
 
   global._memoryOtps = global._memoryOtps.filter(o => {
     if (o.purpose !== 'DEED_REGISTRATION') return true;
     if (emailLower && o.email && o.email.toLowerCase() === emailLower) return false;
     if (recIdStr && o.metadata && o.metadata.record_id === recIdStr) return false;
+    if (nidStr && o.metadata && (o.metadata.recipient_nid === nidStr || o.metadata.heir_nid === nidStr)) return false;
     return true;
   });
   saveJsonFile(OTPS_FILE, global._memoryOtps);
@@ -528,6 +536,10 @@ const deleteDeedOtps = async (cleanEmail, recordId) => {
       const orConditions = [];
       if (emailLower) orConditions.push({ email: emailLower });
       if (recIdStr) orConditions.push({ 'metadata.record_id': recIdStr });
+      if (nidStr) {
+        orConditions.push({ 'metadata.recipient_nid': nidStr });
+        orConditions.push({ 'metadata.heir_nid': nidStr });
+      }
 
       if (orConditions.length > 0) {
         await OtpVerification.deleteMany({
@@ -541,9 +553,15 @@ const deleteDeedOtps = async (cleanEmail, recordId) => {
   }
 };
 
+// Helper to generate 6-digit OTP
+const generate6DigitOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 module.exports = {
   isDbReady,
   ensureDbConnected,
+  generate6DigitOtp,
   findUserByEmail,
   findUserByNid,
   createCitizenUser,

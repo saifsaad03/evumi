@@ -162,13 +162,16 @@ export default function MortgageDeedPanel() {
       });
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated && res.data.simulated_otp) {
-          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        if (res.data.simulated_otp) {
+          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
+          setOwnerOtp(res.data.simulated_otp);
         }
         setOwnerOtpSentMsg(msg);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
+      const errMsg = err.response?.data?.message || err.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।';
+      alert(errMsg);
+      setOwnerOtpSentMsg(`❌ ${errMsg}`);
     } finally {
       setSendingOwnerOtp(false);
     }
@@ -244,13 +247,16 @@ export default function MortgageDeedPanel() {
       });
       if (res.data.success) {
         let msg = res.data.message || 'ওটিপি সফলভাবে পাঠানো হয়েছে।';
-        if (res.data.simulated && res.data.simulated_otp) {
-          msg += ` (সিমুলেশন ওটিপি: ${res.data.simulated_otp})`;
+        if (res.data.simulated_otp) {
+          msg += ` (ওটিপি কোড: ${res.data.simulated_otp})`;
+          setMortgageeOtp(res.data.simulated_otp);
         }
         setUnlockOtpSentMsg(msg);
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।');
+      const errMsg = err.response?.data?.message || err.message || 'ওটিপি পাঠাতে সমস্যা হয়েছে।';
+      alert(errMsg);
+      setUnlockOtpSentMsg(`❌ ${errMsg}`);
     } finally {
       setSendingUnlockOtp(false);
     }
