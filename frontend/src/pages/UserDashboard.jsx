@@ -38,7 +38,8 @@ export default function UserDashboard() {
     active_lands: [],
     sold_lands: [],
     approved_assignments: [],
-    pending_assignments: []
+    pending_assignments: [],
+    pending_mutations: []
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -304,7 +305,8 @@ export default function UserDashboard() {
             active_lands: (rawData.active_lands || []).filter(isMatchingRecord),
             sold_lands: (rawData.sold_lands || []).filter(isMatchingRecord),
             approved_assignments: (rawData.approved_assignments || []).filter(isMatchingReq),
-            pending_assignments: (rawData.pending_assignments || []).filter(isMatchingReq)
+            pending_assignments: (rawData.pending_assignments || []).filter(isMatchingReq),
+            pending_mutations: rawData.pending_mutations || []
           });
         } else {
           setLandData(rawData);
@@ -405,6 +407,10 @@ export default function UserDashboard() {
     }
   };
 
+  const totalPendingMutations = (landData.pending_mutations && landData.pending_mutations.length > 0)
+    ? landData.pending_mutations.length
+    : landData.pending_assignments.length;
+
   const navItems = [
     { 
       id: 'lands', 
@@ -424,9 +430,9 @@ export default function UserDashboard() {
     },
     { 
       id: 'pending', 
-      label: 'পর্যালোচনাধীন আবেদন', 
+      label: 'নামজারি ট্র্যাকিং ও আবেদন', 
       icon: Clock, 
-      badge: landData.pending_assignments.length,
+      badge: totalPendingMutations > 0 ? totalPendingMutations : undefined,
       badgeColor: '#b45309',
       badgeBg: '#fef3c7'
     },
@@ -453,7 +459,7 @@ export default function UserDashboard() {
   const stats = [
     { label: 'অনুমোদিত জমি', value: landData.active_lands.length, color: '#047857' },
     { label: 'মালিকানা দাবি', value: myClaims.length, color: '#1d4ed8' },
-    { label: 'পর্যালোচনাধীন', value: landData.pending_assignments.length, color: '#b45309' },
+    { label: 'নামজারি প্রক্রিয়াধীন', value: totalPendingMutations, color: '#b45309' },
     { label: 'হস্তান্তরিত জমি', value: landData.sold_lands.length, color: '#dc2626' },
   ];
 
@@ -573,11 +579,34 @@ export default function UserDashboard() {
                 const isDeceasedLocked = land.is_deceased_locked || land.status === 'Deceased_Locked' || land.bonton_status === 'Locked';
                 const isMortgaged = land.status === 'Mortgage_Locked';
                 const isBayna = land.status === 'Bayna_Locked';
-                const isLocked = isDeceasedLocked || isMortgaged || isBayna;
+                const isHebaPending = land.status === 'Pending_Heba_Review';
+                const isExchangePending = land.status === 'Pending_Exchange_Review';
+                const isSalePending = land.status === 'Pending_Mutation';
+                const isLocked = isDeceasedLocked || isMortgaged || isBayna || isHebaPending || isExchangePending || isSalePending;
 
-                const topBorderColor = isDeceasedLocked ? '4px solid #ef4444' : isMortgaged ? '4px solid #a21caf' : isBayna ? '4px solid #ea580c' : '4px solid #059669';
-                const cardBorderColor = isDeceasedLocked ? '1.5px solid #fca5a5' : isMortgaged ? '1.5px solid #f0abfc' : isBayna ? '1.5px solid #fed7aa' : '1.5px solid #cbd5e1';
-                const cardBg = isDeceasedLocked ? '#fffbfb' : isMortgaged ? '#fdf4ff' : isBayna ? '#fffaf5' : '#ffffff';
+                const topBorderColor = isDeceasedLocked ? '4px solid #ef4444' 
+                  : isMortgaged ? '4px solid #a21caf' 
+                  : isBayna ? '4px solid #ea580c' 
+                  : isHebaPending ? '4px solid #059669'
+                  : isExchangePending ? '4px solid #0284c7'
+                  : isSalePending ? '4px solid #d97706'
+                  : '4px solid #059669';
+
+                const cardBorderColor = isDeceasedLocked ? '1.5px solid #fca5a5' 
+                  : isMortgaged ? '1.5px solid #f0abfc' 
+                  : isBayna ? '1.5px solid #fed7aa' 
+                  : isHebaPending ? '1.5px solid #86efac'
+                  : isExchangePending ? '1.5px solid #7dd3fc'
+                  : isSalePending ? '1.5px solid #fde68a'
+                  : '1.5px solid #cbd5e1';
+
+                const cardBg = isDeceasedLocked ? '#fffbfb' 
+                  : isMortgaged ? '#fdf4ff' 
+                  : isBayna ? '#fffaf5' 
+                  : isHebaPending ? '#f0fdf4'
+                  : isExchangePending ? '#f0f9ff'
+                  : isSalePending ? '#fffbeb'
+                  : '#ffffff';
 
                 return (
                 <div
@@ -589,7 +618,7 @@ export default function UserDashboard() {
                     background: cardBg,
                     border: cardBorderColor,
                     borderRadius: '14px',
-                    boxShadow: isLocked ? '0 4px 16px rgba(239, 68, 68, 0.08)' : '0 4px 16px rgba(15, 23, 42, 0.05)'
+                    boxShadow: isLocked ? '0 4px 16px rgba(15, 23, 42, 0.08)' : '0 4px 16px rgba(15, 23, 42, 0.05)'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
@@ -640,6 +669,54 @@ export default function UserDashboard() {
                       }}>
                         <FileText size={12} color="#ea580c" />
                         📝 বায়নাকৃত জমি (Bayna Locked)
+                      </span>
+                    ) : isHebaPending ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#ecfdf5',
+                        color: '#065f46',
+                        border: '1px solid #a7f3d0',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Clock size={12} color="#047857" />
+                        ⏳ হেবা দলিল নামজারি প্রক্রিয়াধীন
+                      </span>
+                    ) : isExchangePending ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#f0f9ff',
+                        color: '#0369a1',
+                        border: '1px solid #bae6fd',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Clock size={12} color="#0284c7" />
+                        ⏳ বিনিময় দলিল নামজারি প্রক্রিয়াধীন
+                      </span>
+                    ) : isSalePending ? (
+                      <span style={{
+                        fontSize: '11px',
+                        padding: '3px 10px',
+                        borderRadius: '999px',
+                        background: '#fef3c7',
+                        color: '#92400e',
+                        border: '1px solid #fde68a',
+                        fontWeight: '800',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <Clock size={12} color="#b45309" />
+                        ⏳ বিক্রয় দলিল নামজারি প্রক্রিয়াধীন
                       </span>
                     ) : (
                       <span style={{
@@ -718,6 +795,69 @@ export default function UserDashboard() {
                       <FileText size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#ea580c' }} />
                       <div>
                         <strong style={{ color: '#c2410c' }}>বায়না চুক্তি চলমান:</strong> {land.bayna_details?.bayna_buyer_name ? `${land.bayna_details.bayna_buyer_name}-এর অনুকূলে ` : ''}বায়নাপত্র চুক্তি বলবৎ রয়েছে (পরিশোধিত বায়না: ৳{land.bayna_details?.bayna_amount || 0})। চুক্তি নিষ্পত্তি ছাড়া এ জমি অন্য কোথাও হস্তান্তর করা নিষিদ্ধ।
+                      </div>
+                    </div>
+                  )}
+
+                  {isHebaPending && (
+                    <div style={{
+                      background: '#f0fdf4',
+                      border: '1px solid #86efac',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#166534',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <Clock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#047857' }} />
+                      <div>
+                        <strong>হেবা নামজারি প্রক্রিয়াধীন:</strong> জমিটির দানপত্র/হেবা দলিল সম্পাদনপূর্বক এসি ল্যান্ড কার্যালয়ে নামজারি অনুমোদন প্রক্রিয়ায় রয়েছে। অনুমোদন সম্পন্ন হলে দানকৃত অংশ গ্রহীতার রেকর্ডে যুক্ত হবে এবং আপনার মূল রেকর্ডে অবশিষ্ট শতক কার্যকর হবে।
+                      </div>
+                    </div>
+                  )}
+
+                  {isExchangePending && (
+                    <div style={{
+                      background: '#f0f9ff',
+                      border: '1px solid #7dd3fc',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#0369a1',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <Clock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#0284c7' }} />
+                      <div>
+                        <strong>বিনিময় নামজারি প্রক্রিয়াধীন:</strong> পারস্পরিক জমি বিনিময় দলিল সম্পাদনপূর্বক এসি ল্যান্ড কার্যালয়ে নামজারি অনুমোদন প্রক্রিয়ায় রয়েছে।
+                      </div>
+                    </div>
+                  )}
+
+                  {isSalePending && (
+                    <div style={{
+                      background: '#fffbeb',
+                      border: '1px solid #fde68a',
+                      borderRadius: '8px',
+                      padding: '10px 12px',
+                      marginBottom: '14px',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '8px',
+                      color: '#92400e',
+                      fontSize: '12px',
+                      lineHeight: '1.5'
+                    }}>
+                      <Clock size={16} style={{ flexShrink: 0, marginTop: '2px', color: '#b45309' }} />
+                      <div>
+                        <strong>বিক্রয় নামজারি প্রক্রিয়াধীন:</strong> সাফ-কবলা বিক্রয় দলিল সম্পাদনের পর এসি ল্যান্ড কার্যালয়ে ই-নামজারি অনুমোদন অপেক্ষমান রয়েছে।
                       </div>
                     </div>
                   )}
@@ -930,91 +1070,271 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* ── TAB 2: Pending Assignments in Review ──────────────── */}
-      {activeTab === 'pending' && (
-        <div>
-          <div style={{ marginBottom: '18px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <Clock size={20} color="#b45309" />
-              এসি ল্যান্ড অফিসে পর্যালোচনায় অপেক্ষমান জমি বরাদ্দ ({landData.pending_assignments.length}টি)
-            </h2>
-            <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>
-              সাব-রেজিস্ট্রি অফিস থেকে আপনার নামে জমি বরাদ্দের আবেদন পাঠানো হয়েছে। সহকারী কমিশনার (ভূমি) অনুমোদন করলেই জমিটি আপনার চূড়ান্ত মালিকানায় আসবে।
-            </p>
-          </div>
+      {/* ── TAB 2: Pending Mutations & Assignments in Review ── */}
+      {activeTab === 'pending' && (() => {
+        const pendingList = (landData.pending_mutations && landData.pending_mutations.length > 0)
+          ? landData.pending_mutations
+          : (landData.pending_assignments || []).map(req => ({
+              _id: req._id,
+              type: 'Assignment',
+              type_bn: 'প্রাথমিক জমি বরাদ্দ নামজারি',
+              badge_color: '#b45309',
+              badge_bg: '#fef3c7',
+              status: req.status,
+              status_bn: 'জমি বরাদ্দ নামজারি পর্যালোচনায় অপেক্ষমান',
+              role: 'আবেদনকারী',
+              mouza: req.mouza,
+              dag_no: req.dag_no,
+              khatian_no: req.khatian_no,
+              area_decimal: req.area_decimal,
+              volume_book: req.volume_book,
+              page_no: req.page_no,
+              created_at: req.createdAt || req.created_at
+            }));
 
-          {landData.pending_assignments.length === 0 ? (
-            <div className="glass-card" style={{ padding: '54px 30px', textAlign: 'center', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-              <div style={{ fontSize: '48px', marginBottom: '14px' }}>⏳</div>
-              <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
-                বর্তমানে কোনো অপেক্ষমান বরাদ্দ আবেদন নেই
-              </h3>
-              <p style={{ color: '#475569', fontSize: '14px', maxWidth: '500px', margin: '0 auto' }}>
-                আপনার নামে নতুন কোনো জমির আবেদন সাব-রেজিস্ট্রি কর্তৃক সাবমিট করা হলে তা এখানে পেন্ডিং হিসেবে ট্র্যাক করতে পারবেন।
+        return (
+          <div>
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <h2 style={{ fontSize: '18px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                  <Clock size={20} color="#b45309" />
+                  এসি ল্যান্ড অফিসে পর্যালোচনায় অপেক্ষমান নামজারি আবেদন ({pendingList.length}টি)
+                </h2>
+                <span style={{ fontSize: '12px', background: '#fef3c7', color: '#92400e', padding: '4px 12px', borderRadius: '20px', fontWeight: '700', border: '1px solid #fde68a' }}>
+                  লাইভ ট্র্যাকিং সক্রিয়
+                </span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#475569', margin: '6px 0 0 0', lineHeight: 1.5 }}>
+                সাব-রেজিস্ট্রি অফিসে দলিল সম্পাদন (হেবা/দানপত্র, বিক্রয়, বিনিময়) বা জমি বরাদ্দের পর নামজারি আবেদন বর্তমানে সহকারী কমিশনার (ভূমি) এর অনুমোদনের অপেক্ষায় রয়েছে। অনুমোদন সম্পন্ন হলেই খতিয়ানটি স্বয়ংক্রিয়ভাবে আপনার <strong>'আমার অনুমোদিত জমি'</strong> সেকশনে সক্রিয় হবে এবং এখান থেকে অপসারিত হবে।
               </p>
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '18px' }}>
-              {landData.pending_assignments.map((req) => (
-                <div
-                  key={req._id}
-                  className="glass-card"
-                  style={{
-                    padding: '22px',
-                    borderTop: '4px solid #d97706',
-                    background: '#ffffff',
-                    border: '1.5px solid #cbd5e1',
-                    borderRadius: '14px',
-                    boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)'
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                    <span style={{
-                      fontSize: '11px',
-                      padding: '3px 10px',
-                      borderRadius: '999px',
-                      background: '#fef3c7',
-                      color: '#b45309',
-                      border: '1px solid #fde68a',
-                      fontWeight: '800'
-                    }}>
-                      ⏳ এসি ল্যান্ড রিভিউ পেন্ডিং
-                    </span>
-                    <span style={{ fontSize: '11px', color: '#64748b', fontWeight: '600' }}>
-                      {req.mouza}
-                    </span>
-                  </div>
 
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                    <span>মৌজা: <span style={{ color: '#b45309' }}>{req.mouza}</span></span>
-                    <span style={{ color: '#94a3b8' }}>|</span>
-                    <span>দাগ নং: <span style={{ color: '#b45309' }}>{req.dag_no}</span></span>
-                    <span style={{ color: '#94a3b8' }}>|</span>
-                    <span>খতিয়ান নং: <span style={{ color: '#b45309' }}>{req.khatian_no}</span></span>
-                  </h3>
+            {pendingList.length === 0 ? (
+              <div className="glass-card" style={{ padding: '54px 30px', textAlign: 'center', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '14px' }}>✅</div>
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', marginBottom: '8px' }}>
+                  বর্তমানে কোনো অপেক্ষমান নামজারি আবেদন নেই
+                </h3>
+                <p style={{ color: '#475569', fontSize: '14px', maxWidth: '540px', margin: '0 auto', lineHeight: 1.6 }}>
+                  আপনার নামে নতুন কোনো সাফ-কবলা বিক্রয়, হেবা/দানপত্র বা বিনিময় দলিল সম্পাদন করা হলে এসি ল্যান্ড কর্তৃক নামজারি অনুমোদন না হওয়া পর্যন্ত তা এখানে রিয়েল-টাইমে ট্র্যাক করতে পারবেন।
+                </p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(370px, 1fr))', gap: '20px' }}>
+                {pendingList.map((item) => {
+                  const borderTopColor = item.type === 'Heba' ? '#059669' 
+                    : item.type === 'Exchange' ? '#0284c7' 
+                    : item.type === 'Bonton' ? '#7c3aed' 
+                    : '#d97706';
 
-                  <div style={{
-                    background: '#fffbeb',
-                    border: '1px solid #fde68a',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    fontSize: '13px',
-                    marginBottom: '12px',
-                    color: '#92400e'
-                  }}>
-                    <div>পরিমাণ: <strong>{req.area_decimal} শতক</strong></div>
-                    <div style={{ marginTop: '4px' }}>ভলিউম: <strong>{req.volume_book}</strong> | পৃষ্ঠা: <strong>{req.page_no}</strong></div>
-                  </div>
+                  return (
+                    <div
+                      key={item._id}
+                      className="glass-card"
+                      style={{
+                        padding: '22px',
+                        borderTop: `4px solid ${borderTopColor}`,
+                        background: '#ffffff',
+                        border: '1.5px solid #cbd5e1',
+                        borderRadius: '14px',
+                        boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between'
+                      }}
+                    >
+                      <div>
+                        {/* Top Badges */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '6px' }}>
+                          <span style={{
+                            fontSize: '11px',
+                            padding: '3px 10px',
+                            borderRadius: '999px',
+                            background: item.badge_bg || '#fef3c7',
+                            color: item.badge_color || '#b45309',
+                            border: `1px solid ${item.badge_color ? item.badge_color + '40' : '#fde68a'}`,
+                            fontWeight: '800'
+                          }}>
+                            {item.type_bn}
+                          </span>
+                          {item.role && (
+                            <span style={{
+                              fontSize: '11px',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: '#f1f5f9',
+                              color: '#334155',
+                              fontWeight: '700',
+                              border: '1px solid #e2e8f0'
+                            }}>
+                              ভূমিকা: {item.role}
+                            </span>
+                          )}
+                        </div>
 
-                  <div style={{ fontSize: '12px', color: '#64748b' }}>
-                    আবেদন দাখিলের সময়: {req.created_at ? new Date(req.created_at).toLocaleDateString('bn-BD') : 'সম্প্রতি'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+                        {/* Status notification bar */}
+                        <div style={{
+                          background: '#fffbeb',
+                          border: '1px solid #fde68a',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          fontWeight: '700',
+                          color: '#92400e',
+                          marginBottom: '14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}>
+                          <Clock size={14} color="#d97706" style={{ flexShrink: 0 }} />
+                          <span>{item.status_bn || 'নামজারি প্রক্রিয়াধীন'}</span>
+                        </div>
+
+                        {/* Land & Deed Details Header */}
+                        <div style={{ marginBottom: '12px' }}>
+                          <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+                            <span>মৌজা: <strong style={{ color: '#047857' }}>{item.mouza || 'N/A'}</strong></span>
+                            <span style={{ color: '#cbd5e1' }}>|</span>
+                            <span>দাগ: <strong style={{ color: '#047857' }}>{item.dag_no || 'N/A'}</strong></span>
+                            <span style={{ color: '#cbd5e1' }}>|</span>
+                            <span>খতিয়ান: <strong style={{ color: '#047857' }}>{item.khatian_no || 'N/A'}</strong></span>
+                          </div>
+                          {(item.deed_no || item.application_no) && (
+                            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: '600' }}>
+                              {item.deed_no ? `দলিল নং: ${item.deed_no}` : `আবেদন নং: ${item.application_no}`}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Specific Content per Type */}
+                        <div style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '10px',
+                          padding: '12px',
+                          marginBottom: '14px',
+                          fontSize: '13px'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                            <span style={{ color: '#64748b' }}>জমির পরিমাণ:</span>
+                            <strong style={{ color: '#0f172a' }}>{item.area_decimal} শতক</strong>
+                          </div>
+
+                          {item.type === 'Heba' && (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>দাতা:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.donor_name}</strong>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>গ্রহীতা:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.recipient_name}</strong>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#64748b' }}>সম্পর্ক:</span>
+                                <strong style={{ color: '#047857' }}>{item.relationship || 'নিকটাত্মীয়'} (যাচাইকৃত)</strong>
+                              </div>
+                            </>
+                          )}
+
+                          {item.type === 'Exchange' && (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>মালিক ১:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.owner1_name}</strong>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>মালিক ২:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.owner2_name}</strong>
+                              </div>
+                              {item.other_mouza && (
+                                <div style={{ fontSize: '11.5px', color: '#0284c7', marginTop: '4px', paddingTop: '4px', borderTop: '1px dashed #cbd5e1' }}>
+                                  বিনিময়কৃত অপর জমি: মৌজা {item.other_mouza}, দাগ {item.other_dag} ({item.other_area} শতক)
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {item.type === 'Sale' && (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>বিক্রেতা:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.seller_name}</strong>
+                              </div>
+                              {item.buyer_name && (
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span style={{ color: '#64748b' }}>ক্রেতা:</span>
+                                  <strong style={{ color: '#0f172a' }}>{item.buyer_name}</strong>
+                                </div>
+                              )}
+                            </>
+                          )}
+
+                          {item.type === 'Bonton' && (
+                            <>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                <span style={{ color: '#64748b' }}>মূল মৃত মালিক:</span>
+                                <strong style={{ color: '#0f172a' }}>{item.deceased_name}</strong>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                <span style={{ color: '#64748b' }}>মোট ওয়ারিশ:</span>
+                                <strong style={{ color: '#7c3aed' }}>{item.heirs_count} জন</strong>
+                              </div>
+                            </>
+                          )}
+
+                          {item.type === 'Assignment' && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                              <span style={{ color: '#64748b' }}>ভলিউম ও পৃষ্ঠা:</span>
+                              <strong style={{ color: '#0f172a' }}>ভলিউম {item.volume_book} | পৃষ্ঠা {item.page_no}</strong>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Workflow Timeline */}
+                        <div style={{
+                          background: '#ffffff',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '8px',
+                          padding: '10px 12px',
+                          marginBottom: '12px',
+                          fontSize: '11px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '6px'
+                        }}>
+                          <span style={{ color: '#047857', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Check size={12} /> দলিল সম্পন্ন
+                          </span>
+                          <span style={{ color: '#cbd5e1' }}>➔</span>
+                          <span style={{ color: '#b45309', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Clock size={12} /> এসি ল্যান্ডে চলমান
+                          </span>
+                          <span style={{ color: '#cbd5e1' }}>➔</span>
+                          <span style={{ color: '#94a3b8', fontWeight: '600' }}>
+                            চূড়ান্ত খতিয়ান
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div style={{ paddingTop: '10px', borderTop: '1px dashed #e2e8f0', fontSize: '11px', color: '#64748b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>
+                          {item.created_at ? new Date(item.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'short', day: 'numeric' }) : 'সম্প্রতি'}
+                        </span>
+                        <span style={{ color: '#059669', fontWeight: '700' }}>
+                          অনুমোদনের অপেক্ষায়
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── TAB 3: Sold Lands History ─────────────────────────── */}
       {activeTab === 'sold' && (
