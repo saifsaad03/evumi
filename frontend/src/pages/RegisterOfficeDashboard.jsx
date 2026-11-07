@@ -2,7 +2,11 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, Bell, Plus } from 'lucide-react';
+import { 
+  Building2, Users, Search, UserCheck, Send, CheckCircle, Clock, 
+  AlertTriangle, FileText, Layers, Hash, MapPin, Sparkles, RefreshCw, 
+  Bell, Plus, Gift, ArrowRightLeft, Lock, FileEdit, Landmark 
+} from 'lucide-react';
 import DashboardLayout from '../components/DashboardLayout';
 import P4RegistryPanel from './P4RegistryPanel';
 import BontonNamaRegistrySection from '../components/BontonNamaRegistrySection';
@@ -20,7 +24,6 @@ export default function RegisterOfficeDashboard() {
   const tabFromUrl = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(tabFromUrl || 'assign');
   const [assignSubTab, setAssignSubTab] = useState('form'); // 'form' | 'tracking'
-  const [selectedOtherDeedSub, setSelectedOtherDeedSub] = useState('heba');
 
   useEffect(() => {
     if (tabFromUrl && tabFromUrl !== activeTab) {
@@ -639,17 +642,29 @@ export default function RegisterOfficeDashboard() {
       icon: Users,
     },
     {
-      id: 'other_deeds',
-      label: 'অন্যান্য হস্তান্তর/বিনিময় দলিল',
-      icon: Sparkles,
+      id: 'heba',
+      label: 'দানপত্র / হেবা দলিল',
+      icon: Gift,
     },
     {
-      id: 'requests',
-      label: 'প্রেরিত বরাদ্দের ট্র্যাকিং',
-      icon: Clock,
-      badge: sentRequests.length,
-      badgeColor: '#1d4ed8',
-      badgeBg: '#dbeafe'
+      id: 'exchange',
+      label: 'বিনিময় দলিল',
+      icon: ArrowRightLeft,
+    },
+    {
+      id: 'mortgage',
+      label: 'বন্ধকি দলিল (Mortgage)',
+      icon: Lock,
+    },
+    {
+      id: 'bayna',
+      label: 'বায়নাপত্র দলিল (Bayna)',
+      icon: FileEdit,
+    },
+    {
+      id: 'wakfo',
+      label: 'ওয়াকফ দলিল (Wakf Deed)',
+      icon: Landmark,
     },
     {
       id: 'claims',
@@ -1580,214 +1595,12 @@ export default function RegisterOfficeDashboard() {
         </div>
       )}
 
-      {/* TAB: Other Transfer & Exchange Deeds */}
-      {activeTab === 'other_deeds' && (
-        <div>
-          {/* Sub-menu bar */}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '10px',
-            background: '#ffffff',
-            padding: '14px 18px',
-            borderRadius: '14px',
-            border: '1.5px solid #cbd5e1',
-            marginBottom: '20px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}>
-            <button
-              type="button"
-              onClick={() => setSelectedOtherDeedSub('heba')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '13px',
-                cursor: 'pointer',
-                background: selectedOtherDeedSub === 'heba' ? '#065f46' : '#f1f5f9',
-                color: selectedOtherDeedSub === 'heba' ? '#ffffff' : '#334155',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>🎁 দানপত্র / হেবা দলিল</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedOtherDeedSub('exchange')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '13px',
-                cursor: 'pointer',
-                background: selectedOtherDeedSub === 'exchange' ? '#1e3a8a' : '#f1f5f9',
-                color: selectedOtherDeedSub === 'exchange' ? '#ffffff' : '#334155',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>🔄 বিনিময় দলিল</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedOtherDeedSub('mortgage')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '13px',
-                cursor: 'pointer',
-                background: selectedOtherDeedSub === 'mortgage' ? '#701a75' : '#f1f5f9',
-                color: selectedOtherDeedSub === 'mortgage' ? '#ffffff' : '#334155',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>🔒 বন্ধকি দলিল (Mortgage)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedOtherDeedSub('bayna')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '13px',
-                cursor: 'pointer',
-                background: selectedOtherDeedSub === 'bayna' ? '#c2410c' : '#f1f5f9',
-                color: selectedOtherDeedSub === 'bayna' ? '#ffffff' : '#334155',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>📝 বায়নাপত্র দলিল (Bayna)</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedOtherDeedSub('wakfo')}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '9px 18px',
-                borderRadius: '8px',
-                border: 'none',
-                fontWeight: '800',
-                fontSize: '13px',
-                cursor: 'pointer',
-                background: selectedOtherDeedSub === 'wakfo' ? '#0f766e' : '#f1f5f9',
-                color: selectedOtherDeedSub === 'wakfo' ? '#ffffff' : '#334155',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <span>🏛️ ওয়াকফ দলিল (Wakf Deed)</span>
-            </button>
-          </div>
-
-          {/* Render selected sub-panel */}
-          {selectedOtherDeedSub === 'heba' && <HebaGiftDeedPanel />}
-          {selectedOtherDeedSub === 'exchange' && <ExchangeDeedPanel />}
-          {selectedOtherDeedSub === 'mortgage' && <MortgageDeedPanel />}
-          {selectedOtherDeedSub === 'bayna' && <BaynaDeedPanel />}
-          {selectedOtherDeedSub === 'wakfo' && <WakfoDeedPanel />}
-        </div>
-      )}
-
-      {/* TAB 3: Sent Assignment Requests Tracking */}
-      {activeTab === 'requests' && (
-        <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-              <Clock size={20} color="#2563eb" /> প্রেরিত জমি বরাদ্দ অনুরোধসমূহের স্থিতি ও ট্র্যাকিং
-            </h3>
-            <button onClick={fetchSentRequests} className="btn-secondary" style={{ padding: '7px 16px', fontSize: '13px', background: '#f1f5f9', border: '1.5px solid #94a3b8', color: '#0f172a', fontWeight: '700' }}>
-              রিফ্রেশ
-            </button>
-          </div>
-
-          {sentRequests.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#475569', fontSize: '14px', fontWeight: '600' }}>
-              এখনো কোনো জমি বরাদ্দ অনুরোধ পাঠানো হয়নি।
-            </div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #cbd5e1', textAlign: 'left', color: '#0f172a', background: '#f8fafc' }}>
-                    <th style={{ padding: '10px 12px' }}>অনুরোধ নং</th>
-                    <th style={{ padding: '10px 12px' }}>নাগরিক</th>
-                    <th style={{ padding: '10px 12px' }}>জমির তথ্য</th>
-                    <th style={{ padding: '10px 12px' }}>ভলিউম / পৃষ্ঠা</th>
-                    <th style={{ padding: '10px 12px' }}>বর্তমান স্ট্যাটাস</th>
-                    <th style={{ padding: '10px 12px' }}>পর্যালোচনা</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sentRequests.map((req) => (
-                    <tr key={req._id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '12px', fontFamily: 'monospace', color: '#1d4ed8', fontWeight: '700' }}>
-                        {req.request_id}
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <strong style={{ color: '#0f172a' }}>{req.user_name}</strong>
-                        <div style={{ fontSize: '11px', color: '#475569' }}>NID: {req.user_nid}</div>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ color: '#0f172a' }}>দাগ: <strong>{req.dag_no}</strong> | খতিয়ান: {req.khatian_no}</div>
-                        <div style={{ fontSize: '11px', color: '#475569' }}>মৌজা: {req.mouza} ({req.area_decimal} শতক)</div>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ color: '#0f172a' }}>ভলিউম: <strong>{req.volume_book}</strong></div>
-                        <div style={{ fontSize: '11px', color: '#475569' }}>পৃষ্ঠা: {req.page_no}</div>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <span style={{
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          fontSize: '11px',
-                          fontWeight: '700',
-                          background: req.status === 'Approved' ? '#dcfce7' : req.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
-                          color: req.status === 'Approved' ? '#166534' : req.status === 'Rejected' ? '#991b1b' : '#92400e',
-                          border: `1px solid ${req.status === 'Approved' ? '#86efac' : req.status === 'Rejected' ? '#f87171' : '#fde68a'}`
-                        }}>
-                          {req.status === 'Approved' ? '✅ অনুমোদিত (Approved)' : req.status === 'Rejected' ? '❌ প্রত্যাখ্যাত (Rejected)' : '⏳ এসি ল্যান্ডে অপেক্ষমান'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px', fontSize: '12px', color: '#1e293b' }}>
-                        {req.ac_land_reviewed_by ? (
-                          <div>
-                            <div>কর্মকর্তা: {req.ac_land_reviewed_by}</div>
-                            {req.rejection_reason && <div style={{ color: '#dc2626', fontWeight: '600' }}>কারণ: {req.rejection_reason}</div>}
-                          </div>
-                        ) : (
-                          <span style={{ color: '#475569' }}>পর্যালোচনার অপেক্ষায়</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Direct Deed Feature Tabs */}
+      {activeTab === 'heba' && <HebaGiftDeedPanel />}
+      {activeTab === 'exchange' && <ExchangeDeedPanel />}
+      {activeTab === 'mortgage' && <MortgageDeedPanel />}
+      {activeTab === 'bayna' && <BaynaDeedPanel />}
+      {activeTab === 'wakfo' && <WakfoDeedPanel />}
 
       {/* ── TAB: Land Ownership Claims Notifications (Read-Only) ── */}
       {activeTab === 'claims' && (

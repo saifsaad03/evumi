@@ -25,7 +25,12 @@ import {
   FileCheck,
   User,
   Building2,
-  ShieldAlert
+  ShieldAlert,
+  Gift,
+  ArrowRightLeft,
+  Lock,
+  FileEdit,
+  Landmark
 } from 'lucide-react';
 import { useDashboardNav } from '../context/DashboardNavContext';
 
@@ -149,7 +154,11 @@ export default function Navbar() {
           { id: 'assign', label: 'জমি অনলাইন প্রস্তাব', icon: Layers },
           { id: 'deed_registry', label: 'দলিল নিবন্ধন ও অ্যান্টি-ডাবল সেলিং', icon: FileText },
           { id: 'bonton_nama', label: 'যৌথ ওয়ারিশান বণ্টননামা', icon: Users },
-          { id: 'requests', label: 'প্রেরিত আবেদনের হালনাগাদ', icon: Clock },
+          { id: 'heba', label: 'দানপত্র / হেবা দলিল', icon: Gift },
+          { id: 'exchange', label: 'বিনিময় দলিল', icon: ArrowRightLeft },
+          { id: 'mortgage', label: 'বন্ধকি দলিল (Mortgage)', icon: Lock },
+          { id: 'bayna', label: 'বায়নাপত্র দলিল (Bayna)', icon: FileEdit },
+          { id: 'wakfo', label: 'ওয়াকফ দলিল (Wakf Deed)', icon: Landmark },
           { id: 'claims', label: 'নাগরিক মালিকানা দাবি ও আপত্তি', icon: ShieldAlert },
           { id: 'profile', label: 'রেজিস্ট্রার কার্যালয় প্রোফাইল', icon: Building2 },
         ];
