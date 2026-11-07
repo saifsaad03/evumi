@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useDashboardNav } from '../context/DashboardNavContext';
 import { 
   Menu, X, LogOut, ShieldCheck, ChevronRight, ChevronLeft,
-  Headphones, Building2, UserCheck, Layers, PanelLeftClose, PanelLeftOpen
+  Headphones, Building2, UserCheck, Layers, PanelLeftClose, PanelLeftOpen, Home
 } from 'lucide-react';
 
 export default function DashboardLayout({
@@ -18,8 +18,8 @@ export default function DashboardLayout({
   activeTab,
   onTabChange,
   headerActions,
-  hideBanner = false,
-  fullHeightSidebar = false,
+  hideBanner = true,
+  fullHeightSidebar = true,
   collapsible = true,
   children
 }) {
@@ -451,6 +451,71 @@ export default function DashboardLayout({
       )}
 
       {/* ── Main Layout: Full Height Edge-to-Edge Layout or Centered Floating Layout ──── */}
+      {/* Mobile Off-Canvas Drawer */}
+      {mobileOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 2000,
+          display: 'flex',
+        }}>
+          {/* Backdrop */}
+          <div
+            onClick={() => setMobileOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(15, 23, 42, 0.45)',
+              backdropFilter: 'blur(3px)',
+            }}
+          />
+          {/* Drawer Content */}
+          <div style={{
+            position: 'relative',
+            width: '280px',
+            maxWidth: '85vw',
+            height: '100%',
+            background: '#ffffff',
+            boxShadow: '4px 0 24px rgba(0,0,0,0.18)',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '16px',
+            overflowY: 'auto',
+            zIndex: 10
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              paddingBottom: '12px',
+              marginBottom: '12px',
+              borderBottom: '1px solid #e2e8f0'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img src="/images/logo.png" alt="logo" style={{ width: '32px', height: '32px', objectFit: 'contain' }} />
+                <span style={{ fontSize: '15px', fontWeight: '800', color: '#065f46' }}>e-ভূমি মেনু</span>
+              </div>
+              <button
+                onClick={() => setMobileOpen(false)}
+                style={{
+                  border: 'none',
+                  background: '#f1f5f9',
+                  borderRadius: '6px',
+                  padding: '6px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <X size={18} color="#475569" />
+              </button>
+            </div>
+            <SidebarContent />
+          </div>
+        </div>
+      )}
+
       {fullHeightSidebar ? (
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh' }}>
           {/* ── Top Bar: Logo, Sidebar Fold, Title, and User Profile Card ── */}
@@ -471,33 +536,50 @@ export default function DashboardLayout({
           }}>
             {/* Left: Logo + Divider + Sidebar Fold Button + Breadcrumb */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
-              {/* Bangladesh Land Seal / e-ভূমি Logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+              {/* Bangladesh Land Seal / e-ভূমি Logo (Clickable Link to Home) */}
+              <NavLink
+                to="/"
+                title="মূল হোমপেজে যান"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  flexShrink: 0,
+                  textDecoration: 'none',
+                  color: 'inherit'
+                }}
+              >
                 <img 
                   src="/images/logo.png" 
                   alt="e-ভূমি লোগো" 
                   style={{
-                    width: '40px',
-                    height: '40px',
+                    width: '38px',
+                    height: '38px',
                     objectFit: 'contain',
                     flexShrink: 0
                   }}
                 />
                 <div className="hide-on-mobile">
-                  <div style={{ fontSize: '17px', fontWeight: '900', color: '#065f46', lineHeight: 1.1 }}>
+                  <div style={{ fontSize: '16.5px', fontWeight: '900', color: '#065f46', lineHeight: 1.1 }}>
                     e-ভূমি
                   </div>
                   <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600' }}>
                     ডিজিটাল ভূমি প্রশাসন
                   </div>
                 </div>
-              </div>
+              </NavLink>
 
               <div className="hide-on-mobile" style={{ width: '1px', height: '26px', background: '#e2e8f0', margin: '0 4px', flexShrink: 0 }} />
 
-              {/* Sidebar Folding Toggle Button */}
+              {/* Sidebar Folding / Menu Toggle Button */}
               <button
-                onClick={() => setIsSidebarFolded(p => !p)}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth <= 640) {
+                    setMobileOpen(p => !p);
+                  } else {
+                    setIsSidebarFolded(p => !p);
+                  }
+                }}
                 title={isSidebarFolded ? 'সাইডবার খুলুন (Unfold)' : 'সাইডবার ফোল্ড করুন (Fold to Left)'}
                 style={{
                   display: 'flex',
@@ -505,15 +587,15 @@ export default function DashboardLayout({
                   gap: '7px',
                   padding: '7px 12px',
                   borderRadius: '8px',
-                  background: isSidebarFolded ? '#ede9fe' : '#f8fafc',
-                  border: isSidebarFolded ? '1.5px solid #a78bfa' : '1.5px solid #cbd5e1',
-                  color: isSidebarFolded ? '#6d28d9' : '#0f172a',
+                  background: isSidebarFolded ? theme.badgeBg : '#f8fafc',
+                  border: isSidebarFolded ? `1.5px solid ${theme.badgeBorder}` : '1.5px solid #cbd5e1',
+                  color: isSidebarFolded ? theme.badgeColor : '#0f172a',
                   fontSize: '12.5px',
                   fontWeight: '700',
                   cursor: 'pointer',
                   transition: 'all 0.18s ease',
                   flexShrink: 0,
-                  boxShadow: isSidebarFolded ? '0 2px 8px rgba(109, 40, 217, 0.15)' : 'none'
+                  boxShadow: isSidebarFolded ? `0 2px 8px ${theme.badgeBg}` : 'none'
                 }}
               >
                 {isSidebarFolded ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
@@ -522,80 +604,86 @@ export default function DashboardLayout({
 
               {/* Title & Active Tab Breadcrumb */}
               <div className="hide-on-mobile" style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                <span style={{ fontSize: '14.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
-                  {title || 'ভূমি মন্ত্রণালয় - কেন্দ্রীয় প্রশাসন'}
+                <span style={{ fontSize: '14px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                  {title || 'ড্যাশবোর্ড'}
                 </span>
-                <span style={{ color: '#94a3b8', fontSize: '13px' }}>/</span>
-                <span style={{ fontSize: '13px', fontWeight: '700', color: theme.badgeColor, whiteSpace: 'nowrap' }}>
-                  {currentNav?.label || 'ওভারভিউ'}
-                </span>
+                {currentNav?.label && (
+                  <>
+                    <span style={{ color: '#94a3b8', fontSize: '13px' }}>/</span>
+                    <span style={{ fontSize: '12.5px', fontWeight: '700', color: theme.badgeColor, whiteSpace: 'nowrap' }}>
+                      {currentNav.label}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
-            {/* Right: Feedback alert + User Profile Card + Logout */}
+            {/* Right: Header Actions + User Profile Card */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+              {/* Header Actions */}
               {headerActions}
 
-              {/* User Mini Profile Card (from user screenshot) */}
+              {/* User Mini Profile Card */}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '10px',
-                padding: '5px 12px',
+                padding: '4px 12px',
                 borderRadius: '12px',
                 background: '#ffffff',
                 border: '1.5px solid #e2e8f0',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
+                boxShadow: '0 1px 3px rgba(0,0,0,0.03)',
+                height: '42px',
+                boxSizing: 'border-box'
               }}>
-                {/* Purple Avatar Box with Bengali "ম" */}
+                {/* Role-Themed Avatar Box */}
                 <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '10px',
-                  background: theme.avatarBg || 'linear-gradient(135deg, #6d28d9, #a855f7)',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '9px',
+                  background: theme.avatarBg,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   color: '#ffffff',
                   fontWeight: '900',
-                  fontSize: '17px',
+                  fontSize: '15px',
                   flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(109, 40, 217, 0.25)'
+                  boxShadow: `0 2px 6px ${theme.badgeBorder}`
                 }}>
-                  {user?.name ? user.name.charAt(0) : 'ম'}
+                  {user?.name ? user.name.charAt(0) : 'U'}
                 </div>
 
                 {/* Profile Info */}
                 <div className="hide-on-mobile" style={{ minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
-                      {user?.name || 'মন্ত্রণালয় প্রধান এডমিন'}
+                    <span style={{ fontSize: '12.5px', fontWeight: '800', color: '#0f172a', whiteSpace: 'nowrap' }}>
+                      {user?.name || 'ব্যবহারকারী'}
                     </span>
                     <span style={{
                       fontSize: '10px',
                       fontWeight: '800',
-                      background: '#f5f3ff',
-                      color: '#6d28d9',
-                      border: '1px solid #ddd6fe',
+                      background: theme.badgeBg,
+                      color: theme.badgeColor,
+                      border: `1px solid ${theme.badgeBorder}`,
                       padding: '1px 8px',
                       borderRadius: '999px',
                       whiteSpace: 'nowrap'
                     }}>
-                      {badge?.label || user?.role || 'Super Admin'}
+                      {badge?.label || user?.role || 'নাগরিক'}
                     </span>
                   </div>
 
-                  <div style={{ fontSize: '10.5px', color: '#64748b', fontWeight: '600', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span>NID: {user?.nid || '000000000000'}</span>
-                    <span>•</span>
-                    <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {user?.office_details?.office_name || 'ভূমি মন্ত্রণালয়, বাংলাদেশ সচিবালয়'}
+                  <div style={{ fontSize: '10px', color: '#64748b', fontWeight: '600', marginTop: '1px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {user?.nid && <span>NID: {user.nid}</span>}
+                    {user?.nid && (user?.office_details?.office_name || user?.upazila) && <span>•</span>}
+                    <span style={{ maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user?.office_details?.office_name || (user?.upazila ? `${user.upazila}${user.district ? ', ' + user.district : ''}` : '')}
                     </span>
                   </div>
                 </div>
               </div>
-
-              </div>
+            </div>
           </header>
 
           {/* ── Body: Sticky Left-Flush Sidebar + Content ── */}
@@ -607,9 +695,9 @@ export default function DashboardLayout({
           }}>
             {/* Desktop Sticky Sidebar (Full Height, Left-Flush, Foldable) */}
             <aside className="hide-on-mobile" style={{
-              width: isSidebarFolded ? '0px' : '260px',
-              minWidth: isSidebarFolded ? '0px' : '260px',
-              maxWidth: isSidebarFolded ? '0px' : '260px',
+              width: isSidebarFolded ? '0px' : '270px',
+              minWidth: isSidebarFolded ? '0px' : '270px',
+              maxWidth: isSidebarFolded ? '0px' : '270px',
               height: 'calc(100vh - 64px)',
               position: 'sticky',
               top: '64px',

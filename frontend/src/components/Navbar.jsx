@@ -37,8 +37,14 @@ import { useDashboardNav } from '../context/DashboardNavContext';
 export default function Navbar() {
   const location = useLocation();
 
-  // Hide the global public navbar on admin dashboard to allow the dedicated admin top bar
-  if (location.pathname === '/admin/dashboard' || location.pathname.startsWith('/admin')) {
+  // Hide the global public navbar on role dashboards to allow the dedicated dashboard top bar & full-height sidebar
+  const isDashboardRoute =
+    location.pathname.startsWith('/admin') ||
+    location.pathname.startsWith('/user/dashboard') ||
+    location.pathname.startsWith('/ac-land/dashboard') ||
+    location.pathname.startsWith('/register-office/dashboard');
+
+  if (isDashboardRoute) {
     return null;
   }
 

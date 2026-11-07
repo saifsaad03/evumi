@@ -134,6 +134,9 @@ export default function AcLandDashboard() {
       icon={Users}
       roleTheme="green"
       stats={stats}
+      hideBanner={true}
+      fullHeightSidebar={true}
+      collapsible={true}
       navItems={navItems}
       activeTab={activeTab}
       onTabChange={handleTabChange}

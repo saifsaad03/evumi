@@ -696,6 +696,9 @@ export default function RegisterOfficeDashboard() {
       icon={Building2}
       roleTheme="blue"
       stats={stats}
+      hideBanner={true}
+      fullHeightSidebar={true}
+      collapsible={true}
       navItems={navItems}
       activeTab={activeTab}
       onTabChange={handleTabChange}

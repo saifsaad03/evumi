@@ -473,6 +473,9 @@ export default function UserDashboard() {
       icon={user?.role === 'Institution' ? Building2 : User}
       roleTheme={user?.role === 'Institution' ? 'teal' : 'green'}
       stats={stats}
+      hideBanner={true}
+      fullHeightSidebar={true}
+      collapsible={true}
       navItems={navItems}
       activeTab={activeTab}
       onTabChange={handleTabChange}
