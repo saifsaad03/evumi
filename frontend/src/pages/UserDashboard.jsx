@@ -6,7 +6,7 @@ import {
   User, MapPin, FileText, CheckCircle, Clock, 
   AlertTriangle, Search, Shield, Phone, Mail, Award,
   RefreshCw, Check, ArrowRight, Download, Printer, X, Eye, QrCode,
-  FileCheck, Send, Info, Lock
+  FileCheck, Send, Info, Lock, Building2
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -465,11 +465,13 @@ export default function UserDashboard() {
 
   return (
     <DashboardLayout
-      title="নাগরিক ড্যাশবোর্ড"
-      subtitle={`স্বাগতম, ${user?.name || 'নাগরিক'} | জাতীয় পরিচয়পত্র: ${user?.nid || 'N/A'} | ঠিকানা: ${user?.upazila || ''}, ${user?.district || ''}`}
-      badge={{ label: 'নাগরিক পোর্টাল' }}
-      icon={User}
-      roleTheme="green"
+      title={user?.role === 'Institution' ? 'প্রতিষ্ঠান ড্যাশবোর্ড (ওয়াকফ এস্টেট)' : 'নাগরিক ড্যাশবোর্ড'}
+      subtitle={user?.role === 'Institution'
+        ? `প্রতিষ্ঠান: ${user?.name || ''} | প্রতিনিধি NID: ${user?.nid || 'N/A'} | অবস্থান: ${user?.upazila || ''}, ${user?.district || ''}`
+        : `স্বাগতম, ${user?.name || 'নাগরিক'} | জাতীয় পরিচয়পত্র: ${user?.nid || 'N/A'} | ঠিকানা: ${user?.upazila || ''}, ${user?.district || ''}`}
+      badge={{ label: user?.role === 'Institution' ? '🏛️ ওয়াকফ গ্রহীতা প্রতিষ্ঠান' : 'নাগরিক পোর্টাল' }}
+      icon={user?.role === 'Institution' ? Building2 : User}
+      roleTheme={user?.role === 'Institution' ? 'teal' : 'green'}
       stats={stats}
       navItems={navItems}
       activeTab={activeTab}

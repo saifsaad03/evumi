@@ -4,7 +4,7 @@ const OtherDeedApplicationSchema = new mongoose.Schema({
   application_no: { type: String, unique: true, required: true },
   deed_type: { 
     type: String, 
-    enum: ['Heba', 'Exchange', 'Mortgage', 'Bayna'], 
+    enum: ['Heba', 'Exchange', 'Mortgage', 'Bayna', 'Wakfo'], 
     required: true 
   },
   sub_registry_office: { type: String, default: 'শিবগঞ্জ সাব-রেজিস্ট্রি অফিস' },
@@ -153,6 +153,34 @@ const OtherDeedApplicationSchema = new mongoose.Schema({
     unlocked_by_nid: { type: String },
     unlock_otp_verified: { type: Boolean, default: false },
     unlock_biometric_verified: { type: Boolean, default: false }
+  },
+
+  // 5. Wakfo Deed Fields (Citizen to Institution)
+  wakfo: {
+    donor_nid: { type: String },
+    donor_name: { type: String },
+    donor_phone: { type: String },
+    donor_email: { type: String },
+    land_record_id: { type: mongoose.Schema.Types.ObjectId, ref: 'LandRecord' },
+    division: { type: String },
+    district: { type: String },
+    upazila: { type: String },
+    mouza: { type: String },
+    jl_no: { type: String },
+    khatian_no: { type: String },
+    dag_no: { type: String },
+    donor_total_area: { type: Number },
+    wakfo_area_decimal: { type: Number },
+    remaining_donor_area: { type: Number },
+    institution_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    institution_nid: { type: String },
+    institution_name: { type: String },
+    institution_phone: { type: String },
+    institution_email: { type: String },
+    institution_type: { type: String, default: 'মসজিদ / মাদ্রাসা / ধর্মীয় দাতব্য প্রতিষ্ঠান' },
+    wakfo_purpose: { type: String },
+    donor_otp_verified: { type: Boolean, default: false },
+    donor_biometric_verified: { type: Boolean, default: false }
   },
 
   // Fee & Payment

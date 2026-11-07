@@ -181,7 +181,9 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
           { 'heba.donor_nid': { $in: [rawNid, engNid, bngNid] } },
           { 'heba.recipient_nid': { $in: [rawNid, engNid, bngNid] } },
           { 'exchange.owner1.nid': { $in: [rawNid, engNid, bngNid] } },
-          { 'exchange.owner2.nid': { $in: [rawNid, engNid, bngNid] } }
+          { 'exchange.owner2.nid': { $in: [rawNid, engNid, bngNid] } },
+          { 'wakfo.donor_nid': { $in: [rawNid, engNid, bngNid] } },
+          { 'wakfo.institution_nid': { $in: [rawNid, engNid, bngNid] } }
         ]
       }).populate('heba.land_record_id').sort({ createdAt: -1 });
     } catch (e1) {
@@ -261,6 +263,31 @@ router.get('/assigned-lands', verifyToken, async (req, res) => {
           other_area: isP1 ? app.exchange?.owner2?.area_decimal : app.exchange?.owner1?.area_decimal,
           owner1_name: app.exchange?.owner1?.name,
           owner2_name: app.exchange?.owner2?.name,
+          created_at: app.createdAt
+        });
+      } else if (app.deed_type === 'Wakfo') {
+        const isDonor = [rawNid, engNid, bngNid].includes(app.wakfo?.donor_nid);
+        combinedPendingMutations.push({
+          _id: app._id,
+          type: 'Wakfo',
+          type_bn: 'ওয়াকফ দলিল নামজারি',
+          badge_color: '#0f766e',
+          badge_bg: '#ccfbf1',
+          status: app.status,
+          status_bn: 'ওয়াকফ দলিল নামজারি প্রক্রিয়ায় রয়েছে (এসি ল্যান্ড পর্যালোচনা)',
+          role: isDonor ? 'দাতা (ওয়াকিফ)' : 'গ্রহীতা প্রতিষ্ঠান (ওয়াকফ এস্টেট)',
+          deed_no: app.deed_no,
+          application_no: app.application_no,
+          mouza: app.wakfo?.mouza || '',
+          dag_no: app.wakfo?.dag_no || '',
+          khatian_no: app.wakfo?.khatian_no || '',
+          area_decimal: app.wakfo?.wakfo_area_decimal || 0,
+          donor_name: app.wakfo?.donor_name,
+          donor_nid: app.wakfo?.donor_nid,
+          recipient_name: app.wakfo?.institution_name,
+          recipient_nid: app.wakfo?.institution_nid,
+          institution_type: app.wakfo?.institution_type,
+          wakfo_purpose: app.wakfo?.wakfo_purpose,
           created_at: app.createdAt
         });
       }

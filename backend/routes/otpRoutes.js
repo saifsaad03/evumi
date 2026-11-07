@@ -270,6 +270,8 @@ router.post('/verify-and-register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'এই ইমেইল ঠিকানাটি ইতিমধ্যে নিবন্ধিত।' });
     }
 
+    const userRole = req.body.role === 'Institution' ? 'Institution' : 'User';
+
     // Create User safely (MongoDB Atlas + persistent disk file + memory fallback)
     const newUser = await createCitizenUser({
       name: name.trim(),
@@ -282,7 +284,8 @@ router.post('/verify-and-register', async (req, res) => {
       mouza: (mouza || '').trim(),
       phone: phone.trim(),
       email: cleanEmail,
-      password
+      password,
+      role: userRole
     });
 
     // Clean up OTPs for this email
@@ -294,7 +297,9 @@ router.post('/verify-and-register', async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: '🎉 ইমেইল যাচাই সম্পন্ন! নাগরিক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।',
+      message: userRole === 'Institution'
+        ? '🎉 ইমেইল যাচাই সম্পন্ন! প্রতিষ্ঠান অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।'
+        : '🎉 ইমেইল যাচাই সম্পন্ন! নাগরিক অ্যাকাউন্ট সফলভাবে তৈরি হয়েছে।',
       token,
       user: userObj
     });

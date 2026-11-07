@@ -12,13 +12,16 @@ import {
   Phone,
   User,
   MapPin,
-  Send
+  Send,
+  Building2
 } from 'lucide-react';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state || {};
+
+  const [accountType, setAccountType] = useState(prefill.role || 'User'); // 'User' | 'Institution'
 
   const [formData, setFormData] = useState({
     name: prefill.name || '',
@@ -277,6 +280,7 @@ export default function RegisterPage() {
       if (res.data.success) {
         const payload = {
           ...formData,
+          role: accountType,
           email: formData.email.trim().toLowerCase(),
           nid: formData.nid.trim(),
           name: formData.name.trim(),
@@ -385,19 +389,99 @@ export default function RegisterPage() {
             </div>
           )}
 
+          {/* Account Type Selector (নাগরিক বনাম প্রতিষ্ঠান) */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '10px',
+            background: '#f8fafc',
+            border: '1.5px solid #e2e8f0',
+            padding: '6px',
+            borderRadius: '12px',
+            marginBottom: '16px'
+          }}>
+            <button
+              type="button"
+              onClick={() => setAccountType('User')}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: accountType === 'User' ? '1.5px solid #16a34a' : '1px solid transparent',
+                background: accountType === 'User' ? '#ffffff' : 'transparent',
+                color: accountType === 'User' ? '#15803d' : '#64748b',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: accountType === 'User' ? '0 2px 8px rgba(22, 163, 74, 0.15)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <User size={16} />
+              <span>👤 নাগরিক নিবন্ধন (Citizen)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccountType('Institution')}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '8px',
+                border: accountType === 'Institution' ? '1.5px solid #0f766e' : '1px solid transparent',
+                background: accountType === 'Institution' ? '#0f766e' : 'transparent',
+                color: accountType === 'Institution' ? '#ffffff' : '#64748b',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: accountType === 'Institution' ? '0 2px 10px rgba(15, 118, 110, 0.3)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Building2 size={16} />
+              <span>🏛️ প্রতিষ্ঠান নিবন্ধন (মসজিদ/মাদ্রাসা/স্কুল/দাতব্য)</span>
+            </button>
+          </div>
+
+          {accountType === 'Institution' && (
+            <div style={{
+              background: '#f0fdfa',
+              border: '1px solid #99f6e4',
+              borderRadius: '8px',
+              padding: '10px 14px',
+              marginBottom: '14px',
+              fontSize: '12px',
+              color: '#0f766e',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <Building2 size={16} style={{ flexShrink: 0 }} />
+              <span>
+                <strong>প্রাতিষ্ঠানিক অ্যাকাউন্ট:</strong> এই অ্যাকাউন্টের মাধ্যমে যেকোনো নাগরিক থেকে জমি <strong>ওয়াকফ (Wakf) দলিল</strong> গ্রহণ করা যাবে।
+              </span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* Row 1: Personal Information (Responsive Grid) */}
+            {/* Row 1: Personal / Institutional Information (Responsive Grid) */}
             <div className="register-grid-3">
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
-                  নাগরিকের পূর্ণ নাম (Name) <span style={{ color: '#dc2626' }}>*</span>
+                  {accountType === 'Institution' ? 'প্রতিষ্ঠানের পূর্ণ নাম' : 'নাগরিকের পূর্ণ নাম (Name)'} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
                   name="name"
                   required
-                  placeholder="যেমন: মো. রহিম উদ্দিন"
+                  placeholder={accountType === 'Institution' ? 'যেমন: বায়তুল মোকাররম জামে মসজিদ' : 'যেমন: মো. রহিম উদ্দিন'}
                   value={formData.name}
                   onChange={handleChange}
                   className="register-input"
@@ -406,7 +490,7 @@ export default function RegisterPage() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
-                  পিতার নাম (Father's Name) <span style={{ color: '#dc2626' }}>*</span>
+                  {accountType === 'Institution' ? 'প্রতিনিধির পিতার নাম' : "পিতার নাম (Father's Name)"} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -421,7 +505,7 @@ export default function RegisterPage() {
 
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
-                  মাতার নাম (Mother's Name) <span style={{ color: '#dc2626' }}>*</span>
+                  {accountType === 'Institution' ? 'প্রতিনিধির মাতার নাম' : "মাতার নাম (Mother's Name)"} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
@@ -439,13 +523,13 @@ export default function RegisterPage() {
             <div className="register-grid-3">
               <div>
                 <label style={{ display: 'block', fontSize: '12px', color: '#334155', marginBottom: '4px', fontWeight: '700' }}>
-                  জাতীয় পরিচয়পত্র (NID) <span style={{ color: '#dc2626' }}>*</span>
+                  {accountType === 'Institution' ? 'প্রতিনিধি/মোতাওয়াল্লীর এনআইডি (NID)' : 'জাতীয় পরিচয়পত্র (NID)'} <span style={{ color: '#dc2626' }}>*</span>
                 </label>
                 <input
                   type="text"
                   name="nid"
                   required
-                  placeholder="১০, ১৩ অথবা ১৭ ডিজিটের এনআইডি"
+                  placeholder={accountType === 'Institution' ? 'প্রতিনিধির ১০, ১৩ বা ১৭ ডিজিটের এনআইডি' : '১০, ১৩ অথবা ১৭ ডিজিটের এনআইডি'}
                   maxLength={17}
                   value={formData.nid}
                   onChange={handleChange}

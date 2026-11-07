@@ -1673,5 +1673,412 @@ router.post('/bayna/unlock', verifyToken, requireRole('Register Office', 'Super 
   }
 });
 
+// ─────────────────────────────────────────────────────────────
+// 5. WAKFO DEED (ওয়াকফ দলিল) CONTROLLERS
+// ─────────────────────────────────────────────────────────────
+
+// POST /api/other-deeds/verify-institution-nid
+// Verifies if an institution user exists by NID and ensures role === 'Institution'
+router.post('/verify-institution-nid', verifyToken, async (req, res) => {
+  try {
+    const { nid } = req.body;
+    if (!nid) {
+      return res.status(400).json({ success: false, message: 'প্রতিষ্ঠানের প্রতিনিধির NID প্রদান আবশ্যক।' });
+    }
+    const cleanNid = nid.trim();
+    const engNid = toEnglishDigits(cleanNid);
+    const benNid = toBengaliDigits(cleanNid);
+
+    const user = await User.findOne({
+      $or: [
+        { nid: cleanNid },
+        { nid: engNid },
+        { nid: benNid }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: `প্রদত্ত NID: ${cleanNid} নম্বরধারী কোনো প্রতিষ্ঠান সিস্টেমে নিবন্ধিত নেই। অনুগ্রহ করে প্রথমে প্রতিষ্ঠানটি নিবন্ধন করুন।`
+      });
+    }
+
+    if (user.role !== 'Institution') {
+      return res.status(400).json({
+        success: false,
+        message: `⚠️ এই NID (${user.name}) কোনো প্রতিষ্ঠান হিসেবে নিবন্ধিত নয় (রোল: সাধারণ নাগরিক)। ওয়াকফ দলিল কেবল নিবন্ধিত ধর্মীয়/দাতব্য প্রতিষ্ঠানের অনুকূলে সম্পাদন সম্ভব, নাগরিক-টু-নাগরিক সম্ভব নয়।`
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      institution: {
+        _id: user._id,
+        name: user.name,
+        nid: user.nid,
+        phone: user.phone,
+        email: user.email,
+        division: user.division,
+        district: user.district,
+        upazila: user.upazila,
+        mouza: user.mouza || '',
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.error('Verify Institution error:', err);
+    return res.status(500).json({ success: false, message: 'প্রতিষ্ঠান যাচাইয়ে ত্রুটি হয়েছে।' });
+  }
+});
+
+// POST /api/other-deeds/wakfo/create
+// Registrar creates Wakfo Deed (Citizen to Institution)
+router.post('/wakfo/create', verifyToken, requireRole('Register Office', 'Super Admin'), async (req, res) => {
+  try {
+    const {
+      land_record_id,
+      donor_nid,
+      institution_nid,
+      wakfo_area_decimal,
+      institution_type,
+      wakfo_purpose,
+      donor_otp
+    } = req.body;
+
+    if (!land_record_id || !donor_nid || !institution_nid || !wakfo_area_decimal || !donor_otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'জমির আইডি, দাতার NID, প্রতিষ্ঠানের NID, ওয়াকফের জমির পরিমাণ এবং দাতার ওটিপি প্রদান আবশ্যক।'
+      });
+    }
+
+    const wakfoArea = parseFloat(wakfo_area_decimal);
+    if (isNaN(wakfoArea) || wakfoArea <= 0) {
+      return res.status(400).json({ success: false, message: 'ওয়াকফকৃত জমির পরিমাণ অবশ্যই ০-এর বেশি হতে হবে।' });
+    }
+
+    // 1. Verify Land Record
+    const land = await LandRecord.findById(land_record_id);
+    if (!land) {
+      return res.status(404).json({ success: false, message: 'জমির রেকর্ড পাওয়া যায়নি।' });
+    }
+
+    // 2. Verify Land Status & Ownership
+    const landOwnerNid = toEnglishDigits(land.owner_nid);
+    const donorCleanNid = toEnglishDigits(donor_nid);
+    if (landOwnerNid !== donorCleanNid) {
+      return res.status(403).json({ success: false, message: 'প্রদত্ত জমিটি এই দাতার মালিকানাধীন নয়।' });
+    }
+
+    if (land.status === 'Mortgage_Locked') {
+      return res.status(400).json({ success: false, message: 'জমিটি বর্তমানে ব্যাংকে বন্ধকাবদ্ধ (Mortgaged) রয়েছে। ওয়াকফ করা সম্ভব নয়।' });
+    }
+    if (land.status === 'Bayna_Locked') {
+      return res.status(400).json({ success: false, message: 'জমিটি বর্তমানে বায়নাবদ্ধ (Bayna Locked) রয়েছে। ওয়াকফ করা সম্ভব নয়।' });
+    }
+    if (land.status === 'Frozen_Death') {
+      return res.status(400).json({ success: false, message: 'মালিকের মৃত্যুর কারণে জমিটির হস্তান্তর সাময়িক স্থগিত রয়েছে।' });
+    }
+    if (land.available_area_decimal < wakfoArea) {
+      return res.status(400).json({
+        success: false,
+        message: `অনুরোধকৃত জমির পরিমাণ (${wakfoArea} শতক) অবশিষ্ট অনুমোদনযোগ্য জমির (${land.available_area_decimal} শতক) চেয়ে বেশি।`
+      });
+    }
+
+    // 3. Verify Donor User & OTP
+    let donorUser = (await findUserByNid(donor_nid)) || (await findUserByNid(toEnglishDigits(donor_nid))) || (await findUserByNid(toBengaliDigits(donor_nid)));
+    if (!donorUser && mongoose.connection && mongoose.connection.readyState === 1) {
+      try {
+        donorUser = await User.findOne({
+          $or: [
+            { nid: donor_nid },
+            { nid: toEnglishDigits(donor_nid) },
+            { nid: toBengaliDigits(donor_nid) }
+          ]
+        }).maxTimeMS(2000);
+      } catch (e) {}
+    }
+    if (!donorUser) {
+      donorUser = {
+        name: land.owner_name,
+        nid: donor_nid,
+        email: land.owner_email || `${toEnglishDigits(donor_nid)}@evhumi.gov.bd`,
+        phone: land.owner_phone || '01700000000'
+      };
+    }
+
+    const donorEmail = (donorUser.email || land.owner_email || '').trim().toLowerCase();
+    let storedOtpObj = await findLatestDeedOtp(donorEmail, land_record_id, donor_nid);
+    if (!storedOtpObj && land.owner_email && land.owner_email.toLowerCase() !== donorEmail) {
+      storedOtpObj = await findLatestDeedOtp(land.owner_email.toLowerCase(), land_record_id, donor_nid);
+    }
+    if (!storedOtpObj) {
+      storedOtpObj = await findLatestDeedOtp('', land_record_id, donor_nid);
+    }
+    if (!storedOtpObj && process.env.EMAIL_USER) {
+      storedOtpObj = await findLatestDeedOtp(process.env.EMAIL_USER.toLowerCase(), land_record_id, donor_nid);
+    }
+    if (!storedOtpObj || storedOtpObj.otp !== donor_otp.trim()) {
+      return res.status(400).json({ success: false, message: 'দাতার ওটিপি কোডটি ভুল বা মেয়াদোত্তীর্ণ।' });
+    }
+    await deleteDeedOtps(donorEmail, land_record_id, donor_nid);
+    if (land.owner_email) await deleteDeedOtps(land.owner_email.toLowerCase(), land_record_id, donor_nid);
+
+    // 4. Verify Institution User & Role
+    let instUser = await User.findOne({
+      $or: [
+        { nid: institution_nid.trim() },
+        { nid: toEnglishDigits(institution_nid.trim()) },
+        { nid: toBengaliDigits(institution_nid.trim()) }
+      ]
+    });
+
+    if (!instUser) {
+      return res.status(404).json({ success: false, message: 'গ্রহীতা প্রতিষ্ঠান সিস্টেমে নিবন্ধিত নেই।' });
+    }
+    if (instUser.role !== 'Institution') {
+      return res.status(400).json({
+        success: false,
+        message: 'ওয়াকফ দলিল কেবল নিবন্ধিত প্রতিষ্ঠান (মসজিদ/মাদ্রাসা/স্কুল ইত্যাদি)-এর অনুকূলে সম্পাদন সম্ভব।'
+      });
+    }
+
+    // 5. Generate Deed Identifiers
+    const deed_no = `WAKF-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const deed_year = new Date().getFullYear().toString();
+    const sub_registry_code = 'SRO-BOG-SG-01';
+
+    const cryptoPayload = generateLandCryptoPayload({
+      deed_no,
+      deed_year,
+      sub_registry_code,
+      mouza: land.mouza,
+      dag_no: land.dag_no,
+      khatian_no: land.khatian_no,
+      seller_nid: donorUser.nid,
+      buyer_nid: instUser.nid
+    });
+
+    const appNo = `APP-WAKF-${Date.now().toString().slice(-6)}-${Math.floor(100 + Math.random() * 900)}`;
+
+    // 6. Deduct donor available area to prevent double-selling
+    land.available_area_decimal = Math.max(0, land.available_area_decimal - wakfoArea);
+    if (land.available_area_decimal <= 0) {
+      land.status = 'Pending_Wakfo_Review';
+    }
+    land.last_updated = new Date();
+    await land.save();
+
+    // 7. Save Application
+    const application = new OtherDeedApplication({
+      application_no: appNo,
+      deed_type: 'Wakfo',
+      sub_registry_office: 'শিবগঞ্জ সাব-রেজিস্ট্রি অফিস',
+      sub_registry_code,
+      deed_no,
+      deed_year,
+      deed_hash: cryptoPayload.deed_hash,
+      qr_code_id: cryptoPayload.qr_code_id,
+      status: 'Pending_AC_Land_Review',
+      wakfo: {
+        donor_nid: donorUser.nid,
+        donor_name: donorUser.name,
+        donor_phone: donorUser.phone || '',
+        donor_email: donorUser.email || '',
+        land_record_id: land._id,
+        division: land.division,
+        district: land.district,
+        upazila: land.upazila,
+        mouza: land.mouza,
+        jl_no: land.jl_no,
+        khatian_no: land.khatian_no,
+        dag_no: land.dag_no,
+        donor_total_area: land.total_area_decimal,
+        wakfo_area_decimal: wakfoArea,
+        remaining_donor_area: land.available_area_decimal,
+        institution_id: instUser._id,
+        institution_nid: instUser.nid,
+        institution_name: instUser.name,
+        institution_phone: instUser.phone || '',
+        institution_email: instUser.email || '',
+        institution_type: institution_type || 'মসজিদ / মাদ্রাসা / ধর্মীয় দাতব্য প্রতিষ্ঠান',
+        wakfo_purpose: wakfo_purpose || 'ধর্মীয় ও জনকল্যাণমূলক ওয়াকফ',
+        donor_otp_verified: true,
+        donor_biometric_verified: true
+      },
+      mutation_fee: 1150,
+      payment_status: 'Unpaid',
+      submitted_by_officer: req.user.name || 'সাব-রেজিস্ট্রার',
+      submitted_by_nid: req.user.nid || ''
+    });
+
+    await application.save();
+
+    await logActivity({
+      action_type: 'WAKFO_DEED_SUBMITTED',
+      module: 'Other_Deeds',
+      description: `ওয়াকফ দলিল সম্পাদন: দাতা ${donorUser.name} কর্তৃক ${instUser.name}-এর অনুকূলে ${wakfoArea} শতক জমি ওয়াকফ, দলিল নং ${deed_no}`,
+      user_id: req.user._id,
+      nid: req.user.nid,
+      meta: { deed_no, application_no: appNo }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `✅ ওয়াকফ দলিল সফলভাবে সম্পাদিত হয়েছে (দলিল নং ${deed_no}) এবং নামজারির জন্য এসি ল্যান্ড কার্যালয়ে প্রেরণ করা হয়েছে।`,
+      application
+    });
+  } catch (err) {
+    console.error('Wakfo Deed submission error:', err);
+    return res.status(500).json({ success: false, message: 'ওয়াকফ দলিল সৃষ্টিতে সার্ভার ত্রুটি হয়েছে।' });
+  }
+});
+
+// GET /api/other-deeds/wakfo/applications
+// Fetches Wakfo applications for AC Land and Registrar
+router.get('/wakfo/applications', verifyToken, async (req, res) => {
+  try {
+    const list = await OtherDeedApplication.find({
+      deed_type: 'Wakfo',
+      status: { $in: ['Pending_AC_Land_Review', 'Payment_Pending', 'Approved', 'Rejected'] }
+    }).sort({ createdAt: -1 });
+
+    return res.status(200).json({ success: true, count: list.length, data: list });
+  } catch (err) {
+    console.error('Fetch Wakfo applications error:', err);
+    return res.status(500).json({ success: false, message: 'ওয়াকফ আবেদনের তালিকা লোড ব্যর্থ হয়েছে।' });
+  }
+});
+
+// POST /api/other-deeds/wakfo/approve
+// AC Land approves Wakfo Mutation and creates new LandRecord for Institution
+router.post('/wakfo/approve', verifyToken, requireRole('AC Land Office', 'Super Admin'), async (req, res) => {
+  try {
+    const { application_id } = req.body;
+    const app = await OtherDeedApplication.findById(application_id);
+    if (!app || app.deed_type !== 'Wakfo') {
+      return res.status(404).json({ success: false, message: 'ওয়াকফ আবেদন পাওয়া যায়নি।' });
+    }
+
+    const origLand = await LandRecord.findById(app.wakfo.land_record_id);
+    if (!origLand) {
+      return res.status(404).json({ success: false, message: 'মূল জমির রেকর্ড পাওয়া যায়নি।' });
+    }
+
+    // 1. Create New Active LandRecord for Institution
+    const newRecordId = `rec_wakfo_${Date.now()}_${origLand.dag_no}`;
+    const newQrId = `QR-WAKF-${origLand.dag_no}-${Date.now().toString().slice(-4)}`;
+
+    const institutionLand = new LandRecord({
+      record_id: newRecordId,
+      division: origLand.division,
+      district: origLand.district,
+      upazila: origLand.upazila,
+      mouza: origLand.mouza,
+      jl_no: origLand.jl_no,
+      khatian_no: origLand.khatian_no,
+      dag_no: origLand.dag_no,
+      owner_nid: app.wakfo.institution_nid,
+      owner_name: app.wakfo.institution_name,
+      owner_phone: app.wakfo.institution_phone,
+      owner_email: app.wakfo.institution_email,
+      total_area_decimal: app.wakfo.wakfo_area_decimal,
+      available_area_decimal: app.wakfo.wakfo_area_decimal,
+      status: 'Active',
+      mutation_source: 'ওয়াকফ সূত্রে নামজারি',
+      deed_no: app.deed_no,
+      deed_year: app.deed_year,
+      sub_registry_code: app.sub_registry_code,
+      deed_hash: app.deed_hash,
+      qr_code_id: newQrId,
+      transfer_history: [
+        {
+          title: 'ওয়াকফ সূত্রে নামজারি',
+          date: new Date(),
+          details: `${app.wakfo.donor_name} (NID: ${app.wakfo.donor_nid}) কর্তৃক ওয়াকফ সূত্রে ${app.wakfo.institution_name}-এর অনুকূলে প্রদত্ত ${app.wakfo.wakfo_area_decimal} শতক জমি নামজারি অনুমোদিত হয়েছে। উদ্দেশ্য: ${app.wakfo.wakfo_purpose || 'ধর্মীয়/জনকল্যাণমূলক'}`,
+          deed_no: app.deed_no,
+          source_type: 'Wakfo'
+        }
+      ]
+    });
+
+    await institutionLand.save();
+
+    // 2. Update Donor's Land Record
+    origLand.status = origLand.available_area_decimal > 0 ? 'Active' : 'Sold';
+    origLand.transfer_history = origLand.transfer_history || [];
+    origLand.transfer_history.push({
+      title: 'ওয়াকফ সূত্রে জমি হস্তান্তর',
+      date: new Date(),
+      details: `${app.wakfo.institution_name}-এর অনুকূলে ওয়াকফ সূত্রে ${app.wakfo.wakfo_area_decimal} শতক জমি হস্তান্তর করা হয়েছে।`,
+      deed_no: app.deed_no,
+      source_type: 'Wakfo'
+    });
+    origLand.last_updated = new Date();
+    await origLand.save();
+
+    // 3. Update Application Status
+    app.status = 'Approved';
+    app.payment_status = 'Paid';
+    app.ac_land_reviewed_by = req.user.name || 'এসি ল্যান্ড';
+    app.ac_land_reviewed_at = new Date();
+    await app.save();
+
+    await logActivity({
+      action_type: 'WAKFO_MUTATION_APPROVED',
+      module: 'Other_Deeds',
+      description: `ওয়াকফ নামজারি অনুমোদিত: গ্রহীতা ${app.wakfo.institution_name} (${app.wakfo.wakfo_area_decimal} শতক), দলিল নং ${app.deed_no}`,
+      user_id: req.user._id,
+      nid: req.user.nid,
+      meta: { deed_no: app.deed_no, newRecordId }
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `✅ ওয়াকফ নামজারি সফলভাবে অনুমোদিত হয়েছে। ${app.wakfo.institution_name}-এর নামে ${app.wakfo.wakfo_area_decimal} শতকের সক্রিয় রেকর্ড প্রস্তুত হয়েছে।`,
+      institution_land_record: institutionLand
+    });
+  } catch (err) {
+    console.error('Approve Wakfo error:', err);
+    return res.status(500).json({ success: false, message: 'ওয়াকফ নামজারি অনুমোদন ব্যর্থ হয়েছে।' });
+  }
+});
+
+// POST /api/other-deeds/wakfo/reject
+// AC Land rejects Wakfo Deed and reverts donor's area
+router.post('/wakfo/reject', verifyToken, requireRole('AC Land Office', 'Super Admin'), async (req, res) => {
+  try {
+    const { application_id, reason } = req.body;
+    const app = await OtherDeedApplication.findById(application_id);
+    if (!app || app.deed_type !== 'Wakfo') {
+      return res.status(404).json({ success: false, message: 'আবেদন পাওয়া যায়নি।' });
+    }
+
+    const origLand = await LandRecord.findById(app.wakfo.land_record_id);
+    if (origLand) {
+      origLand.available_area_decimal += app.wakfo.wakfo_area_decimal;
+      origLand.status = 'Active';
+      origLand.last_updated = new Date();
+      await origLand.save();
+    }
+
+    app.status = 'Rejected';
+    app.rejection_reason = reason || 'যথাযথ তথ্যের ঘাটতি থাকায় ওয়াকফ নামজারি আবেদন খারিজ করা হলো।';
+    app.ac_land_reviewed_by = req.user.name || 'এসি ল্যান্ড';
+    app.ac_land_reviewed_at = new Date();
+    await app.save();
+
+    return res.status(200).json({
+      success: true,
+      message: 'ওয়াকফ আবেদনটি খারিজ করা হয়েছে এবং দাতার জমির পরিমাণ পুনর্বহাল করা হয়েছে।'
+    });
+  } catch (err) {
+    console.error('Reject Wakfo error:', err);
+    return res.status(500).json({ success: false, message: 'ওয়াকফ আবেদন বাতিল করতে সমস্যা হয়েছে।' });
+  }
+});
+
 module.exports = router;
 

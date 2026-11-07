@@ -12,11 +12,13 @@ import {
   X,
   FileCheck,
   Clock,
-  UserCheck
+  UserCheck,
+  Building2,
+  Landmark
 } from 'lucide-react';
 
 export default function ACLandOtherDeedsPanel() {
-  const [activeTab, setActiveTab] = useState('heba'); // 'heba' or 'exchange'
+  const [activeTab, setActiveTab] = useState('heba'); // 'heba' | 'exchange' | 'wakfo'
 
   // Heba states
   const [hebaApps, setHebaApps] = useState([]);
@@ -39,10 +41,31 @@ export default function ACLandOtherDeedsPanel() {
   const [exchangeActionMsg, setExchangeActionMsg] = useState(null);
   const [exchangeActionError, setExchangeActionError] = useState(null);
 
+  // Wakfo states
+  const [wakfoApps, setWakfoApps] = useState([]);
+  const [loadingWakfo, setLoadingWakfo] = useState(false);
+  const [selectedWakfo, setSelectedWakfo] = useState(null);
+  const [wakfoProcessing, setWakfoProcessing] = useState(false);
+  const [wakfoActionMsg, setWakfoActionMsg] = useState(null);
+  const [wakfoActionError, setWakfoActionError] = useState(null);
+
   useEffect(() => {
     if (activeTab === 'heba') fetchHebaApps();
-    else fetchExchangeApps();
+    else if (activeTab === 'exchange') fetchExchangeApps();
+    else if (activeTab === 'wakfo') fetchWakfoApps();
   }, [activeTab]);
+
+  const fetchWakfoApps = async () => {
+    setLoadingWakfo(true);
+    try {
+      const res = await axios.get('/api/other-deeds/wakfo/applications');
+      setWakfoApps(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load Wakfo applications:', err);
+    } finally {
+      setLoadingWakfo(false);
+    }
+  };
 
   const fetchHebaApps = async () => {
     setLoadingHeba(true);
@@ -226,6 +249,56 @@ export default function ACLandOtherDeedsPanel() {
     }
   };
 
+  // Approve Wakfo Mutation
+  const handleApproveWakfo = async () => {
+    if (!selectedWakfo) return;
+    setWakfoProcessing(true);
+    setWakfoActionMsg(null);
+    setWakfoActionError(null);
+
+    try {
+      const res = await axios.post('/api/other-deeds/wakfo/approve', {
+        application_id: selectedWakfo._id
+      });
+      if (res.data.success) {
+        setWakfoActionMsg(res.data.message || 'ওয়াকফ নামজারি সফলভাবে অনুমোদিত হয়েছে।');
+        setSelectedWakfo(null);
+        fetchWakfoApps();
+      }
+    } catch (err) {
+      setWakfoActionError(err.response?.data?.message || 'ওয়াকফ নামজারি অনুমোদন ব্যর্থ হয়েছে।');
+    } finally {
+      setWakfoProcessing(false);
+    }
+  };
+
+  // Reject Wakfo
+  const handleRejectWakfo = async () => {
+    if (!selectedWakfo) return;
+    const reason = prompt('ওয়াকফ আবেদন নামঞ্জুরের কারণ লিখুন:');
+    if (!reason) return;
+
+    setWakfoProcessing(true);
+    setWakfoActionMsg(null);
+    setWakfoActionError(null);
+
+    try {
+      const res = await axios.post('/api/other-deeds/wakfo/reject', {
+        application_id: selectedWakfo._id,
+        reason
+      });
+      if (res.data.success) {
+        setWakfoActionMsg(res.data.message || 'ওয়াকফ আবেদনটি খারিজ করা হয়েছে।');
+        setSelectedWakfo(null);
+        fetchWakfoApps();
+      }
+    } catch (err) {
+      setWakfoActionError(err.response?.data?.message || 'ওয়াকফ আবেদন বাতিল করতে সমস্যা হয়েছে।');
+    } finally {
+      setWakfoProcessing(false);
+    }
+  };
+
   return (
     <div style={{ padding: '8px 0' }}>
       {/* Header Banner */}
@@ -304,6 +377,28 @@ export default function ACLandOtherDeedsPanel() {
         >
           <ArrowRightLeft size={16} />
           <span>২. বিনিময় দলিল নামজারি অনুরোধ ({exchangeApps.length})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveTab('wakfo'); setSelectedWakfo(null); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: 'none',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeTab === 'wakfo' ? '#0f766e' : '#f1f5f9',
+            color: activeTab === 'wakfo' ? '#ffffff' : '#475569',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Building2 size={16} />
+          <span>৩. ওয়াকফ দলিল নামজারি অনুরোধ ({wakfoApps.filter(a => a.status === 'Pending_AC_Land_Review').length}টি অপেক্ষমান)</span>
         </button>
       </div>
 
@@ -971,6 +1066,277 @@ export default function ACLandOtherDeedsPanel() {
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────────
+          TAB 3: WAKFO DEED MUTATION REVIEW
+          ───────────────────────────────────────────────────────────── */}
+      {activeTab === 'wakfo' && (
+        <div>
+          {wakfoActionMsg && (
+            <div style={{
+              background: '#dcfce7',
+              border: '1.5px solid #86efac',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              color: '#166534',
+              fontSize: '14px',
+              fontWeight: '700',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <CheckCircle size={20} color="#166534" />
+              <span>{wakfoActionMsg}</span>
+            </div>
+          )}
+
+          {wakfoActionError && (
+            <div style={{
+              background: '#fee2e2',
+              border: '1.5px solid #f87171',
+              borderRadius: '12px',
+              padding: '16px 20px',
+              color: '#991b1b',
+              fontSize: '14px',
+              fontWeight: '700',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px'
+            }}>
+              <AlertTriangle size={20} color="#991b1b" />
+              <span>{wakfoActionError}</span>
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: selectedWakfo ? 'minmax(340px, 1.1fr) minmax(340px, 1fr)' : '1fr', gap: '24px' }}>
+            {/* Left: Applications List */}
+            <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Building2 size={20} color="#0f766e" />
+                  ওয়াকফ নামজারি আবেদন তালিকা ({wakfoApps.length}টি)
+                </h3>
+                <button
+                  type="button"
+                  onClick={fetchWakfoApps}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 14px',
+                    background: '#f8fafc',
+                    border: '1px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <RefreshCw size={13} className={loadingWakfo ? 'animate-spin' : ''} />
+                  <span>রিফ্রেশ</span>
+                </button>
+              </div>
+
+              {loadingWakfo ? (
+                <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  <RefreshCw size={24} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                  <div>তথ্য লোড হচ্ছে...</div>
+                </div>
+              ) : wakfoApps.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 20px', color: '#64748b', background: '#f8fafc', borderRadius: '10px' }}>
+                  <Building2 size={36} color="#94a3b8" style={{ margin: '0 auto 8px' }} />
+                  <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>কোনো ওয়াকফ নামজারি আবেদন নেই</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>সাব-রেজিস্ট্রার কার্যালয় থেকে ওয়াকফ আবেদন প্রেরণ করলে তা এখানে প্রদর্শিত হবে</div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {wakfoApps.map((app) => {
+                    const isSelected = selectedWakfo?._id === app._id;
+                    const w = app.wakfo || {};
+                    return (
+                      <div
+                        key={app._id}
+                        onClick={() => setSelectedWakfo(app)}
+                        style={{
+                          padding: '16px',
+                          borderRadius: '12px',
+                          border: isSelected ? '2px solid #0f766e' : '1.5px solid #e2e8f0',
+                          background: isSelected ? '#f0fdfa' : '#ffffff',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span style={{ fontFamily: 'monospace', fontWeight: '800', color: '#0f766e', fontSize: '13px' }}>
+                            {app.deed_no}
+                          </span>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: '800',
+                            padding: '3px 9px',
+                            borderRadius: '999px',
+                            background: app.status === 'Approved' ? '#dcfce7' : app.status === 'Rejected' ? '#fee2e2' : '#fef3c7',
+                            color: app.status === 'Approved' ? '#166534' : app.status === 'Rejected' ? '#991b1b' : '#92400e',
+                            border: `1px solid ${app.status === 'Approved' ? '#86efac' : app.status === 'Rejected' ? '#f87171' : '#fde68a'}`
+                          }}>
+                            {app.status === 'Approved' ? '✅ অনুমোদিত' : app.status === 'Rejected' ? '❌ বাতিল' : '⏳ পর্যালোচনার অপেক্ষায়'}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: '13px', color: '#0f172a', marginBottom: '4px' }}>
+                          দাতা: <strong>{w.donor_name}</strong> ➔ গ্রহীতা: <strong style={{ color: '#0f766e' }}>{w.institution_name}</strong>
+                        </div>
+
+                        <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+                          <span>মৌজা: <strong>{w.mouza}</strong></span>
+                          <span>দাগ: <strong>{w.dag_no}</strong></span>
+                          <span>ওয়াকফ: <strong style={{ color: '#0f766e' }}>{w.wakfo_area_decimal} শতক</strong></span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Selected Wakfo Review Panel */}
+            {selectedWakfo && (
+              <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '2px solid #0f766e', borderRadius: '14px', height: 'fit-content' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '12px' }}>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                      ওয়াকফ দলিল ও নামজারি চূড়ান্ত পর্যালোচনা
+                    </h3>
+                    <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '2px' }}>
+                      দলিল নং: <strong>{selectedWakfo.deed_no}</strong> | আবেদন নং: {selectedWakfo.application_no}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedWakfo(null)}
+                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                {/* Donor & Institution Info Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '18px' }}>
+                  <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '4px' }}>
+                      👤 দাতা (ওয়াকিফ)
+                    </span>
+                    <div style={{ fontWeight: '800', color: '#0f172a', fontSize: '13.5px' }}>{selectedWakfo.wakfo?.donor_name}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>NID: {selectedWakfo.wakfo?.donor_nid}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>মোবাইল: {selectedWakfo.wakfo?.donor_phone}</div>
+                    <div style={{ fontSize: '11px', color: '#059669', marginTop: '4px', fontWeight: '700' }}>
+                      ✓ ওটিপি ও বায়োমেট্রিক রেজিস্ট্রি অফিসে যাচাইকৃত
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#f0fdfa', padding: '14px', borderRadius: '10px', border: '1.5px solid #99f6e4' }}>
+                    <span style={{ fontSize: '11px', fontWeight: '800', color: '#0f766e', display: 'block', marginBottom: '4px' }}>
+                      🏛️ গ্রহীতা প্রতিষ্ঠান (ওয়াকফ এস্টেট)
+                    </span>
+                    <div style={{ fontWeight: '800', color: '#0f766e', fontSize: '13.5px' }}>{selectedWakfo.wakfo?.institution_name}</div>
+                    <div style={{ fontSize: '11px', color: '#475569' }}>প্রতিনিধি NID: {selectedWakfo.wakfo?.institution_nid}</div>
+                    <div style={{ fontSize: '11px', color: '#475569' }}>ধরন: {selectedWakfo.wakfo?.institution_type}</div>
+                    <span style={{
+                      display: 'inline-block',
+                      marginTop: '4px',
+                      fontSize: '10px',
+                      fontWeight: '800',
+                      background: '#ccfbf1',
+                      color: '#0f766e',
+                      padding: '2px 8px',
+                      borderRadius: '999px',
+                      border: '1px solid #5eead4'
+                    }}>
+                      ✓ প্রাতিষ্ঠানিক ইউজার অ্যাকাউন্ট (Role: Institution)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Land & Waqf Terms Details */}
+                <div style={{ background: '#f8fafc', padding: '14px', borderRadius: '10px', border: '1px solid #e2e8f0', marginBottom: '18px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', fontSize: '12.5px' }}>
+                    <div>মৌজা: <strong>{selectedWakfo.wakfo?.mouza}</strong></div>
+                    <div>দাগ নং: <strong>{selectedWakfo.wakfo?.dag_no}</strong></div>
+                    <div>খতিয়ান নং: <strong>{selectedWakfo.wakfo?.khatian_no}</strong></div>
+                    <div>ওয়াকফকৃত জমি: <strong style={{ color: '#0f766e', fontSize: '13.5px' }}>{selectedWakfo.wakfo?.wakfo_area_decimal} শতক</strong></div>
+                  </div>
+                  {selectedWakfo.wakfo?.wakfo_purpose && (
+                    <div style={{ marginTop: '10px', fontSize: '12px', color: '#334155', borderTop: '1px dashed #cbd5e1', paddingTop: '8px' }}>
+                      ওয়াকফের উদ্দেশ্য: <em>&ldquo;{selectedWakfo.wakfo.wakfo_purpose}&rdquo;</em>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons for Pending Wakfo */}
+                {selectedWakfo.status === 'Pending_AC_Land_Review' ? (
+                  <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1.5px solid #e2e8f0', paddingTop: '16px' }}>
+                    <button
+                      type="button"
+                      onClick={handleRejectWakfo}
+                      disabled={wakfoProcessing}
+                      style={{
+                        padding: '10px 20px',
+                        borderRadius: '8px',
+                        border: '1.5px solid #f87171',
+                        background: '#fee2e2',
+                        color: '#991b1b',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      আবেদন খারিজ
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleApproveWakfo}
+                      disabled={wakfoProcessing}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 28px',
+                        background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '8px',
+                        fontWeight: '800',
+                        fontSize: '13.5px',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 14px rgba(15, 118, 110, 0.35)'
+                      }}
+                    >
+                      <Check size={16} />
+                      <span>{wakfoProcessing ? 'অনুমোদন হচ্ছে...' : 'ওয়াকফ নামজারি অনুমোদন করুন (Execute Mutation)'}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    background: selectedWakfo.status === 'Approved' ? '#f0fdf4' : '#fef2f2',
+                    border: `1px solid ${selectedWakfo.status === 'Approved' ? '#86efac' : '#fca5a5'}`,
+                    fontSize: '13px',
+                    color: selectedWakfo.status === 'Approved' ? '#166534' : '#991b1b',
+                    fontWeight: '700',
+                    textAlign: 'center'
+                  }}>
+                    {selectedWakfo.status === 'Approved' ? '✅ এই আবেদনটির ওয়াকফ নামজারি ইতোমধ্যে অনুমোদিত ও কার্যকর হয়েছে।' : '❌ আবেদনটি বাতিলকৃত।'}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

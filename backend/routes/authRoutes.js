@@ -91,6 +91,8 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'এই ইমেইল ঠিকানাটি ইতিমধ্যে ব্যবহৃত হচ্ছে।' });
     }
 
+    const userRole = req.body.role === 'Institution' ? 'Institution' : 'User';
+
     // Create user with resilient store (MongoDB or memory fallback)
     const newUser = await createCitizenUser({
       name,
@@ -103,7 +105,8 @@ router.post('/register', async (req, res) => {
       mouza: (mouza || '').trim(),
       phone,
       email,
-      password
+      password,
+      role: userRole
     });
 
     const token = generateToken(newUser);
@@ -113,10 +116,12 @@ router.post('/register', async (req, res) => {
 
     logActivity({
       req,
-      actor: { id: newUser._id, name: newUser.name, email: newUser.email, role: 'User', nid: newUser.nid },
+      actor: { id: newUser._id, name: newUser.name, email: newUser.email, role: userRole, nid: newUser.nid },
       action_type: 'USER_REGISTERED',
       module: 'Auth',
-      description: `নতুন নাগরিক অ্যাকাউন্ট নিবন্ধন সম্পন্ন: ${newUser.name} (NID: ${newUser.nid})`,
+      description: userRole === 'Institution'
+        ? `নতুন প্রতিষ্ঠান অ্যাকাউন্ট নিবন্ধন সম্পন্ন: ${newUser.name} (প্রতিনিধি NID: ${newUser.nid})`
+        : `নতুন নাগরিক অ্যাকাউন্ট নিবন্ধন সম্পন্ন: ${newUser.name} (NID: ${newUser.nid})`,
       target_resource: `NID: ${newUser.nid}, উপজেলা: ${newUser.upazila}, জেলা: ${newUser.district}`,
       details: { phone: newUser.phone, email: newUser.email, division: newUser.division }
     });

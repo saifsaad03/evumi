@@ -115,6 +115,8 @@ export default function Navbar() {
         return { label: 'সাব-রেজিস্ট্রি', color: '#1d4ed8', bg: '#eff6ff', border: '#bfdbfe' };
       case 'AC Land Office':
         return { label: 'এসি ল্যান্ড', color: '#047857', bg: '#ecfdf5', border: '#a7f3d0' };
+      case 'Institution':
+        return { label: 'প্রতিষ্ঠান (ওয়াকফ)', color: '#0f766e', bg: '#ccfbf1', border: '#99f6e4' };
       case 'User':
       default:
         return { label: 'নাগরিক', color: '#92400e', bg: '#fef3c7', border: '#fde68a' };
@@ -132,6 +134,7 @@ export default function Navbar() {
   const getRoleDefaultNavItems = () => {
     if (!user) return [];
     switch (user.role) {
+      case 'Institution':
       case 'User':
         return [
           { id: 'lands', label: 'আমার অনুমোদিত জমি', icon: FileText },

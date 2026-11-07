@@ -11,6 +11,7 @@ import HebaGiftDeedPanel from '../components/OtherDeeds/HebaGiftDeedPanel';
 import ExchangeDeedPanel from '../components/OtherDeeds/ExchangeDeedPanel';
 import MortgageDeedPanel from '../components/OtherDeeds/MortgageDeedPanel';
 import BaynaDeedPanel from '../components/OtherDeeds/BaynaDeedPanel';
+import WakfoDeedPanel from '../components/OtherDeeds/WakfoDeedPanel';
 
 
 export default function RegisterOfficeDashboard() {
@@ -1677,6 +1678,27 @@ export default function RegisterOfficeDashboard() {
             >
               <span>📝 বায়নাপত্র দলিল (Bayna)</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedOtherDeedSub('wakfo')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '9px 18px',
+                borderRadius: '8px',
+                border: 'none',
+                fontWeight: '800',
+                fontSize: '13px',
+                cursor: 'pointer',
+                background: selectedOtherDeedSub === 'wakfo' ? '#0f766e' : '#f1f5f9',
+                color: selectedOtherDeedSub === 'wakfo' ? '#ffffff' : '#334155',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <span>🏛️ ওয়াকফ দলিল (Wakf Deed)</span>
+            </button>
           </div>
 
           {/* Render selected sub-panel */}
@@ -1684,6 +1706,7 @@ export default function RegisterOfficeDashboard() {
           {selectedOtherDeedSub === 'exchange' && <ExchangeDeedPanel />}
           {selectedOtherDeedSub === 'mortgage' && <MortgageDeedPanel />}
           {selectedOtherDeedSub === 'bayna' && <BaynaDeedPanel />}
+          {selectedOtherDeedSub === 'wakfo' && <WakfoDeedPanel />}
         </div>
       )}
 

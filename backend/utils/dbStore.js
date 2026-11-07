@@ -138,7 +138,7 @@ const createCitizenUser = async (userData) => {
   const hashedPassword = await bcrypt.hash(userData.password, 10);
   const userPayload = {
     ...userData,
-    role: 'User',
+    role: userData.role === 'Institution' ? 'Institution' : (userData.role || 'User'),
     status: 'Active',
     createdAt: new Date(),
     updatedAt: new Date()
