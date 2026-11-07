@@ -2,15 +2,18 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
   Search, ShieldAlert, ShieldCheck, CheckCircle, AlertTriangle, 
-  MapPin, UserCheck, Layers, Hash, FileText, Check, Lock, Info, XCircle
+  MapPin, UserCheck, Layers, Hash, FileText, Check, Lock, Info, XCircle, RefreshCw
 } from 'lucide-react';
 
 export default function P5CitizenVerify() {
-  const [searchForm, setSearchForm] = useState({
+    const [searchForm, setSearchForm] = useState({
     seller_nid: '',
-    dag_no: '',
+    division: '',
+    district: '',
+    upazila: '',
     mouza: '',
     khatian_no: '',
+    dag_no: '',
     requested_area: ''
   });
 
@@ -19,35 +22,234 @@ export default function P5CitizenVerify() {
   const [landRecord, setLandRecord] = useState(null);
   const [alertData, setAlertData] = useState(null);
 
-  // Dynamic Mouza List from database
+  // Cascading Dynamic Location States: Division ➔ District ➔ Upazila ➔ Mouza ➔ Khatian ➔ Dag
+  const [divisionsList, setDivisionsList] = useState([]);
+  const [districtsList, setDistrictsList] = useState([]);
+  const [upazilasList, setUpazilasList] = useState([]);
   const [mouzasList, setMouzasList] = useState([]);
-  const [mouzaLoading, setMouzaLoading] = useState(false);
+  const [khatiansList, setKhatiansList] = useState([]);
+  const [dagsList, setDagsList] = useState([]);
+  const [loadingLocations, setLoadingLocations] = useState(false);
+
+  const [selectedDivId, setSelectedDivId] = useState('');
+  const [selectedDistId, setSelectedDistId] = useState('');
+  const [selectedUpzId, setSelectedUpzId] = useState('');
+  const [selectedMouzaId, setSelectedMouzaId] = useState('');
+  const [selectedKhatianId, setSelectedKhatianId] = useState('');
+  const [selectedDagId, setSelectedDagId] = useState('');
 
   useEffect(() => {
-    fetchMouzas();
+    loadDivisions();
   }, []);
 
-  const fetchMouzas = async () => {
-    setMouzaLoading(true);
+  const loadDivisions = async () => {
+    setLoadingLocations(true);
     try {
-      const res = await axios.get('/api/mouzas');
-      if (res.data?.success && Array.isArray(res.data.mouzas) && res.data.mouzas.length > 0) {
-        setMouzasList(res.data.mouzas);
-      } else {
-        setMouzasList(['গুজিয়া', 'অনন্তবালা', 'চক অনন্তবালা', 'কিচক', 'বেলাই', 'হরিপুর', 'চক হরিপুর', 'বিশা', 'কানাইডাঙ্গা', 'সর্দারপাড়া', 'জানগ্রাম', 'রামচন্দ্রপুর', 'ধাওয়া', 'চক ধাওয়া', 'চণ্ডীহারা', 'চক চণ্ডীহারা', 'করতকোলা', 'শোলাগাড়ী', 'বুড়িগঞ্জ', 'সাদুল্লাপুর']);
-      }
+      const res = await axios.get('/api/locations/divisions');
+      setDivisionsList(res.data?.data || []);
+      setSelectedDivId('');
+      setDistrictsList([]);
+      setSelectedDistId('');
+      setUpazilasList([]);
+      setSelectedUpzId('');
+      setMouzasList([]);
+      setSelectedMouzaId('');
+      setKhatiansList([]);
+      setSelectedKhatianId('');
+      setDagsList([]);
+      setSelectedDagId('');
     } catch (err) {
-      console.warn('Could not load mouzas dynamically, applying fallback list:', err);
-      setMouzasList(['গুজিয়া', 'অনন্তবালা', 'চক অনন্তবালা', 'কিচক', 'বেলাই', 'হরিপুর', 'চক হরিপুর', 'বিশা', 'কানাইডাঙ্গা', 'সর্দারপাড়া', 'জানগ্রাম', 'রামচন্দ্রপুর', 'ধাওয়া', 'চক ধাওয়া', 'চণ্ডীহারা', 'চক চণ্ডীহারা', 'করতকোলা', 'শোলাগাড়ী', 'বুড়িগঞ্জ', 'সাদুল্লাপুর']);
+      console.error('Failed to load divisions:', err);
     } finally {
-      setMouzaLoading(false);
+      setLoadingLocations(false);
     }
+  };
+
+  const handleDivisionChange = async (divId) => {
+    setSelectedDivId(divId);
+    setSelectedDistId('');
+    setDistrictsList([]);
+    setSelectedUpzId('');
+    setUpazilasList([]);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+
+    const divObj = divisionsList.find(d => d._id === divId);
+    const divName = divObj ? (divObj.name || divObj.bn_name) : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      division: divName,
+      district: '',
+      upazila: '',
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+
+    if (!divId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/districts?division_id=${divId}`);
+      setDistrictsList(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load districts:', err);
+      setDistrictsList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleDistrictChange = async (distId) => {
+    setSelectedDistId(distId);
+    setSelectedUpzId('');
+    setUpazilasList([]);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+
+    const distObj = districtsList.find(d => d._id === distId);
+    const distName = distObj ? (distObj.name || distObj.bn_name) : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      district: distName,
+      upazila: '',
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+
+    if (!distId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/upazilas?district_id=${distId}`);
+      setUpazilasList(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load upazilas:', err);
+      setUpazilasList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleUpazilaChange = async (upzId) => {
+    setSelectedUpzId(upzId);
+    setSelectedMouzaId('');
+    setMouzasList([]);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+
+    const upzObj = upazilasList.find(u => u._id === upzId);
+    const upzName = upzObj ? (upzObj.name || upzObj.bn_name) : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      upazila: upzName,
+      mouza: '',
+      khatian_no: '',
+      dag_no: ''
+    }));
+
+    if (!upzId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/mouzas?upazila_id=${upzId}`);
+      setMouzasList(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load mouzas:', err);
+      setMouzasList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleMouzaChange = async (mouzaId) => {
+    setSelectedMouzaId(mouzaId);
+    setSelectedKhatianId('');
+    setKhatiansList([]);
+    setSelectedDagId('');
+    setDagsList([]);
+
+    const mouzaObj = mouzasList.find(m => m._id === mouzaId);
+    const mouzaName = mouzaObj ? (mouzaObj.name || mouzaObj.bn_name) : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      mouza: mouzaName,
+      khatian_no: '',
+      dag_no: ''
+    }));
+
+    if (!mouzaId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/khatians?mouza_id=${mouzaId}`);
+      setKhatiansList(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load khatians:', err);
+      setKhatiansList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleKhatianChange = async (khatianId) => {
+    setSelectedKhatianId(khatianId);
+    setSelectedDagId('');
+    setDagsList([]);
+
+    const khObj = khatiansList.find(k => k._id === khatianId);
+    const khNo = khObj ? khObj.khatian_no : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      khatian_no: khNo,
+      dag_no: ''
+    }));
+
+    if (!khatianId) return;
+
+    setLoadingLocations(true);
+    try {
+      const res = await axios.get(`/api/locations/dags?khatian_id=${khatianId}`);
+      setDagsList(res.data?.data || []);
+    } catch (err) {
+      console.error('Failed to load dags:', err);
+      setDagsList([]);
+    } finally {
+      setLoadingLocations(false);
+    }
+  };
+
+  const handleDagChange = (dagId) => {
+    setSelectedDagId(dagId);
+    const dagObj = dagsList.find(d => d._id === dagId);
+    const dagNo = dagObj ? dagObj.dag_no : '';
+
+    setSearchForm(prev => ({
+      ...prev,
+      dag_no: dagNo
+    }));
   };
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
-    if (!searchForm.seller_nid?.trim() || !searchForm.dag_no?.trim() || !searchForm.mouza?.trim() || !searchForm.khatian_no?.trim()) {
-      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, মৌজা, দাগ নম্বর এবং খতিয়ান নম্বর — এই ৪টি তথ্যই প্রদান করুন (স্ট্যান্ডার্ড: মৌজা + দাগ + খতিয়ান)।');
+    if (!searchForm.seller_nid?.trim() || !searchForm.mouza?.trim() || !searchForm.dag_no?.trim() || !searchForm.khatian_no?.trim()) {
+      setSearchError('অনুগ্রহ করে বিক্রেতার NID নম্বর, মৌজা, খতিয়ান এবং দাগ নম্বর নির্বাচন বা প্রদান করুন (বিভাগ ➔ জেলা ➔ উপজেলা ➔ মৌজা ➔ খতিয়ান ➔ দাগ)।');
       return;
     }
 
@@ -60,9 +262,12 @@ export default function P5CitizenVerify() {
       // Connect to unified live Anti-Double Selling & Land Verification Engine
       const res = await axios.post('/api/verify-deed', {
         seller_nid: searchForm.seller_nid?.trim(),
-        dag_no: searchForm.dag_no?.trim(),
+        division: searchForm.division?.trim(),
+        district: searchForm.district?.trim(),
+        upazila: searchForm.upazila?.trim(),
         mouza: searchForm.mouza?.trim(),
         khatian_no: searchForm.khatian_no?.trim(),
+        dag_no: searchForm.dag_no?.trim(),
         requested_area: searchForm.requested_area || '1'
       });
 
@@ -85,60 +290,49 @@ export default function P5CitizenVerify() {
   const handleReset = () => {
     setSearchForm({
       seller_nid: '',
-      dag_no: '',
+      division: '',
+      district: '',
+      upazila: '',
       mouza: '',
       khatian_no: '',
+      dag_no: '',
       requested_area: ''
     });
+    setSelectedDivId('');
+    setDistrictsList([]);
+    setSelectedDistId('');
+    setUpazilasList([]);
+    setSelectedUpzId('');
+    setMouzasList([]);
+    setSelectedMouzaId('');
+    setKhatiansList([]);
+    setSelectedKhatianId('');
+    setDagsList([]);
+    setSelectedDagId('');
     setLandRecord(null);
     setAlertData(null);
     setSearchError('');
   };
 
   return (
-    <div style={{ color: '#0f172a', maxWidth: '1280px', margin: '0 auto', padding: '20px 16px 40px' }}>
+    <div className="p5-verify-container">
       {/* Top Header Banner */}
-      <div style={{
-        background: '#ffffff',
-        border: '1.5px solid #cbd5e1',
-        borderLeft: '5px solid #2563eb',
-        borderRadius: '16px',
-        padding: '24px 28px',
-        marginBottom: '26px',
-        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{
-              width: '52px',
-              height: '52px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #1d4ed8, #2563eb)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
-            }}>
+      <div className="p5-header-card">
+        <div className="p5-header-inner">
+          <div className="p5-header-left">
+            <div className="p5-header-icon">
               <ShieldCheck size={28} color="#ffffff" />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: '20px', fontWeight: '800', margin: 0, color: '#0f172a' }}>
+                <h2 className="p5-header-title">
                   জমি সার্চ ও অ্যান্টি-ডাবল সেলিং চেক
                 </h2>
-                <span style={{
-                  fontSize: '11px',
-                  padding: '3px 10px',
-                  borderRadius: '999px',
-                  background: '#dcfce7',
-                  color: '#166534',
-                  border: '1px solid #86efac',
-                  fontWeight: '700'
-                }}>
+                <span className="p5-header-badge">
                   নাগরিক ও উন্মুক্ত পোর্টাল (Public Verification Engine)
                 </span>
               </div>
-              <p style={{ color: '#334155', fontSize: '13px', margin: '4px 0 0 0' }}>
+              <p className="p5-header-sub">
                 জমি কেনার পূর্বে বিক্রেতার বৈধ মালিকানা, আদালতের মামলা, স্থগিতাদেশ (Stay Order) ও ডাবল-সেলিং ঝুঁকি লাইভ যাচাই করুন
               </p>
             </div>
@@ -147,16 +341,10 @@ export default function P5CitizenVerify() {
       </div>
 
       {/* Main Grid: Left Search Form | Right Verification Results */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(360px, 1.2fr) minmax(360px, 1fr)', gap: '24px' }}>
+      <div className="p5-main-grid">
         
         {/* Left Column: Search Form */}
-        <div style={{
-          background: '#ffffff',
-          border: '1.5px solid #cbd5e1',
-          borderRadius: '16px',
-          padding: '24px',
-          boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
-        }}>
+        <div className="p5-form-card">
           <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Search size={18} color="#2563eb" />
             জমির তথ্য অনুসন্ধান ও যাচাইকরণ
@@ -181,64 +369,158 @@ export default function P5CitizenVerify() {
               </span>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                মৌজার নাম নির্বাচন করুন <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
-                required
-                className="input-field"
-                value={searchForm.mouza}
-                onChange={(e) => setSearchForm(prev => ({ ...prev, mouza: e.target.value }))}
+            <div className="p5-location-grid">
+                {/* ১. বিভাগ */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ১. বিভাগ (Division) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedDivId}
+                    onChange={(e) => handleDivisionChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || divisionsList.length === 0}
+                  >
+                    <option value="">-- বিভাগ নির্বাচন করুন --</option>
+                    {divisionsList.map(d => (
+                      <option key={d._id} value={d._id}>{d.name || d.bn_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ২. জেলা */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ২. জেলা (District) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedDistId}
+                    onChange={(e) => handleDistrictChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: !selectedDivId ? '#f1f5f9' : '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || !selectedDivId || districtsList.length === 0}
+                  >
+                    <option value="">{selectedDivId ? '-- জেলা নির্বাচন করুন --' : '-- প্রথমে বিভাগ নির্বাচন করুন --'}</option>
+                    {districtsList.map(d => (
+                      <option key={d._id} value={d._id}>{d.name || d.bn_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ৩. উপজেলা */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ৩. উপজেলা (Upazila) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedUpzId}
+                    onChange={(e) => handleUpazilaChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: !selectedDistId ? '#f1f5f9' : '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || !selectedDistId || upazilasList.length === 0}
+                  >
+                    <option value="">{selectedDistId ? '-- উপজেলা নির্বাচন করুন --' : '-- প্রথমে জেলা নির্বাচন করুন --'}</option>
+                    {upazilasList.map(u => (
+                      <option key={u._id} value={u._id}>{u.name || u.bn_name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ৪. মৌজা */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ৪. মৌজা (Mouza) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedMouzaId}
+                    onChange={(e) => handleMouzaChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: !selectedUpzId ? '#f1f5f9' : '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || !selectedUpzId || mouzasList.length === 0}
+                  >
+                    <option value="">{selectedUpzId ? '-- মৌজা নির্বাচন করুন --' : '-- প্রথমে উপজেলা নির্বাচন করুন --'}</option>
+                    {mouzasList.map(m => (
+                      <option key={m._id} value={m._id}>
+                        {m.name || m.bn_name} {m.jl_no ? `(জে.এল ${m.jl_no})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ৫. খতিয়ান নং */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ৫. খতিয়ান নম্বর (Khatian) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedKhatianId}
+                    onChange={(e) => handleKhatianChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: !selectedMouzaId ? '#f1f5f9' : '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || !selectedMouzaId || khatiansList.length === 0}
+                  >
+                    <option value="">{selectedMouzaId ? '-- খতিয়ান নম্বর নির্বাচন করুন --' : '-- প্রথমে মৌজা নির্বাচন করুন --'}</option>
+                    {khatiansList.map(k => (
+                      <option key={k._id} value={k._id}>
+                        খতিয়ান {k.khatian_no} {k.khatian_type ? `(${k.khatian_type})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* ৬. দাগ নং */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '4px', fontWeight: '700' }}>
+                    ৬. দাগ নম্বর (Dag No) <span style={{ color: '#dc2626' }}>*</span>
+                  </label>
+                  <select
+                    required
+                    className="input-field"
+                    value={selectedDagId}
+                    onChange={(e) => handleDagChange(e.target.value)}
+                    style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: !selectedKhatianId ? '#f1f5f9' : '#ffffff', height: '42px', border: '1.5px solid #cbd5e1', borderRadius: '8px', padding: '0 10px' }}
+                    disabled={loadingLocations || !selectedKhatianId || dagsList.length === 0}
+                  >
+                    <option value="">{selectedKhatianId ? '-- দাগ নম্বর নির্বাচন করুন --' : '-- প্রথমে খতিয়ান নির্বাচন করুন --'}</option>
+                    {dagsList.map(d => (
+                      <option key={d._id} value={d._id}>
+                        দাগ {d.dag_no} {d.total_area_decimal ? `(${d.total_area_decimal} শতক)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+            {/* Location Helper Bar */}
+            <div className="p5-location-helper">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <MapPin size={13} color="#2563eb" />
+                <span>অনুসন্ধান ক্রম: <strong>বিভাগ ➔ জেলা ➔ উপজেলা ➔ মৌজা ➔ খতিয়ান ➔ দাগ নম্বর</strong></span>
+              </div>
+              <button
+                type="button"
+                onClick={loadDivisions}
+                title="লোকেশন ডাটা রিলোড করুন"
                 style={{
-                  width: '100%',
-                  fontSize: '13px',
-                  color: '#0f172a',
-                  background: '#ffffff',
-                  height: '42px',
-                  border: '1.5px solid #cbd5e1',
-                  borderRadius: '8px',
-                  padding: '0 10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  background: 'none',
+                  border: 'none',
+                  color: '#2563eb',
+                  fontSize: '11px',
+                  fontWeight: '700',
                   cursor: 'pointer'
                 }}
               >
-                <option value="">{mouzaLoading ? 'মৌজা লোড হচ্ছে...' : '-- মৌজা নির্বাচন করুন --'}</option>
-                {mouzasList.map((m, idx) => (
-                  <option key={idx} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                  দাগ নম্বর (Plot No) <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="input-field"
-                  placeholder="যেমন: ১০১"
-                  value={searchForm.dag_no}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, dag_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
-                  খতিয়ান নম্বর (Khatian No) <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  className="input-field"
-                  placeholder="যেমন: ২৫০"
-                  value={searchForm.khatian_no}
-                  onChange={(e) => setSearchForm(prev => ({ ...prev, khatian_no: e.target.value }))}
-                  style={{ width: '100%', fontSize: '13px', color: '#0f172a', background: '#ffffff' }}
-                />
-              </div>
+                <RefreshCw size={11} className={loadingLocations ? 'animate-spin' : ''} /> রিফ্রেশ
+              </button>
             </div>
 
             <div style={{ marginTop: '10px', background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11px', color: '#1e40af', fontWeight: '600' }}>
@@ -260,7 +542,7 @@ export default function P5CitizenVerify() {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+            <div className="p5-btn-group">
               <button
                 type="submit"
                 disabled={loading}
@@ -339,19 +621,7 @@ export default function P5CitizenVerify() {
         <div>
           {/* Default Empty State */}
           {!loading && !landRecord && !alertData && (
-            <div style={{
-              background: '#ffffff',
-              border: '1.5px solid #cbd5e1',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-              minHeight: '380px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 20px rgba(15, 23, 42, 0.08)'
-            }}>
+            <div className="p5-result-empty">
               <div style={{
                 width: '68px',
                 height: '68px',
@@ -375,18 +645,7 @@ export default function P5CitizenVerify() {
 
           {/* Loading Skeleton */}
           {loading && (
-            <div style={{
-              background: '#ffffff',
-              border: '1.5px solid #cbd5e1',
-              borderRadius: '16px',
-              padding: '40px 24px',
-              textAlign: 'center',
-              minHeight: '380px',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
+            <div className="p5-result-loading">
               <div className="animate-spin" style={{
                 width: '40px',
                 height: '40px',
@@ -403,13 +662,7 @@ export default function P5CitizenVerify() {
 
           {/* Alert View (Court Case, Stay Order, Double Selling, Fake Owner, Khas Land, etc.) */}
           {alertData && (
-            <div style={{
-              background: '#fef2f2',
-              border: '2px solid #ef4444',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 6px 24px rgba(239, 68, 68, 0.15)'
-            }}>
+            <div className="p5-alert-card">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
                 <ShieldAlert size={28} color="#dc2626" />
                 <div>
@@ -443,17 +696,7 @@ export default function P5CitizenVerify() {
               </div>
 
               {alertData.court_case && (
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '8px',
-                  fontSize: '12px',
-                  background: '#ffffff',
-                  padding: '12px',
-                  borderRadius: '10px',
-                  border: '1.5px solid #fca5a5',
-                  color: '#7f1d1d'
-                }}>
+                <div className="p5-alert-grid">
                   <div>মামলা সংক্রান্ত অবস্থা: <strong style={{ color: '#991b1b' }}>{alertData.court_case.has_court_case ? 'সক্রিয় মোকদ্দমা' : 'মামলামুক্ত'}</strong></div>
                   <div>স্থগিতাদেশ (Stay Order): <strong style={{ color: alertData.court_case.stay_order ? '#dc2626' : '#166534' }}>{alertData.court_case.stay_order ? 'বলবৎ আছে' : 'নেই'}</strong></div>
                   {alertData.court_case.case_details && (
@@ -468,13 +711,7 @@ export default function P5CitizenVerify() {
 
           {/* Verified Land Card (Safe To Buy) */}
           {landRecord && !alertData && (
-            <div style={{
-              background: '#f0fdf4',
-              border: '2px solid #86efac',
-              borderRadius: '16px',
-              padding: '24px',
-              boxShadow: '0 6px 24px rgba(34, 197, 94, 0.15)'
-            }}>
+            <div className="p5-success-card">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <ShieldCheck size={28} color="#16a34a" />
@@ -501,7 +738,7 @@ export default function P5CitizenVerify() {
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', fontSize: '13px', color: '#1e293b', marginBottom: '16px' }}>
+              <div className="p5-details-grid">
                 <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '10px', border: '1px solid #cbd5e1' }}>
                   <span style={{ color: '#475569', fontSize: '11px', display: 'block', marginBottom: '2px', fontWeight: '600' }}>মৌজা:</span>
                   <strong style={{ color: '#0f172a', fontSize: '14px' }}>{landRecord.mouza}</strong>
@@ -526,15 +763,16 @@ export default function P5CitizenVerify() {
                   <span style={{ color: '#475569', fontSize: '11px', display: 'block', marginBottom: '2px', fontWeight: '600' }}>মালিকের NID:</span>
                   <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '13px' }}>{landRecord.owner_nid}</strong>
                 </div>
-                <div style={{
-                  gridColumn: 'span 2',
+                <div className="p5-area-row" style={{
+                  gridColumn: '1 / -1',
                   background: '#dcfce7',
                   padding: '12px 16px',
                   borderRadius: '10px',
                   border: '1px solid #86efac',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'space-between'
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap'
                 }}>
                   <span style={{ color: '#166534', fontWeight: '700' }}>মোট বিক্রয়যোগ্য পরিমাণ:</span>
                   <strong style={{ color: '#15803d', fontSize: '16px' }}>
@@ -544,7 +782,7 @@ export default function P5CitizenVerify() {
               </div>
 
               {/* Verified Checklist */}
-              <div style={{
+              <div className="p5-checklist-box" style={{
                 background: '#ffffff',
                 padding: '12px 14px',
                 borderRadius: '10px',

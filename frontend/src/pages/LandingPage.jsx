@@ -1100,7 +1100,7 @@ export default function LandingPage() {
             color: '#065f46',
             letterSpacing: '0.01em'
           }}>
-            This Website is Developed By MD SAAD &amp; MD CHAND
+            This Website is Developed By MD SAAD &amp; Md. Chand Mandol
           </div>
         </div>
       </footer>
