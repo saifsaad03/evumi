@@ -497,35 +497,6 @@ export default function P5CitizenVerify() {
                 </div>
               </div>
 
-            {/* Location Helper Bar */}
-            <div className="p5-location-helper">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <MapPin size={13} color="#2563eb" />
-                <span>অনুসন্ধান ক্রম: <strong>বিভাগ ➔ জেলা ➔ উপজেলা ➔ মৌজা ➔ খতিয়ান ➔ দাগ নম্বর</strong></span>
-              </div>
-              <button
-                type="button"
-                onClick={loadDivisions}
-                title="লোকেশন ডাটা রিলোড করুন"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  background: 'none',
-                  border: 'none',
-                  color: '#2563eb',
-                  fontSize: '11px',
-                  fontWeight: '700',
-                  cursor: 'pointer'
-                }}
-              >
-                <RefreshCw size={11} className={loadingLocations ? 'animate-spin' : ''} /> রিফ্রেশ
-              </button>
-            </div>
-
-            <div style={{ marginTop: '10px', background: '#eff6ff', padding: '8px 12px', borderRadius: '6px', border: '1px solid #bfdbfe', fontSize: '11px', color: '#1e40af', fontWeight: '600' }}>
-              📌 জমি অনুসন্ধান ও যাচাইকরণের স্ট্যান্ডার্ড: <strong>মৌজা + দাগ নম্বর + খতিয়ান নম্বর</strong>
-            </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '12px', color: '#1e293b', marginBottom: '6px', fontWeight: '700' }}>
