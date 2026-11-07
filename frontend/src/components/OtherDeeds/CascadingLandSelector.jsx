@@ -7,13 +7,23 @@ export default function CascadingLandSelector({
   nidPlaceholder = '১০/১৩/১৭ ডিজিট NID লিখুন',
   nidValue = '',
   onNidChange,
+  donorNid,
+  setDonorNid,
+  donorNidLabel,
+  donorNidPlaceholder,
   onSelectionChange,
+  setLandLocation,
   onSearch,
   searching = false,
   accentColor = '#2563eb',
   searchButtonText = '🔍 জমি অনুসন্ধান ও যাচাই করুন',
   compact = false
 }) {
+  const actualNid = nidValue !== undefined && nidValue !== '' ? nidValue : (donorNid || '');
+  const handleNidChange = onNidChange || setDonorNid;
+  const actualLabel = donorNidLabel || nidLabel;
+  const actualPlaceholder = donorNidPlaceholder || nidPlaceholder;
+  const handleLocChange = onSelectionChange || setLandLocation;
   const [divisionsList, setDivisionsList] = useState([]);
   const [districtsList, setDistrictsList] = useState([]);
   const [upazilasList, setUpazilasList] = useState([]);
@@ -71,7 +81,7 @@ export default function CascadingLandSelector({
         dag_no: ''
       };
       setLocationNames(cleanLoc);
-      if (onSelectionChange) onSelectionChange({ ...cleanLoc, isComplete: false });
+      if (handleLocChange) handleLocChange({ ...cleanLoc, isComplete: false });
     } catch (err) {
       console.error('Failed to load divisions:', err);
     } finally {
@@ -105,7 +115,7 @@ export default function CascadingLandSelector({
       dag_no: ''
     };
     setLocationNames(newLoc);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete: false });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete: false });
 
     if (!divId) return;
 
@@ -145,7 +155,7 @@ export default function CascadingLandSelector({
       dag_no: ''
     };
     setLocationNames(newLoc);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete: false });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete: false });
 
     if (!distId) return;
 
@@ -182,7 +192,7 @@ export default function CascadingLandSelector({
       dag_no: ''
     };
     setLocationNames(newLoc);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete: false });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete: false });
 
     if (!upzId) return;
 
@@ -216,7 +226,7 @@ export default function CascadingLandSelector({
       dag_no: ''
     };
     setLocationNames(newLoc);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete: false });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete: false });
 
     if (!mouzaId) return;
 
@@ -247,7 +257,7 @@ export default function CascadingLandSelector({
       dag_no: ''
     };
     setLocationNames(newLoc);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete: false });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete: false });
 
     if (!khatianId) return;
 
@@ -275,7 +285,7 @@ export default function CascadingLandSelector({
     };
     setLocationNames(newLoc);
     const isComplete = Boolean(newLoc.mouza && newLoc.khatian_no && newLoc.dag_no);
-    if (onSelectionChange) onSelectionChange({ ...newLoc, isComplete });
+    if (handleLocChange) handleLocChange({ ...newLoc, isComplete });
   };
 
   const handleSubmit = (e) => {
@@ -301,14 +311,14 @@ export default function CascadingLandSelector({
         {/* NID Input */}
         <div>
           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '5px' }}>
-            {nidLabel} <span style={{ color: '#dc2626' }}>*</span>
+            {actualLabel} <span style={{ color: '#dc2626' }}>*</span>
           </label>
           <input
             type="text"
             className="input-field"
-            placeholder={nidPlaceholder}
-            value={nidValue}
-            onChange={e => onNidChange && onNidChange(e.target.value)}
+            placeholder={actualPlaceholder}
+            value={actualNid}
+            onChange={e => handleNidChange && handleNidChange(e.target.value)}
             required
             style={{ width: '100%', color: '#0f172a', fontWeight: '600', height: '40px' }}
           />

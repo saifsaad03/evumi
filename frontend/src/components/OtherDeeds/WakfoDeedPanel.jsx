@@ -391,14 +391,15 @@ export default function WakfoDeedPanel() {
             </h3>
 
             <CascadingLandSelector
-              donorNid={donorNid}
-              setDonorNid={setDonorNid}
-              donorNidLabel="দাতার জাতীয় পরিচয়পত্র (NID)"
-              donorNidPlaceholder="দাতার ১০, ১৩ অথবা ১৭ ডিজিটের এনআইডি"
-              landLocation={landLocation}
-              setLandLocation={setLandLocation}
+              nidLabel="দাতার জাতীয় পরিচয়পত্র (NID)"
+              nidPlaceholder="দাতার ১০, ১৩ অথবা ১৭ ডিজিটের এনআইডি লিখুন"
+              nidValue={donorNid}
+              onNidChange={setDonorNid}
+              onSelectionChange={setLandLocation}
               onSearch={handleSearchLand}
               searching={searching}
+              accentColor="#0f766e"
+              searchButtonText="🔍 দাতার জমি অনুসন্ধান ও মালিকানা যাচাই করুন"
             />
 
             {searchError && (
@@ -910,3 +911,4 @@ export default function WakfoDeedPanel() {
     </div>
   );
 }
+
