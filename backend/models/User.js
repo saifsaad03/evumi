@@ -40,6 +40,7 @@ const UserSchema = new mongoose.Schema({
 
   // Institutional Details & Custody/Representative Change History
   representative_name: { type: String, default: '', trim: true },
+  representative_nid: { type: String, default: '', trim: true },
   representative_designation: { type: String, default: 'মোতাওয়াল্লী / সভাপতি', trim: true },
   institution_type: { type: String, default: 'মসজিদ / মাদ্রাসা / ধর্মীয় ওয়াকফ প্রতিষ্ঠান', trim: true },
   custody_history: [
@@ -47,7 +48,9 @@ const UserSchema = new mongoose.Schema({
       previous_name: { type: String, default: '' },
       new_name: { type: String, default: '' },
       previous_representative: { type: String, default: '' },
+      previous_representative_nid: { type: String, default: '' },
       new_representative: { type: String, default: '' },
+      new_representative_nid: { type: String, default: '' },
       previous_designation: { type: String, default: '' },
       new_designation: { type: String, default: '' },
       reason: { type: String, default: '' },

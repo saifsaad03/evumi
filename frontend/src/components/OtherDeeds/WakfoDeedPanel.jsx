@@ -106,6 +106,7 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
   const [custodyForm, setCustodyForm] = useState({
     name: '',
     representative_name: '',
+    representative_nid: '',
     representative_designation: 'মোতাওয়াল্লী / সভাপতি',
     reason: '',
     resolution_no: '',
@@ -136,6 +137,7 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
     setCustodyForm({
       name: inst.name || '',
       representative_name: inst.representative_name || inst.father_name || '',
+      representative_nid: inst.representative_nid || '',
       representative_designation: inst.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
       reason: '',
       resolution_no: 'SR-MEMO-' + Date.now().toString().slice(-4),
@@ -157,6 +159,10 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
       setCustodyErrMsg('অনুগ্রহ করে নতুন দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধির নাম লিখুন।');
       return;
     }
+    if (!custodyForm.representative_nid?.trim()) {
+      setCustodyErrMsg('অনুগ্রহ করে নতুন দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধির জাতীয় পরিচয়পত্র (NID) নম্বর লিখুন।');
+      return;
+    }
     if (!custodyForm.reason?.trim()) {
       setCustodyErrMsg('অনুগ্রহ করে পরিবর্তনের কারণ ও রেজুলেশন বিবরণ লিখুন।');
       return;
@@ -171,6 +177,7 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
         institution_id: selectedInst._id,
         name: custodyForm.name,
         representative_name: custodyForm.representative_name,
+        representative_nid: custodyForm.representative_nid,
         representative_designation: custodyForm.representative_designation,
         reason: custodyForm.reason,
         resolution_no: custodyForm.resolution_no,
@@ -1267,6 +1274,11 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
                       </h4>
                       <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
                         বর্তমান মোতাওয়াল্লী: <strong style={{ color: '#0f766e' }}>{selectedInst.representative_name || selectedInst.father_name || 'নির্ধারিত হয়নি'}</strong> ({selectedInst.representative_designation || 'মোতাওয়াল্লী'})
+                        {selectedInst.representative_nid && (
+                          <span style={{ marginLeft: '8px', background: '#ccfbf1', color: '#0f766e', padding: '2px 8px', borderRadius: '4px', fontFamily: 'monospace', fontWeight: '700' }}>
+                            NID: {selectedInst.representative_nid}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div style={{ textAlign: 'right' }}>
@@ -1308,7 +1320,7 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
                         />
                       </div>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
                         <div>
                           <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
                             নতুন দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধির নাম <span style={{ color: '#dc2626' }}>*</span>
@@ -1320,6 +1332,20 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
                             value={custodyForm.representative_name}
                             onChange={(e) => setCustodyForm(p => ({ ...p, representative_name: e.target.value }))}
                             style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            নতুন প্রতিনিধির জাতীয় পরিচয়পত্র (NID) নম্বর <span style={{ color: '#dc2626' }}>*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="১০, ১৩ বা ১৭ ডিজিটের NID নম্বর"
+                            value={custodyForm.representative_nid}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, representative_nid: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', fontFamily: 'monospace' }}
                           />
                         </div>
 
@@ -1468,7 +1494,11 @@ export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
                               </div>
                               <div>
                                 <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>মোতাওয়াল্লী:</span>
-                                <span>{rec.previous_representative && rec.previous_representative !== rec.new_representative ? `${rec.previous_representative} ➔ ${rec.new_representative}` : rec.new_representative}</span>
+                                <span>
+                                  {rec.previous_representative && rec.previous_representative !== rec.new_representative 
+                                    ? `${rec.previous_representative} ${rec.previous_representative_nid ? `(NID: ${rec.previous_representative_nid})` : ''} ➔ ${rec.new_representative} ${rec.new_representative_nid ? `(NID: ${rec.new_representative_nid})` : ''}`
+                                    : `${rec.new_representative} ${rec.new_representative_nid ? `(NID: ${rec.new_representative_nid})` : ''}`}
+                                </span>
                               </div>
                               <div>
                                 <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>অনুমোদনকারী:</span>

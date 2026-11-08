@@ -167,16 +167,20 @@ router.put('/users/:id', async (req, res) => {
     if (user.role === 'Institution') {
       const prevInstName = user.name;
       const prevInstRep = user.representative_name || user.father_name || '';
+      const prevInstRepNid = user.representative_nid || '';
       const newInstName = name || user.name;
       const newInstRep = req.body.representative_name !== undefined ? req.body.representative_name : prevInstRep;
+      const newInstRepNid = req.body.representative_nid !== undefined ? req.body.representative_nid : prevInstRepNid;
 
-      if ((name && name !== prevInstName) || (req.body.representative_name && req.body.representative_name !== prevInstRep)) {
+      if ((name && name !== prevInstName) || (req.body.representative_name && req.body.representative_name !== prevInstRep) || (req.body.representative_nid && req.body.representative_nid !== prevInstRepNid)) {
         user.custody_history = user.custody_history || [];
         user.custody_history.unshift({
           previous_name: prevInstName,
           new_name: newInstName,
           previous_representative: prevInstRep || 'প্রাথমিক প্রতিনিধি',
+          previous_representative_nid: prevInstRepNid,
           new_representative: newInstRep,
+          new_representative_nid: newInstRepNid,
           previous_designation: user.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
           new_designation: req.body.representative_designation || user.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
           reason: req.body.reason || 'মন্ত্রণালয় এডমিন কর্তৃক প্রাতিষ্ঠানিক তথ্য হালনাগাদ',
@@ -188,6 +192,7 @@ router.put('/users/:id', async (req, res) => {
         });
       }
       if (req.body.representative_name) user.representative_name = req.body.representative_name;
+      if (req.body.representative_nid) user.representative_nid = req.body.representative_nid;
       if (req.body.representative_designation) user.representative_designation = req.body.representative_designation;
     }
 

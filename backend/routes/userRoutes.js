@@ -165,6 +165,7 @@ router.put('/institution-custody', verifyToken, async (req, res) => {
       institution_nid,
       name,
       representative_name,
+      representative_nid,
       representative_designation,
       reason,
       resolution_no,
@@ -197,17 +198,20 @@ router.put('/institution-custody', verifyToken, async (req, res) => {
 
     const prevName = (targetUser.name || '').trim();
     const prevRep = (targetUser.representative_name || targetUser.father_name || '').trim();
+    const prevRepNid = (targetUser.representative_nid || '').trim();
     const prevDesig = (targetUser.representative_designation || 'মোতাওয়াল্লী / সভাপতি').trim();
 
     const newName = (name && name.trim()) ? name.trim() : prevName;
     const newRep = (representative_name && representative_name.trim()) ? representative_name.trim() : prevRep;
+    const newRepNid = (representative_nid && representative_nid.trim()) ? representative_nid.trim() : prevRepNid;
     const newDesig = (representative_designation && representative_designation.trim()) ? representative_designation.trim() : prevDesig;
 
     const isNameChanged = newName !== prevName;
     const isRepChanged = newRep !== prevRep;
+    const isRepNidChanged = newRepNid !== prevRepNid;
     const isDesigChanged = newDesig !== prevDesig;
 
-    if (!isNameChanged && !isRepChanged && !isDesigChanged && !phone && !email) {
+    if (!isNameChanged && !isRepChanged && !isRepNidChanged && !isDesigChanged && !phone && !email) {
       return res.status(400).json({ success: false, message: 'কোনো নতুন তথ্য প্রদান করা হয়নি।' });
     }
 
@@ -223,7 +227,9 @@ router.put('/institution-custody', verifyToken, async (req, res) => {
       previous_name: prevName,
       new_name: newName,
       previous_representative: prevRep || 'প্রাথমিক প্রতিনিধি',
+      previous_representative_nid: prevRepNid,
       new_representative: newRep,
+      new_representative_nid: newRepNid,
       previous_designation: prevDesig,
       new_designation: newDesig,
       reason: reason || 'সাব-রেজিস্ট্রি অফিসে ওয়াকফ কমিটি ও মোতাওয়াল্লী রদবদল অনুমোদন',
@@ -236,6 +242,7 @@ router.put('/institution-custody', verifyToken, async (req, res) => {
 
     targetUser.name = newName;
     targetUser.representative_name = newRep;
+    targetUser.representative_nid = newRepNid;
     targetUser.representative_designation = newDesig;
 
     if (phone && phone.trim()) {

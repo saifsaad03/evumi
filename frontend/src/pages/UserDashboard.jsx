@@ -1506,6 +1506,13 @@ export default function UserDashboard() {
                   </div>
                 </div>
 
+                <div style={{ background: '#f0fdfa', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #99f6e4' }}>
+                  <div style={{ fontSize: '11px', color: '#0f766e', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>মোতাওয়াল্লী / প্রতিনিধির NID নম্বর</div>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f766e', fontFamily: 'monospace' }}>
+                    {user?.representative_nid || 'নথিভুক্ত নয়'}
+                  </div>
+                </div>
+
                 <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
                   <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>প্রতিষ্ঠানের ধরণ</div>
                   <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>
@@ -1827,6 +1834,11 @@ export default function UserDashboard() {
                         <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>
                           {record.previous_representative || 'পূর্ববর্তী মোতাওয়াল্লী'}
                         </div>
+                        {record.previous_representative_nid && (
+                          <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'monospace' }}>
+                            NID: {record.previous_representative_nid}
+                          </div>
+                        )}
                         <div style={{ fontSize: '11.5px', color: '#64748b' }}>
                           পদবী: {record.previous_designation || 'মোতাওয়াল্লী / সভাপতি'}
                         </div>
@@ -1837,6 +1849,11 @@ export default function UserDashboard() {
                         <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f766e' }}>
                           {record.new_representative}
                         </div>
+                        {record.new_representative_nid && (
+                          <div style={{ fontSize: '11.5px', color: '#0f766e', fontFamily: 'monospace', fontWeight: '700' }}>
+                            NID: {record.new_representative_nid}
+                          </div>
+                        )}
                         <div style={{ fontSize: '11.5px', color: '#115e59' }}>
                           পদবী: {record.new_designation || 'মোতাওয়াল্লী / সভাপতি'}
                         </div>
