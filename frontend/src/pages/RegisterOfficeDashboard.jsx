@@ -667,6 +667,11 @@ export default function RegisterOfficeDashboard() {
       icon: Landmark,
     },
     {
+      id: 'custody',
+      label: 'প্রতিষ্ঠান ও মোতাওয়াল্লী পরিবর্তন',
+      icon: Building2,
+    },
+    {
       id: 'claims',
       label: 'মালিকানা দাবি বিজ্ঞপ্তি',
       icon: Bell,
@@ -1604,6 +1609,7 @@ export default function RegisterOfficeDashboard() {
       {activeTab === 'mortgage' && <MortgageDeedPanel />}
       {activeTab === 'bayna' && <BaynaDeedPanel />}
       {activeTab === 'wakfo' && <WakfoDeedPanel />}
+      {activeTab === 'custody' && <WakfoDeedPanel initialSubTab="custody" />}
 
       {/* ── TAB: Land Ownership Claims Notifications (Read-Only) ── */}
       {activeTab === 'claims' && (

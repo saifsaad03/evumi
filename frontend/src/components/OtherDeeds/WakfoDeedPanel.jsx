@@ -26,8 +26,8 @@ const INSTITUTION_TYPES = [
   'অন্যান্য ধর্মীয় ও জনকল্যাণমূলক ওয়াকফ (Other Waqf)'
 ];
 
-export default function WakfoDeedPanel() {
-  const [activeSubTab, setActiveSubTab] = useState('create'); // 'create' | 'tracking'
+export default function WakfoDeedPanel({ initialSubTab = 'create' }) {
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab);
 
   // Donor search states
   const [donorNid, setDonorNid] = useState('');
@@ -85,7 +85,17 @@ export default function WakfoDeedPanel() {
   };
 
   useEffect(() => {
-    fetchWakfoApplications();
+    if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  useEffect(() => {
+    if (activeSubTab === 'custody') {
+      fetchInstitutionsList();
+    } else {
+      fetchWakfoApplications();
+    }
   }, [activeSubTab]);
 
   // Sub-Registrar Authority: Custody & Mutawalli Management State
