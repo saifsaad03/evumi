@@ -94,6 +94,210 @@ router.put('/profile', verifyToken, async (req, res) => {
   }
 });
 
+// GET /api/user/institutions-list
+// Sub-Registrar & Admin fetches list of registered institutions
+router.get('/institutions-list', verifyToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'Register Office' && req.user.role !== 'Super Admin') {
+      return res.status(403).json({ success: false, message: 'অননুমোদিত প্রবেশাধিকার। শুধুমাত্র সাব-রেজিস্ট্রার ও এডমিন অ্যাক্সেস করতে পারেন।' });
+    }
+    const search = (req.query.search || '').trim();
+    const query = { role: 'Institution' };
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { nid: { $regex: search, $options: 'i' } },
+        { representative_name: { $regex: search, $options: 'i' } }
+      ];
+    }
+    const institutions = await User.find(query).select('-password').sort({ updatedAt: -1 });
+    return res.status(200).json({ success: true, data: institutions });
+  } catch (err) {
+    console.error('Fetch institutions list error:', err);
+    return res.status(500).json({ success: false, message: 'প্রতিষ্ঠান তালিকা লোড করা যায়নি।' });
+  }
+});
+
+// GET /api/user/institution-custody-history
+// Returns custody history for an institution
+router.get('/institution-custody-history', verifyToken, async (req, res) => {
+  try {
+    const institutionId = req.query.institution_id;
+    let targetUser = null;
+    if (institutionId && (req.user.role === 'Register Office' || req.user.role === 'Super Admin')) {
+      targetUser = await User.findById(institutionId);
+    } else {
+      targetUser = await User.findById(req.user._id);
+    }
+
+    if (!targetUser) {
+      return res.status(404).json({ success: false, message: 'প্রতিষ্ঠান ব্যবহারকারী খুঁজে পাওয়া যায়নি।' });
+    }
+
+    return res.status(200).json({
+      success: true,
+      institution_name: targetUser.name,
+      representative_name: targetUser.representative_name,
+      representative_designation: targetUser.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
+      custody_history: targetUser.custody_history || []
+    });
+  } catch (err) {
+    console.error('Fetch custody history error:', err);
+    return res.status(500).json({ success: false, message: 'ইতিহাস লোড করা যায়নি।' });
+  }
+});
+
+// PUT /api/user/institution-custody
+// EXCLUSIVE: Sub-Registrar (Register Office) or Super Admin updates institution name & mutawalli.
+// Institution cannot change itself directly.
+router.put('/institution-custody', verifyToken, async (req, res) => {
+  try {
+    // 1. Enforce Role: Institution cannot change itself; only Sub-Registrar or Super Admin can!
+    if (req.user.role !== 'Register Office' && req.user.role !== 'Super Admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'প্রতিষ্ঠান নিজে কোনো তথ্য পরিবর্তন করতে পারবে না। ওয়াকফ আইন অনুযায়ী শুধুমাত্র সাব-রেজিস্ট্রার (Sub-Registrar) বা মন্ত্রণালয় এডমিন এই পরিবর্তন সম্পাদন করতে পারেন।'
+      });
+    }
+
+    const {
+      institution_id,
+      institution_nid,
+      name,
+      representative_name,
+      representative_designation,
+      reason,
+      resolution_no,
+      effective_date,
+      phone,
+      email
+    } = req.body;
+
+    const toEnglishDigits = (str) => (str || '').toString().replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d)).trim();
+    const toBengaliDigits = (str) => (str || '').toString().replace(/[0-9]/g, d => '০১২৩৪৫৬৭৮৯'[d]).trim();
+
+    let targetUser = null;
+    if (institution_id) {
+      targetUser = await User.findById(institution_id);
+    } else if (institution_nid) {
+      const cleanNid = institution_nid.trim();
+      targetUser = await User.findOne({
+        role: 'Institution',
+        $or: [
+          { nid: cleanNid },
+          { nid: toEnglishDigits(cleanNid) },
+          { nid: toBengaliDigits(cleanNid) }
+        ]
+      });
+    }
+
+    if (!targetUser || targetUser.role !== 'Institution') {
+      return res.status(404).json({ success: false, message: 'সংশ্লিষ্ট ওয়াকফ / প্রতিষ্ঠান অ্যাকাউন্ট খুঁজে পাওয়া যায়নি।' });
+    }
+
+    const prevName = (targetUser.name || '').trim();
+    const prevRep = (targetUser.representative_name || targetUser.father_name || '').trim();
+    const prevDesig = (targetUser.representative_designation || 'মোতাওয়াল্লী / সভাপতি').trim();
+
+    const newName = (name && name.trim()) ? name.trim() : prevName;
+    const newRep = (representative_name && representative_name.trim()) ? representative_name.trim() : prevRep;
+    const newDesig = (representative_designation && representative_designation.trim()) ? representative_designation.trim() : prevDesig;
+
+    const isNameChanged = newName !== prevName;
+    const isRepChanged = newRep !== prevRep;
+    const isDesigChanged = newDesig !== prevDesig;
+
+    if (!isNameChanged && !isRepChanged && !isDesigChanged && !phone && !email) {
+      return res.status(400).json({ success: false, message: 'কোনো নতুন তথ্য প্রদান করা হয়নি।' });
+    }
+
+    // Determine changer title
+    const officerName = req.user.name || 'সাব-রেজিস্ট্রার';
+    const changerTitle = req.user.role === 'Super Admin' 
+      ? `${officerName} (মন্ত্রণালয় এডমিন)`
+      : `${officerName} (সাব-রেজিস্ট্রার)`;
+
+    // Record immutable history log
+    targetUser.custody_history = targetUser.custody_history || [];
+    targetUser.custody_history.unshift({
+      previous_name: prevName,
+      new_name: newName,
+      previous_representative: prevRep || 'প্রাথমিক প্রতিনিধি',
+      new_representative: newRep,
+      previous_designation: prevDesig,
+      new_designation: newDesig,
+      reason: reason || 'সাব-রেজিস্ট্রি অফিসে ওয়াকফ কমিটি ও মোতাওয়াল্লী রদবদল অনুমোদন',
+      resolution_no: resolution_no || `SR-RES-${Date.now().toString().slice(-6)}`,
+      effective_date: effective_date ? new Date(effective_date) : new Date(),
+      changed_by: changerTitle,
+      changed_by_role: req.user.role,
+      created_at: new Date()
+    });
+
+    targetUser.name = newName;
+    targetUser.representative_name = newRep;
+    targetUser.representative_designation = newDesig;
+
+    if (phone && phone.trim()) {
+      targetUser.phone = phone.trim();
+    }
+    if (email && email.trim()) {
+      targetUser.email = email.trim().toLowerCase();
+    }
+
+    await targetUser.save();
+
+    // If institution name changed, update the active LandRecords owner_name and log to land transfer_history
+    if (isNameChanged) {
+      try {
+        await LandRecord.updateMany(
+          { owner_nid: targetUser.nid },
+          { 
+            $set: { owner_name: newName },
+            $push: {
+              transfer_history: {
+                title: 'ওয়াকফ প্রতিষ্ঠানের নাম ও মোতাওয়াল্লী পরিবর্তন (সাব-রেজিস্ট্রার কর্তৃক)',
+                date: new Date(),
+                details: `সাব-রেজিস্ট্রার (${changerTitle}) কর্তৃক নাম হালনাগাদ: '${prevName}' ➔ '${newName}' (মোতাওয়াল্লী: ${newRep})। রেজুলেশন: ${resolution_no || 'সরকারি অনুমোদন'}`,
+                source_type: 'Institution_Custody_Update_SubRegistrar'
+              }
+            }
+          }
+        );
+      } catch (landErr) {
+        console.error('LandRecord sync warning:', landErr);
+      }
+    }
+
+    // Log Activity to Audit Engine
+    logActivity({
+      req,
+      action_type: 'INSTITUTION_CUSTODY_UPDATED_BY_SUB_REGISTRAR',
+      module: 'Institution_Management',
+      description: `সাব-রেজিস্ট্রার কর্তৃক প্রতিষ্ঠান '${prevName}' এর নাম/দায়িত্ব পরিবর্তন: নতুন নাম '${newName}', মোতাওয়াল্লী '${newRep}' (${newDesig})`,
+      target_resource: `Institution ID: ${targetUser._id}, NID: ${targetUser.nid}`,
+      details: {
+        officer: changerTitle,
+        previous: { name: prevName, representative: prevRep, designation: prevDesig },
+        updated: { name: newName, representative: newRep, designation: newDesig, reason, resolution_no }
+      }
+    });
+
+    const userObj = targetUser.toObject();
+    delete userObj.password;
+
+    return res.status(200).json({
+      success: true,
+      message: `✅ সাব-রেজিস্ট্রার কর্তৃক '${newName}'-এর মোতাওয়াল্লী ও নাম সফলভাবে হালনাগাদ করা হয়েছে!`,
+      user: userObj,
+      custody_history: targetUser.custody_history
+    });
+  } catch (err) {
+    console.error('Institution custody update error:', err);
+    return res.status(500).json({ success: false, message: 'তথ্য হালনাগাদ ব্যর্থ হয়েছে: ' + err.message });
+  }
+});
+
 // GET /api/user/assigned-lands
 // Returns only the lands assigned to and owned by this specific citizen
 router.get('/assigned-lands', verifyToken, async (req, res) => {

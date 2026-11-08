@@ -36,7 +36,28 @@ const UserSchema = new mongoose.Schema({
   },
   // Field-Level Encryption at Rest (AES-256-GCM)
   nid_encrypted: { type: String, default: null },
-  phone_encrypted: { type: String, default: null }
+  phone_encrypted: { type: String, default: null },
+
+  // Institutional Details & Custody/Representative Change History
+  representative_name: { type: String, default: '', trim: true },
+  representative_designation: { type: String, default: 'মোতাওয়াল্লী / সভাপতি', trim: true },
+  institution_type: { type: String, default: 'মসজিদ / মাদ্রাসা / ধর্মীয় ওয়াকফ প্রতিষ্ঠান', trim: true },
+  custody_history: [
+    {
+      previous_name: { type: String, default: '' },
+      new_name: { type: String, default: '' },
+      previous_representative: { type: String, default: '' },
+      new_representative: { type: String, default: '' },
+      previous_designation: { type: String, default: '' },
+      new_designation: { type: String, default: '' },
+      reason: { type: String, default: '' },
+      resolution_no: { type: String, default: '' },
+      effective_date: { type: Date, default: Date.now },
+      changed_by: { type: String, default: '' },
+      changed_by_role: { type: String, default: '' },
+      created_at: { type: Date, default: Date.now }
+    }
+  ]
 }, { timestamps: true });
 
 // Hash password and encrypt sensitive fields at rest before saving

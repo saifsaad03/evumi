@@ -163,6 +163,34 @@ router.put('/users/:id', async (req, res) => {
     const previousRole = user.role;
     const previousStatus = user.status;
 
+    // If institution, track custody/representative history
+    if (user.role === 'Institution') {
+      const prevInstName = user.name;
+      const prevInstRep = user.representative_name || user.father_name || '';
+      const newInstName = name || user.name;
+      const newInstRep = req.body.representative_name !== undefined ? req.body.representative_name : prevInstRep;
+
+      if ((name && name !== prevInstName) || (req.body.representative_name && req.body.representative_name !== prevInstRep)) {
+        user.custody_history = user.custody_history || [];
+        user.custody_history.unshift({
+          previous_name: prevInstName,
+          new_name: newInstName,
+          previous_representative: prevInstRep || 'প্রাথমিক প্রতিনিধি',
+          new_representative: newInstRep,
+          previous_designation: user.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
+          new_designation: req.body.representative_designation || user.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
+          reason: req.body.reason || 'মন্ত্রণালয় এডমিন কর্তৃক প্রাতিষ্ঠানিক তথ্য হালনাগাদ',
+          resolution_no: req.body.resolution_no || `ADM-RES-${Date.now().toString().slice(-6)}`,
+          effective_date: new Date(),
+          changed_by: 'মন্ত্রণালয় এডমিন',
+          changed_by_role: 'Super Admin',
+          created_at: new Date()
+        });
+      }
+      if (req.body.representative_name) user.representative_name = req.body.representative_name;
+      if (req.body.representative_designation) user.representative_designation = req.body.representative_designation;
+    }
+
     if (name) user.name = name;
     if (father_name) user.father_name = father_name;
     if (mother_name) user.mother_name = mother_name;

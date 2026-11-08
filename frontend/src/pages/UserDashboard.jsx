@@ -6,7 +6,7 @@ import {
   User, MapPin, FileText, CheckCircle, Clock, 
   AlertTriangle, Search, Shield, Phone, Mail, Award,
   RefreshCw, Check, ArrowRight, Download, Printer, X, Eye, QrCode,
-  FileCheck, Send, Info, Lock, Building2
+  FileCheck, Send, Info, Lock, Building2, Landmark, History
 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -411,15 +411,27 @@ export default function UserDashboard() {
     ? landData.pending_mutations.length
     : landData.pending_assignments.length;
 
+  const isInstitution = user?.role === 'Institution';
+
   const navItems = [
     { 
       id: 'lands', 
-      label: 'আমার অনুমোদিত জমি', 
-      icon: FileText, 
+      label: isInstitution ? 'ওয়াকফ ও প্রতিষ্ঠানের জমি' : 'আমার অনুমোদিত জমি', 
+      icon: isInstitution ? Building2 : FileText, 
       badge: landData.active_lands.length,
       badgeColor: '#065f46',
       badgeBg: '#dcfce7'
     },
+    ...(isInstitution ? [
+      {
+        id: 'custody_history',
+        label: 'ওয়াকফ হেফাজত ও মোতাওয়াল্লী ইতিহাস',
+        icon: Landmark,
+        badge: (user?.custody_history && user.custody_history.length > 0) ? user.custody_history.length : undefined,
+        badgeColor: '#0f766e',
+        badgeBg: '#ccfbf1'
+      }
+    ] : []),
     { 
       id: 'claim_ownership', 
       label: 'মালিকানা দাবি করুন', 
@@ -451,8 +463,8 @@ export default function UserDashboard() {
     },
     { 
       id: 'profile', 
-      label: 'নাগরিক প্রোফাইল', 
-      icon: User 
+      label: isInstitution ? 'প্রতিষ্ঠান ও মোতাওয়াল্লী পরিচিতি' : 'নাগরিক প্রোফাইল', 
+      icon: isInstitution ? Building2 : User 
     },
   ];
 
@@ -1434,7 +1446,7 @@ export default function UserDashboard() {
         </div>
       )}
 
-      {/* ── TAB 5: Read-Only Citizen Profile ──────────────────── */}
+      {/* ── TAB 5: Read-Only Citizen / Institution Profile ──────────────────── */}
       {activeTab === 'profile' && (
         <div className="glass-card" style={{ padding: '32px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px', maxWidth: '880px', margin: '0 auto' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px', borderBottom: '1.5px solid #e2e8f0', paddingBottom: '20px' }}>
@@ -1442,45 +1454,78 @@ export default function UserDashboard() {
               width: '52px',
               height: '52px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, #065f46, #059669)',
+              background: isInstitution ? 'linear-gradient(135deg, #0f766e, #0d9488)' : 'linear-gradient(135deg, #065f46, #059669)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
-              boxShadow: '0 4px 12px rgba(6, 95, 70, 0.25)'
+              boxShadow: isInstitution ? '0 4px 12px rgba(15, 118, 110, 0.25)' : '0 4px 12px rgba(6, 95, 70, 0.25)'
             }}>
-              <Award size={26} />
+              {isInstitution ? <Building2 size={26} /> : <Award size={26} />}
             </div>
             <div>
               <h2 style={{ fontSize: '20px', fontWeight: '900', color: '#0f172a', margin: 0 }}>
-                জাতীয় নাগরিক প্রোফাইল (দর্শনযোগ্য)
+                {isInstitution ? 'প্রতিষ্ঠান ও মোতাওয়াল্লী তথ্য বিবরণী (অপরিবর্তনযোগ্য)' : 'জাতীয় নাগরিক প্রোফাইল (দর্শনযোগ্য)'}
               </h2>
               <p style={{ fontSize: '13px', color: '#475569', margin: '4px 0 0 0' }}>
-                জাতীয় কেন্দ্রীয় ডাটাবেজে সংরক্ষিত আপনার স্থায়ী নাগরিক পরিচিতি
+                {isInstitution 
+                  ? 'ওয়াকফ ও ভূমি রেজিস্ট্রি রেকর্ডে সংরক্ষিত প্রতিষ্ঠানের স্থায়ী ও আনুষ্ঠানিক তথ্য' 
+                  : 'জাতীয় কেন্দ্রীয় ডাটাবেজে সংরক্ষিত আপনার স্থায়ী নাগরিক পরিচিতি'}
               </p>
             </div>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
             <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>পুরো নাম</div>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{user?.name || 'নাগরিক নাম'}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>
+                {isInstitution ? 'প্রতিষ্ঠানের নাম' : 'পুরো নাম'}
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>{user?.name || (isInstitution ? 'ওয়াকফ প্রতিষ্ঠান' : 'নাগরিক নাম')}</div>
             </div>
 
             <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>জাতীয় পরিচয়পত্র (NID)</div>
-              <div style={{ fontSize: '16px', fontWeight: '800', color: '#047857', fontFamily: 'monospace' }}>{user?.nid}</div>
+              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>
+                {isInstitution ? 'প্রতিষ্ঠান রেজিস্ট্রি / NID কোড' : 'জাতীয় পরিচয়পত্র (NID)'}
+              </div>
+              <div style={{ fontSize: '16px', fontWeight: '800', color: isInstitution ? '#0f766e' : '#047857', fontFamily: 'monospace' }}>{user?.nid}</div>
             </div>
 
-            <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>পিতার নাম</div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{user?.father_name || 'জালাল উদ্দিন'}</div>
-            </div>
+            {isInstitution ? (
+              <>
+                <div style={{ background: '#f0fdfa', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #99f6e4' }}>
+                  <div style={{ fontSize: '11px', color: '#0f766e', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>বর্তমান দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধি</div>
+                  <div style={{ fontSize: '16px', fontWeight: '800', color: '#0f766e' }}>
+                    {user?.representative_name || user?.father_name || 'দায়িত্বরত কর্মকর্তা'}
+                  </div>
+                </div>
 
-            <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
-              <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>মাতার নাম</div>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{user?.mother_name || 'আমেনা খাতুন'}</div>
-            </div>
+                <div style={{ background: '#f0fdfa', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #99f6e4' }}>
+                  <div style={{ fontSize: '11px', color: '#0f766e', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>প্রতিনিধির পদবী</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#115e59' }}>
+                    {user?.representative_designation || 'মোতাওয়াল্লী / সভাপতি'}
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>প্রতিষ্ঠানের ধরণ</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>
+                    {user?.institution_type || 'মসজিদ / মাদ্রাসা / ধর্মীয় প্রতিষ্ঠান'}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>পিতার নাম</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{user?.father_name || 'জালাল উদ্দিন'}</div>
+                </div>
+
+                <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>মাতার নাম</div>
+                  <div style={{ fontSize: '15px', fontWeight: '700', color: '#0f172a' }}>{user?.mother_name || 'আমেনা খাতুন'}</div>
+                </div>
+              </>
+            )}
 
             <div style={{ background: '#f8fafc', padding: '16px 18px', borderRadius: '12px', border: '1.5px solid #e2e8f0' }}>
               <div style={{ fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: '700', marginBottom: '4px' }}>বিভাগ ও জেলা</div>
@@ -1507,23 +1552,322 @@ export default function UserDashboard() {
             </div>
           </div>
 
+          {isInstitution ? (
+            <div style={{
+              marginTop: '28px',
+              padding: '18px 22px',
+              background: '#fffbeb',
+              border: '1.5px solid #fde68a',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '14px',
+              lineHeight: 1.6
+            }}>
+              <Shield size={24} color="#b45309" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div style={{ fontWeight: '800', color: '#92400e', fontSize: '14px', marginBottom: '4px' }}>
+                  আইনগত নির্দেশনা ও সুরক্ষা বিধিমালা (সরকারি এখতিয়ারভুক্ত):
+                </div>
+                <div style={{ fontSize: '12.5px', color: '#78350f' }}>
+                  ওয়াকফ অধ্যাদেশ ১৯৬২ ও ভূমি রেজিস্ট্রেশন আইন অনুযায়ী কোনো প্রতিষ্ঠান নিজ উদ্যোগে নাম বা মোতাওয়াল্লী পরিবর্তন করতে পারবে না। 
+                  কমিটি রদবদল বা নতুন মোতাওয়াল্লী নিয়োগ হলে অনুমোদিত রেজুলেশনসহ <strong>সাব-রেজিস্ট্রি অফিসে</strong> আবেদন করতে হবে। 
+                  যাচাইপূর্বক শুধুমাত্র <strong>সাব-রেজিস্ট্রার (Sub-Registrar)</strong> এই তথ্য সিস্টেমে হালনাগাদ করার চূড়ান্ত ক্ষমতাপ্রাপ্ত।
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('custody_history')}
+                  style={{
+                    marginTop: '12px',
+                    padding: '7px 16px',
+                    fontSize: '12px',
+                    fontWeight: '800',
+                    color: '#0f766e',
+                    background: '#ffffff',
+                    border: '1.5px solid #0f766e',
+                    borderRadius: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📜 মোতাওয়াল্লী পরিবর্তনের ইতিহাস দেখুন ➔
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div style={{
+              marginTop: '28px',
+              padding: '16px 20px',
+              background: '#eff6ff',
+              border: '1.5px solid #bfdbfe',
+              borderRadius: '12px',
+              fontSize: '13px',
+              color: '#1e40af',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              lineHeight: 1.5
+            }}>
+              <Shield size={20} style={{ flexShrink: 0 }} />
+              <span>
+                নাগরিকের প্রোফাইল তথ্য সিস্টেম নিরাপত্তার স্বার্থে শুধুমাত্র দর্শনযোগ্য (Read-only)। সংশোধনের জন্য সংশ্লিষ্ট উপজেলা ভূমি অফিস অথবা মন্ত্রণালয়ে যোগাযোগ করুন।
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── TAB: Institution Custody History (ওয়াকফ হেফাজত ও মোতাওয়াল্লী ইতিহাস - Read Only) ─── */}
+      {activeTab === 'custody_history' && isInstitution && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', maxWidth: '1000px', margin: '0 auto' }}>
+          {/* Header Banner */}
           <div style={{
-            marginTop: '28px',
-            padding: '16px 20px',
-            background: '#eff6ff',
-            border: '1.5px solid #bfdbfe',
+            background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+            borderRadius: '16px',
+            padding: '24px 28px',
+            color: '#ffffff',
+            boxShadow: '0 10px 25px -5px rgba(15, 118, 110, 0.25)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '16px'
+          }}>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                <span style={{
+                  background: 'rgba(255, 255, 255, 0.2)',
+                  padding: '4px 10px',
+                  borderRadius: '999px',
+                  fontSize: '12px',
+                  fontWeight: '800',
+                  letterSpacing: '0.5px'
+                }}>
+                  সরকারি অডিট লগ ও হেফাজত ইতিহাস
+                </span>
+                <span style={{
+                  background: '#fef3c7',
+                  color: '#92400e',
+                  padding: '3px 8px',
+                  borderRadius: '999px',
+                  fontSize: '11px',
+                  fontWeight: '800'
+                }}>
+                  শুধুমাত্র দর্শনযোগ্য (Read-Only)
+                </span>
+              </div>
+              <h2 style={{ fontSize: '22px', fontWeight: '900', margin: '0 0 6px 0' }}>
+                🏛️ {user?.name || 'প্রতিষ্ঠান'} - মোতাওয়াল্লী ও নাম পরিবর্তন ইতিহাস
+              </h2>
+              <p style={{ fontSize: '13px', margin: 0, opacity: 0.9 }}>
+                সাব-রেজিস্ট্রার কার্যালয় কর্তৃক অনুমোদিত সকল রদবদল, রেজুলেশন মেমো ও দায়িত্ব হস্তান্তর লগ
+              </p>
+            </div>
+          </div>
+
+          {/* Official Rule Notice */}
+          <div style={{
+            background: '#fffbeb',
+            border: '1.5px solid #fde68a',
             borderRadius: '12px',
-            fontSize: '13px',
-            color: '#1e40af',
+            padding: '16px 20px',
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
+            color: '#92400e',
+            fontSize: '12.5px',
+            fontWeight: '600',
             lineHeight: 1.5
           }}>
-            <Shield size={20} style={{ flexShrink: 0 }} />
+            <Info size={20} color="#b45309" style={{ flexShrink: 0 }} />
             <span>
-              নাগরিকের প্রোফাইল তথ্য সিস্টেম নিরাপত্তার স্বার্থে শুধুমাত্র দর্শনযোগ্য (Read-only)। সংশোধনের জন্য সংশ্লিষ্ট উপজেলা ভূমি অফিস অথবা মন্ত্রণালয়ে যোগাযোগ করুন।
+              <strong>সরকারি ওয়াকফ বিধিমালা:</strong> এই প্রতিষ্ঠানের নাম, মোতাওয়াল্লী বা প্রতিনিধি পরিবর্তন প্রতিষ্ঠান নিজে করতে পারে না। 
+              সকল পরিবর্তন সাব-রেজিস্ট্রার (Register Office) কর্তৃক আইনগত রেজুলেশন যাচাইয়ের মাধ্যমে সরাসরি সম্পন্ন ও অডিট লগে লিপিবদ্ধ করা হয়।
             </span>
+          </div>
+
+          {/* Current Representative Summary Card */}
+          <div className="glass-card" style={{
+            padding: '20px 24px',
+            background: '#ffffff',
+            borderRadius: '14px',
+            border: '1.5px solid #ccfbf1',
+            boxShadow: '0 4px 14px rgba(15, 118, 110, 0.08)'
+          }}>
+            <div style={{ fontSize: '12px', fontWeight: '800', color: '#0f766e', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Shield size={16} /> বর্তমান দায়িত্বরত কর্মকর্তা বিবরণ
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>প্রতিষ্ঠানের বর্তমান নাম</div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a' }}>{user?.name}</div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>দায়িত্বরত মোতাওয়াল্লী / সভাপতি</div>
+                <div style={{ fontSize: '15px', fontWeight: '800', color: '#0f766e' }}>
+                  {user?.representative_name || user?.father_name || 'নির্ধারিত নয়'}
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>পদবী</div>
+                <div style={{ fontSize: '14px', fontWeight: '700', color: '#334155' }}>
+                  {user?.representative_designation || 'মোতাওয়াল্লী / সভাপতি'}
+                </div>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '12px 14px', borderRadius: '10px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b' }}>সর্বশেষ হালনাগাদকারী</div>
+                <div style={{ fontSize: '13px', fontWeight: '700', color: '#059669' }}>
+                  সাব-রেজিস্ট্রার কার্যালয়
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Chronological Custody History List */}
+          <div className="glass-card" style={{
+            padding: '24px',
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1.5px solid #cbd5e1'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: '20px',
+              borderBottom: '1.5px solid #e2e8f0',
+              paddingBottom: '14px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <History size={20} color="#0f766e" />
+                <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                  দায়িত্ব ও মোতাওয়াল্লী রদবদলের কালানুক্রমিক ইতিহাস
+                </h3>
+              </div>
+              <span style={{
+                fontSize: '12px',
+                fontWeight: '800',
+                padding: '4px 10px',
+                borderRadius: '999px',
+                background: '#ccfbf1',
+                color: '#0f766e'
+              }}>
+                মোট পরিবর্তন: {user?.custody_history ? user.custody_history.length : 0} টি
+              </span>
+            </div>
+
+            {(!user?.custody_history || user.custody_history.length === 0) ? (
+              <div style={{
+                padding: '48px 24px',
+                textAlign: 'center',
+                color: '#64748b',
+                background: '#f8fafc',
+                borderRadius: '12px',
+                border: '1px dashed #cbd5e1'
+              }}>
+                <Landmark size={40} style={{ opacity: 0.3, margin: '0 auto 12px auto' }} />
+                <div style={{ fontSize: '15px', fontWeight: '700', color: '#334155' }}>
+                  এখনো কোনো মোতাওয়াল্লী বা নাম পরিবর্তন নথিভুক্ত হয়নি
+                </div>
+                <div style={{ fontSize: '12.5px', marginTop: '6px' }}>
+                  প্রতিষ্ঠানের প্রতিষ্ঠাকালীন তথ্য অপরিবর্তিত রয়েছে। ভবিষ্যতে সাব-রেজিস্ট্রার কার্যালয়ে কোনো রদবদল অনুমোদিত হলে তার বিবরণ এখানে কালানুক্রমিকভাবে লিপিবদ্ধ থাকবে।
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {user.custody_history.map((record, index) => (
+                  <div
+                    key={record._id || index}
+                    style={{
+                      padding: '18px 20px',
+                      borderRadius: '12px',
+                      border: '1.5px solid #e2e8f0',
+                      background: '#f8fafc',
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '10px',
+                      marginBottom: '12px',
+                      borderBottom: '1px solid #e2e8f0',
+                      paddingBottom: '10px'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{
+                          background: '#0f766e',
+                          color: '#ffffff',
+                          fontWeight: '800',
+                          fontSize: '11px',
+                          padding: '3px 8px',
+                          borderRadius: '6px'
+                        }}>
+                          #{user.custody_history.length - index}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: '800', color: '#0f172a' }}>
+                          রেজুলেশন মেমো: {record.resolution_no || 'সরকারি অনুমোদন'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Clock size={13} />
+                        {new Date(record.created_at || record.effective_date).toLocaleDateString('bn-BD', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '12px', marginBottom: '12px' }}>
+                      <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                        <div style={{ fontSize: '11px', color: '#64748b', fontWeight: '700' }}>পূর্ববর্তী দায়িত্বপ্রাপ্ত</div>
+                        <div style={{ fontSize: '14px', fontWeight: '700', color: '#dc2626' }}>
+                          {record.previous_representative || 'পূর্ববর্তী মোতাওয়াল্লী'}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#64748b' }}>
+                          পদবী: {record.previous_designation || 'মোতাওয়াল্লী / সভাপতি'}
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#ffffff', padding: '12px 14px', borderRadius: '8px', border: '1px solid #99f6e4' }}>
+                        <div style={{ fontSize: '11px', color: '#0f766e', fontWeight: '700' }}>নতুন দায়িত্বপ্রাপ্ত (অনুমোদিত)</div>
+                        <div style={{ fontSize: '14px', fontWeight: '800', color: '#0f766e' }}>
+                          {record.new_representative}
+                        </div>
+                        <div style={{ fontSize: '11.5px', color: '#115e59' }}>
+                          পদবী: {record.new_designation || 'মোতাওয়াল্লী / সভাপতি'}
+                        </div>
+                      </div>
+                    </div>
+
+                    {record.previous_name !== record.new_name && (
+                      <div style={{ background: '#ffffff', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '10px', fontSize: '12.5px' }}>
+                        <span style={{ fontWeight: '700', color: '#475569' }}>নাম পরিবর্তন: </span>
+                        <span style={{ color: '#dc2626', textDecoration: 'line-through' }}>{record.previous_name}</span>
+                        {' ➔ '}
+                        <span style={{ color: '#0f766e', fontWeight: '800' }}>{record.new_name}</span>
+                      </div>
+                    )}
+
+                    <div style={{ fontSize: '12.5px', color: '#334155', background: '#f1f5f9', padding: '10px 12px', borderRadius: '8px', marginBottom: '10px' }}>
+                      <strong>পরিবর্তনের কারণ ও রেজুলেশন বিবরণ:</strong> {record.reason || 'সাব-রেজিস্ট্রি অফিসে ওয়াকফ কমিটি ও মোতাওয়াল্লী পরিবর্তন নথিভুক্তকরণ।'}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '11.5px', color: '#64748b', flexWrap: 'wrap', gap: '8px' }}>
+                      <div>
+                        <strong>পরিবর্তন সম্পাদনকারী:</strong> <span style={{ color: '#0f766e', fontWeight: '800' }}>{record.changed_by || 'সাব-রেজিস্ট্রার'}</span> ({record.changed_by_role || 'Register Office'})
+                      </div>
+                      <div>
+                        <strong>কার্যকর তারিখ:</strong> {new Date(record.effective_date).toLocaleDateString('bn-BD')}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -88,6 +88,101 @@ export default function WakfoDeedPanel() {
     fetchWakfoApplications();
   }, [activeSubTab]);
 
+  // Sub-Registrar Authority: Custody & Mutawalli Management State
+  const [institutionsList, setInstitutionsList] = useState([]);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(false);
+  const [selectedInst, setSelectedInst] = useState(null);
+  const [instSearchQuery, setInstSearchQuery] = useState('');
+  const [custodyForm, setCustodyForm] = useState({
+    name: '',
+    representative_name: '',
+    representative_designation: 'মোতাওয়াল্লী / সভাপতি',
+    reason: '',
+    resolution_no: '',
+    effective_date: new Date().toISOString().split('T')[0],
+    phone: '',
+    email: ''
+  });
+  const [submittingCustody, setSubmittingCustody] = useState(false);
+  const [custodySuccessMsg, setCustodySuccessMsg] = useState(null);
+  const [custodyErrMsg, setCustodyErrMsg] = useState(null);
+
+  const fetchInstitutionsList = async () => {
+    setLoadingInstitutions(true);
+    try {
+      const res = await axios.get('/api/user/institutions-list');
+      if (res.data?.success) {
+        setInstitutionsList(res.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to load institutions list:', err);
+    } finally {
+      setLoadingInstitutions(false);
+    }
+  };
+
+  const handleSelectInstitution = (inst) => {
+    setSelectedInst(inst);
+    setCustodyForm({
+      name: inst.name || '',
+      representative_name: inst.representative_name || inst.father_name || '',
+      representative_designation: inst.representative_designation || 'মোতাওয়াল্লী / সভাপতি',
+      reason: '',
+      resolution_no: 'SR-MEMO-' + Date.now().toString().slice(-4),
+      effective_date: new Date().toISOString().split('T')[0],
+      phone: inst.phone || '',
+      email: inst.email || ''
+    });
+    setCustodySuccessMsg(null);
+    setCustodyErrMsg(null);
+  };
+
+  const handleCustodySubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedInst) {
+      setCustodyErrMsg('অনুগ্রহ করে প্রথমে একটি প্রতিষ্ঠান নির্বাচন করুন।');
+      return;
+    }
+    if (!custodyForm.representative_name?.trim()) {
+      setCustodyErrMsg('অনুগ্রহ করে নতুন দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধির নাম লিখুন।');
+      return;
+    }
+    if (!custodyForm.reason?.trim()) {
+      setCustodyErrMsg('অনুগ্রহ করে পরিবর্তনের কারণ ও রেজুলেশন বিবরণ লিখুন।');
+      return;
+    }
+
+    setSubmittingCustody(true);
+    setCustodySuccessMsg(null);
+    setCustodyErrMsg(null);
+
+    try {
+      const res = await axios.put('/api/user/institution-custody', {
+        institution_id: selectedInst._id,
+        name: custodyForm.name,
+        representative_name: custodyForm.representative_name,
+        representative_designation: custodyForm.representative_designation,
+        reason: custodyForm.reason,
+        resolution_no: custodyForm.resolution_no,
+        effective_date: custodyForm.effective_date,
+        phone: custodyForm.phone,
+        email: custodyForm.email
+      });
+
+      if (res.data?.success) {
+        setCustodySuccessMsg(res.data.message || 'সাব-রেজিস্ট্রার কর্তৃক মোতাওয়াল্লী ও নাম সফলভাবে হালনাগাদ করা হয়েছে!');
+        setSelectedInst(res.data.user);
+        fetchInstitutionsList();
+      } else {
+        setCustodyErrMsg(res.data?.message || 'পরিবর্তন সম্পন্ন করা যায়নি।');
+      }
+    } catch (err) {
+      setCustodyErrMsg(err.response?.data?.message || 'সার্ভার ত্রুটি: পরিবর্তন ব্যর্থ হয়েছে।');
+    } finally {
+      setSubmittingCustody(false);
+    }
+  };
+
   // Search Donor Land
   const handleSearchLand = async (params) => {
     const nid = (params?.owner_nid || donorNid || '').trim();
@@ -352,6 +447,29 @@ export default function WakfoDeedPanel() {
           }}>
             {wakfoApplications.length}
           </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => { setActiveSubTab('custody'); fetchInstitutionsList(); }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 22px',
+            borderRadius: '10px',
+            border: activeSubTab === 'custody' ? '1.5px solid #0f766e' : '1.5px solid #cbd5e1',
+            fontSize: '13.5px',
+            fontWeight: '800',
+            cursor: 'pointer',
+            background: activeSubTab === 'custody' ? 'linear-gradient(135deg, #0f766e, #0d9488)' : '#f8fafc',
+            color: activeSubTab === 'custody' ? '#ffffff' : '#334155',
+            boxShadow: activeSubTab === 'custody' ? '0 4px 12px rgba(15, 118, 110, 0.25)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Landmark size={16} />
+          <span>৩. প্রতিষ্ঠান ও মোতাওয়াল্লী পরিবর্তন (সাব-রেজিস্ট্রার এখতিয়ার)</span>
         </button>
       </div>
 
@@ -908,6 +1026,462 @@ export default function WakfoDeedPanel() {
           )}
         </div>
       )}
+
+      {/* SUB-TAB 3: INSTITUTION & MUTAWALLI CUSTODY MANAGEMENT (SUB-REGISTRAR EXCLUSIVE) */}
+      {activeSubTab === 'custody' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          {/* Sub-Registrar Authority Banner */}
+          <div style={{
+            background: '#ffffff',
+            border: '1.5px solid #cbd5e1',
+            borderLeft: '5px solid #0f766e',
+            borderRadius: '16px',
+            padding: '20px 24px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '14px',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.05)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '48px',
+                height: '48px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ffffff',
+                boxShadow: '0 4px 12px rgba(15, 118, 110, 0.25)',
+                flexShrink: 0
+              }}>
+                <Landmark size={24} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    ওয়াকফ প্রতিষ্ঠান ও মোতাওয়াল্লী পরিবর্তন ব্যবস্থাপনা
+                  </h3>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '2px 9px',
+                    borderRadius: '999px',
+                    background: '#ccfbf1',
+                    color: '#0f766e',
+                    border: '1px solid #99f6e4',
+                    fontWeight: '800'
+                  }}>
+                    সাব-রেজিস্ট্রারের প্রশাসনিক এখতিয়ার
+                  </span>
+                </div>
+                <p style={{ fontSize: '12.5px', color: '#475569', margin: '3px 0 0 0' }}>
+                  মসজিদ, মাদ্রাসা বা ওয়াকফ প্রতিষ্ঠান নিজে তাদের মোতাওয়াল্লী পরিবর্তন করতে পারে না। সরকারি রেজুলেশন ও অনুমোদনের ভিত্তিতে সাব-রেজিস্ট্রার কর্তৃক এন্ট্রি সম্পন্ন হয়।
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={fetchInstitutionsList}
+              className="btn-secondary"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                fontSize: '13px',
+                fontWeight: '700',
+                background: '#f8fafc',
+                border: '1.5px solid #cbd5e1',
+                borderRadius: '8px'
+              }}
+            >
+              <RefreshCw size={13} className={loadingInstitutions ? 'animate-spin' : ''} />
+              <span>রিফ্রেশ তালিকা</span>
+            </button>
+          </div>
+
+          {/* Grid Layout: Left Selection List | Right Edit Form & History */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 1fr) minmax(400px, 1.4fr)', gap: '20px', alignItems: 'start' }}>
+            
+            {/* Left: Institution Selector Card */}
+            <div className="glass-card" style={{ padding: '20px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Building2 size={16} color="#0f766e" />
+                  <span>নিবন্ধিত প্রতিষ্ঠান নির্বাচন করুন</span>
+                </h4>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748b' }}>
+                  মোট: {institutionsList.length} টি
+                </span>
+              </div>
+
+              {/* Quick Search */}
+              <div style={{ position: 'relative', marginBottom: '14px' }}>
+                <Search size={14} color="#94a3b8" style={{ position: 'absolute', left: '10px', top: '12px' }} />
+                <input
+                  type="text"
+                  placeholder="প্রতিষ্ঠান বা মোতাওয়াল্লীর নাম/NID দিয়ে খুঁজুন..."
+                  value={instSearchQuery}
+                  onChange={(e) => setInstSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    padding: '8px 12px 8px 32px',
+                    fontSize: '12.5px',
+                    border: '1.5px solid #cbd5e1',
+                    borderRadius: '8px',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              {loadingInstitutions ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '13px' }}>
+                  <RefreshCw size={20} className="animate-spin" style={{ margin: '0 auto 8px' }} />
+                  প্রতিষ্ঠান তালিকা লোড হচ্ছে...
+                </div>
+              ) : institutionsList.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '30px', color: '#64748b', fontSize: '13px' }}>
+                  কোনো প্রতিষ্ঠান নিবন্ধিত পাওয়া যায়নি।
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '420px', overflowY: 'auto' }}>
+                  {institutionsList
+                    .filter(inst => {
+                      if (!instSearchQuery.trim()) return true;
+                      const q = instSearchQuery.toLowerCase();
+                      return (
+                        (inst.name && inst.name.toLowerCase().includes(q)) ||
+                        (inst.nid && inst.nid.includes(q)) ||
+                        (inst.representative_name && inst.representative_name.toLowerCase().includes(q))
+                      );
+                    })
+                    .map((inst) => {
+                      const isSelected = selectedInst?._id === inst._id;
+                      return (
+                        <div
+                          key={inst._id}
+                          onClick={() => handleSelectInstitution(inst)}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: '10px',
+                            border: isSelected ? '2px solid #0f766e' : '1px solid #e2e8f0',
+                            background: isSelected ? '#f0fdfa' : '#ffffff',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <strong style={{ fontSize: '13.5px', color: isSelected ? '#0f766e' : '#0f172a' }}>
+                              {inst.name}
+                            </strong>
+                            <span style={{
+                              fontSize: '10px',
+                              padding: '2px 7px',
+                              borderRadius: '999px',
+                              background: '#ccfbf1',
+                              color: '#0f766e',
+                              fontWeight: '700'
+                            }}>
+                              ওয়াকফ
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '3px' }}>
+                            মোতাওয়াল্লী: <strong style={{ color: '#0f172a' }}>{inst.representative_name || inst.father_name || 'নির্ধারিত হয়নি'}</strong>
+                          </div>
+                          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>NID: {inst.nid}</span>
+                            <span>{inst.upazila}, {inst.district}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+
+            {/* Right: Sub-Registrar Edit Form & Historical Audit */}
+            <div>
+              {!selectedInst ? (
+                <div className="glass-card" style={{
+                  padding: '40px 24px',
+                  background: '#ffffff',
+                  border: '1.5px solid #cbd5e1',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  color: '#64748b'
+                }}>
+                  <div style={{
+                    width: '56px',
+                    height: '56px',
+                    borderRadius: '50%',
+                    background: '#f0fdfa',
+                    color: '#0f766e',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto 14px'
+                  }}>
+                    <Building2 size={28} />
+                  </div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '0 0 6px 0' }}>
+                    বাম পাশ থেকে একটি প্রতিষ্ঠান নির্বাচন করুন
+                  </h4>
+                  <p style={{ fontSize: '13px', margin: 0, maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto' }}>
+                    মসজিদ বা মাদ্রাসার নাম সিলেক্ট করলে তার বর্তমান তথ্য, অতীতের মোতাওয়াল্লীর ইতিহাস ও নতুন পরিবর্তন ফর্ম প্রদর্শিত হবে।
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  
+                  {/* Selected Institution Current Summary */}
+                  <div style={{
+                    background: '#ffffff',
+                    border: '1.5px solid #99f6e4',
+                    borderRadius: '14px',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: '#0f766e', fontWeight: '800', textTransform: 'uppercase' }}>
+                        নির্বাচিত ওয়াকফ প্রতিষ্ঠান
+                      </div>
+                      <h4 style={{ fontSize: '17px', fontWeight: '800', color: '#0f172a', margin: '2px 0 0 0' }}>
+                        {selectedInst.name}
+                      </h4>
+                      <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                        বর্তমান মোতাওয়াল্লী: <strong style={{ color: '#0f766e' }}>{selectedInst.representative_name || selectedInst.father_name || 'নির্ধারিত হয়নি'}</strong> ({selectedInst.representative_designation || 'মোতাওয়াল্লী'})
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '11px', color: '#64748b', display: 'block' }}>এনআইডি নম্বর:</span>
+                      <strong style={{ fontFamily: 'monospace', color: '#0f172a', fontSize: '13px' }}>{selectedInst.nid}</strong>
+                    </div>
+                  </div>
+
+                  {/* Edit Form */}
+                  <div className="glass-card" style={{ padding: '24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: '800', color: '#0f172a', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Landmark size={18} color="#0f766e" />
+                      <span>সাব-রেজিস্ট্রার অনুমোদন ফর্ম (মোতাওয়াল্লী / নাম পরিবর্তন)</span>
+                    </h4>
+
+                    {custodyErrMsg && (
+                      <div style={{ padding: '10px 14px', background: '#fee2e2', border: '1px solid #f87171', borderRadius: '8px', color: '#991b1b', fontSize: '13px', fontWeight: '600', marginBottom: '14px' }}>
+                        ⚠️ {custodyErrMsg}
+                      </div>
+                    )}
+
+                    {custodySuccessMsg && (
+                      <div style={{ padding: '10px 14px', background: '#dcfce7', border: '1px solid #86efac', borderRadius: '8px', color: '#166534', fontSize: '13px', fontWeight: '700', marginBottom: '14px' }}>
+                        {custodySuccessMsg}
+                      </div>
+                    )}
+
+                    <form onSubmit={handleCustodySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                          প্রতিষ্ঠানের পূর্ণ নাম (প্রয়োজনে সংশোধনযোগ্য) <span style={{ color: '#dc2626' }}>*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={custodyForm.name}
+                          onChange={(e) => setCustodyForm(p => ({ ...p, name: e.target.value }))}
+                          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            নতুন দায়িত্বরত মোতাওয়াল্লী / প্রতিনিধির নাম <span style={{ color: '#dc2626' }}>*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="যেমন: মাওলানা মো. আব্দুর রহিম"
+                            value={custodyForm.representative_name}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, representative_name: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            পদবী <span style={{ color: '#dc2626' }}>*</span>
+                          </label>
+                          <select
+                            value={custodyForm.representative_designation}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, representative_designation: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          >
+                            <option value="মোতাওয়াল্লী / সভাপতি">মোতাওয়াল্লী / সভাপতি</option>
+                            <option value="সাধারণ সম্পাদক">সাধারণ সম্পাদক</option>
+                            <option value="মুহতামিম / প্রিন্সিপাল">মুহতামিম / প্রিন্সিপাল</option>
+                            <option value="পরিচালনা কমিটির সদস্য">পরিচালনা কমিটির সদস্য</option>
+                            <option value="ট্রাস্টি (Trustee)">ট্রাস্টি (Trustee)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                          পরিবর্তনের কারণ ও রেজুলেশন বিবরণ <span style={{ color: '#dc2626' }}>*</span>
+                        </label>
+                        <textarea
+                          required
+                          rows={2}
+                          placeholder="যেমন: পরিচালনা কমিটির রেজুলেশন অনুযায়ী এবং সাব-রেজিস্ট্রার কর্তৃক অনুমোদিত হয়ে নতুন মোতাওয়াল্লী নিয়োগ সম্পন্ন হয়েছে।"
+                          value={custodyForm.reason}
+                          onChange={(e) => setCustodyForm(p => ({ ...p, reason: e.target.value }))}
+                          style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box', resize: 'vertical' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            রেজুলেশন / স্মারক নম্বর (Memo No)
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="যেমন: SR-MEMO-2026-44"
+                            value={custodyForm.resolution_no}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, resolution_no: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            কার্যকর হওয়ার তারিখ
+                          </label>
+                          <input
+                            type="date"
+                            value={custodyForm.effective_date}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, effective_date: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            মোবাইল নম্বর
+                          </label>
+                          <input
+                            type="tel"
+                            value={custodyForm.phone}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, phone: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+
+                        <div>
+                          <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>
+                            ইমেইল ঠিকানা
+                          </label>
+                          <input
+                            type="email"
+                            value={custodyForm.email}
+                            onChange={(e) => setCustodyForm(p => ({ ...p, email: e.target.value }))}
+                            style={{ width: '100%', padding: '9px 12px', border: '1.5px solid #cbd5e1', borderRadius: '8px', fontSize: '13px', boxSizing: 'border-box' }}
+                          />
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '6px' }}>
+                        <button
+                          type="submit"
+                          disabled={submittingCustody}
+                          className="btn-primary"
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '11px 24px',
+                            fontSize: '13.5px',
+                            fontWeight: '700',
+                            background: 'linear-gradient(135deg, #0f766e, #0d9488)',
+                            borderRadius: '8px'
+                          }}
+                        >
+                          <CheckCircle size={16} />
+                          <span>{submittingCustody ? 'সংরক্ষণ করা হচ্ছে...' : 'সাব-রেজিস্ট্রার হিসেবে পরিবর্তন ও অনুমোদন নিশ্চিত করুন'}</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Chronological History for Selected Institution */}
+                  <div className="glass-card" style={{ padding: '20px 24px', background: '#ffffff', border: '1.5px solid #cbd5e1', borderRadius: '16px' }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: '800', color: '#0f172a', margin: '0 0 14px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Clock size={16} color="#0f766e" />
+                      <span>এই প্রতিষ্ঠানের অতীতের দায়িত্ব ও নাম পরিবর্তনের ইতিহাস</span>
+                    </h4>
+
+                    {(!selectedInst.custody_history || selectedInst.custody_history.length === 0) ? (
+                      <div style={{ padding: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', fontSize: '12.5px', color: '#64748b' }}>
+                        📌 এখনও পর্যন্ত কোনো পরিবর্তন রেকর্ড করা হয়নি। বর্তমানে প্রাথমিক নিবন্ধিত মোতাওয়াল্লী বহাল রয়েছে।
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {selectedInst.custody_history.map((rec, i) => (
+                          <div key={rec._id || i} style={{
+                            padding: '12px 16px',
+                            background: '#f8fafc',
+                            border: '1px solid #e2e8f0',
+                            borderLeft: i === 0 ? '4px solid #0f766e' : '4px solid #94a3b8',
+                            borderRadius: '8px',
+                            fontSize: '12.5px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                              <strong style={{ color: '#0f766e' }}>
+                                স্মারক: {rec.resolution_no || 'রেজুলেশন'}
+                              </strong>
+                              <span style={{ fontSize: '11px', color: '#64748b' }}>
+                                তারিখ: {new Date(rec.effective_date || rec.created_at).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' })}
+                              </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+                              <div>
+                                <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>নাম:</span>
+                                <span>{rec.previous_name && rec.previous_name !== rec.new_name ? `${rec.previous_name} ➔ ${rec.new_name}` : rec.new_name}</span>
+                              </div>
+                              <div>
+                                <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>মোতাওয়াল্লী:</span>
+                                <span>{rec.previous_representative && rec.previous_representative !== rec.new_representative ? `${rec.previous_representative} ➔ ${rec.new_representative}` : rec.new_representative}</span>
+                              </div>
+                              <div>
+                                <span style={{ color: '#64748b', fontSize: '11px', display: 'block' }}>অনুমোদনকারী:</span>
+                                <strong style={{ color: '#0f766e' }}>{rec.changed_by}</strong>
+                              </div>
+                            </div>
+                            <div style={{ marginTop: '6px', fontSize: '11.5px', color: '#475569' }}>
+                              কারণ: {rec.reason}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
